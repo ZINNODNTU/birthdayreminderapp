@@ -1,0 +1,277 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../models/birthday.dart';
+import '../controllers/birthday_controller.dart';
+import 'dart:convert';
+import 'package:image_picker/image_picker.dart';
+
+class BirthdayAddEditView extends StatefulWidget {
+  final Birthday? birthday;
+
+  const BirthdayAddEditView({super.key, this.birthday});
+
+  @override
+  _BirthdayAddEditViewState createState() => _BirthdayAddEditViewState();
+}
+
+class _BirthdayAddEditViewState extends State<BirthdayAddEditView> {
+  final _formKey = GlobalKey<FormState>();
+
+  late String _name;
+  String? _avatarBase64;
+  String? _gender;
+  String? _nickname;
+  String? _relationship;
+  String? _note;
+
+  late DateTime _solarBirthday;
+  late LunarDateTime _lunarBirthday;
+  late CalendarType _calendarType;
+  late int _remindBeforeDays;
+  late TimeOfDay _remindTime;
+  bool _isRecurringNotificationEnabled = true;
+  bool _repeatAnnually = true;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.birthday != null) {
+      final b = widget.birthday!;
+      _name = b.name;
+      _avatarBase64 = b.avatarBase64;
+      _gender = b.gender;
+      _nickname = b.nickname;
+      _relationship = b.relationship;
+      _note = b.note;
+      _solarBirthday = b.solarBirthday;
+      _lunarBirthday = b.lunarBirthday;
+      _calendarType = b.calendarType;
+      _remindBeforeDays = b.remindBeforeDays;
+      _remindTime = b.remindTime;
+      _isRecurringNotificationEnabled = b.isRecurringNotificationEnabled;
+      _repeatAnnually = b.repeatAnnually;
+    } else {
+      _name = '';
+      _avatarBase64 = null;
+      _gender = null;
+      _nickname = null;
+      _relationship = null;
+      _note = null;
+      _solarBirthday = DateTime.now();
+      _lunarBirthday = LunarDateTime.fromDateTime(DateTime.now());
+      _calendarType = CalendarType.solar;
+      _remindBeforeDays = 0;
+      _remindTime = TimeOfDay.now();
+    }
+  }
+
+  bool isValidAge(DateTime birthday, {int minAge = 0, int maxAge = 120}) {
+    final now = DateTime.now();
+    int age = now.year - birthday.year;
+    if (now.month < birthday.month || (now.month == birthday.month && now.day < birthday.day)) {
+      age--;
+    }
+    return age >= minAge && age <= maxAge;
+  }
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final image = await picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      final bytes = await image.readAsBytes();
+      setState(() {
+        _avatarBase64 = base64Encode(bytes);
+      });
+    }
+  }
+
+  void _submitForm() {
+    if (_formKey.currentState!.validate()) {
+      if (!isValidAge(_solarBirthday)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Tuổi phải nằm trong khoảng từ 0 đến 120.')),
+        );
+        return;
+      }
+
+      _formKey.currentState!.save();
+      final birthday = Birthday(
+        id: widget.birthday?.id ?? DateTime.now().toString(),
+        name: _name,
+        avatarBase64: _avatarBase64,
+        gender: _gender,
+        nickname: _nickname,
+        relationship: _relationship,
+        solarBirthday: _solarBirthday,
+        lunarBirthday: _lunarBirthday,
+        calendarType: _calendarType,
+        remindBeforeDays: _remindBeforeDays,
+        remindTime: _remindTime,
+        isRecurringNotificationEnabled: _isRecurringNotificationEnabled,
+        repeatAnnually: _repeatAnnually,
+        note: _note,
+      );
+
+      final controller = Provider.of<BirthdayController>(context, listen: false);
+      widget.birthday == null
+          ? controller.addBirthday(birthday)
+          : controller.updateBirthday(birthday);
+
+      Navigator.of(context).pop();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.birthday == null ? 'Thêm sinh nhật' : 'Sửa sinh nhật'),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              GestureDetector(
+                onTap: _pickImage,
+                child: CircleAvatar(
+                  radius: 40,
+                  backgroundImage: _avatarBase64 != null
+                      ? MemoryImage(base64Decode(_avatarBase64!))
+                      : null,
+                  child: _avatarBase64 == null ? const Icon(Icons.add_a_photo) : null,
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                initialValue: _name,
+                decoration: const InputDecoration(labelText: 'Tên *'),
+                validator: (value) => value == null || value.isEmpty ? 'Vui lòng nhập tên' : null,
+                onSaved: (value) => _name = value!,
+              ),
+              TextFormField(
+                initialValue: _nickname,
+                decoration: const InputDecoration(labelText: 'Biệt danh'),
+                onSaved: (value) => _nickname = value,
+              ),
+              DropdownButtonFormField<String>(
+                value: _gender?.isNotEmpty == true ? _gender : '',
+                decoration: const InputDecoration(labelText: 'Giới tính'),
+                isExpanded: true,
+                onChanged: (value) {
+                  setState(() => _gender = value != '' ? value : null);
+                },
+                items: const [
+                  DropdownMenuItem(value: '', child: Text('- Chọn -')),
+                  DropdownMenuItem(value: 'Nam', child: Text('Nam')),
+                  DropdownMenuItem(value: 'Nữ', child: Text('Nữ')),
+                  DropdownMenuItem(value: 'Khác', child: Text('Khác')),
+                ],
+                onSaved: (value) => _gender = value != '' ? value : null,
+              ),
+
+
+              TextFormField(
+                initialValue: _relationship,
+                decoration: const InputDecoration(labelText: 'Mối quan hệ'),
+                onSaved: (value) => _relationship = value,
+              ),
+              TextFormField(
+                initialValue: _note,
+                decoration: const InputDecoration(labelText: 'Ghi chú'),
+                onSaved: (value) => _note = value,
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  const Text('Loại lịch:'),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: RadioListTile<CalendarType>(
+                      title: const Text('Dương lịch'),
+                      value: CalendarType.solar,
+                      groupValue: _calendarType,
+                      onChanged: (value) => setState(() => _calendarType = value!),
+                    ),
+                  ),
+                  Expanded(
+                    child: RadioListTile<CalendarType>(
+                      title: const Text('Âm lịch'),
+                      value: CalendarType.lunar,
+                      groupValue: _calendarType,
+                      onChanged: (value) => setState(() => _calendarType = value!),
+                    ),
+                  ),
+                ],
+              ),
+              ListTile(
+                title: Text('Ngày sinh dương: ${_solarBirthday.day}/${_solarBirthday.month}/${_solarBirthday.year}'),
+                trailing: const Icon(Icons.calendar_today),
+                onTap: () async {
+                  DateTime? picked = await showDatePicker(
+                    context: context,
+                    initialDate: _solarBirthday,
+                    firstDate: DateTime(1900),
+                    lastDate: DateTime.now(),
+                  );
+                  if (picked != null) {
+                    if (!isValidAge(picked)) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Tuổi không hợp lệ. Tuổi phải từ 0 đến 120.')),
+                      );
+                      return;
+                    }
+                    setState(() {
+                      _solarBirthday = picked;
+                      _lunarBirthday = LunarDateTime.fromDateTime(picked);
+                    });
+                  }
+                },
+              ),
+              ListTile(
+                title: Text('Ngày sinh âm: ${_lunarBirthday.day}/${_lunarBirthday.month}'),
+              ),
+              DropdownButtonFormField<int>(
+                decoration: const InputDecoration(labelText: 'Nhắc trước (ngày)'),
+                value: _remindBeforeDays,
+                onChanged: (value) => setState(() => _remindBeforeDays = value ?? 0),
+                items: List.generate(31, (index) {
+                  return DropdownMenuItem(value: index, child: Text('$index'));
+                }),
+              ),
+              ListTile(
+                title: Text('Giờ nhắc: ${_remindTime.format(context)}'),
+                trailing: const Icon(Icons.access_time),
+                onTap: () async {
+                  TimeOfDay? picked = await showTimePicker(
+                    context: context,
+                    initialTime: _remindTime,
+                  );
+                  if (picked != null) {
+                    setState(() => _remindTime = picked);
+                  }
+                },
+              ),
+              CheckboxListTile(
+                title: const Text('Lặp lại hàng năm'),
+                value: _repeatAnnually,
+                onChanged: (val) => setState(() => _repeatAnnually = val ?? true),
+              ),
+              CheckboxListTile(
+                title: const Text('Bật thông báo định kỳ'),
+                value: _isRecurringNotificationEnabled,
+                onChanged: (val) => setState(() => _isRecurringNotificationEnabled = val ?? true),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: _submitForm,
+                child: const Text('Lưu'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
