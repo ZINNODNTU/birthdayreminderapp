@@ -1,6 +1,8 @@
 import 'package:birthdayreminderapp/controllers/birthday_controller.dart';
 import 'package:birthdayreminderapp/core/auth/auth_gate.dart';
 import 'package:birthdayreminderapp/core/auth/auth_repository.dart';
+import 'package:birthdayreminderapp/core/auth/user_profile_repository.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:birthdayreminderapp/core/session/session_controller.dart';
 import 'package:birthdayreminderapp/core/session/session_repository.dart';
 import 'package:birthdayreminderapp/features/auth/views/auth_screen.dart';
@@ -107,11 +109,15 @@ void main() {
                   ),
             ),
             Provider<AuthRepository>.value(value: repo),
+            Provider<UserProfileRepository>(
+              create: (_) => _NoopProfileRepository(),
+            ),
             Provider<SessionRepository>.value(value: sessionRepo),
             ChangeNotifierProvider<SessionController>(
               create:
                   (ctx) => SessionController(
                     repository: ctx.read<SessionRepository>(),
+                    profileRepository: ctx.read<UserProfileRepository>(),
                     authStateChanges:
                         ctx.read<AuthRepository>().authStateChanges,
                   ),
@@ -135,4 +141,9 @@ void main() {
       expect(find.byType(Homepage), findsNothing);
     },
   );
+}
+
+class _NoopProfileRepository implements UserProfileRepository {
+  @override
+  Future<void> ensureProfile(User user) async {}
 }

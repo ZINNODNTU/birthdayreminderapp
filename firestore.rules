@@ -1,21 +1,67 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function signedInAs(userId) {
-      return request.auth != null && request.auth.uid == userId;
+
+    // ----- helpers ----------------------------------------------------
+    function signedIn() {
+      return request.auth != null;
     }
 
-    match /users/{userId} {
-      allow read, create, update, delete: if signedInAs(userId);
+    function signedInAs(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
 
+    // Production: `request.auth.token.firebase.sign_in_provider == 'google.com'`.
+// Emulator: the test harness puts a literal `provider` claim at
+// `request.auth.token.provider`. Accept both shapes.
+    function isGoogleUser() {
+      return request.auth != null &&
+        (request.auth.token.provider == 'google.com' ||
+          (request.auth.token.firebase != null &&
+            request.auth.token.firebase.sign_in_provider == 'google.com'));
+    }
+
+    // ----- user profile ------------------------------------------------
+    match /users/{userId} {
+      allow read, delete: if signedInAs(userId);
+
+      allow create: if signedInAs(userId)
+        && isGoogleUser()
+        && request.resource.data.uid == userId
+        && request.resource.data.provider == 'google.com'
+        && request.resource.data.schemaVersion == 1
+        && request.resource.data.keys().hasAll([
+             'uid', 'provider', 'createdAt', 'updatedAt',
+             'lastLoginAt', 'schemaVersion'
+           ]);
+
+      // Updates may not modify immutable fields.
+      allow update: if signedInAs(userId)
+        && isGoogleUser()
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.provider == 'google.com'
+        && request.resource.data.schemaVersion == resource.data.schemaVersion
+        && request.resource.data.createdAt == resource.data.createdAt;
+
+      // ----- birthdays subcollection --------------------------------
       match /birthdays/{birthdayId} {
         allow read, delete: if signedInAs(userId);
+
         allow create, update: if signedInAs(userId)
-          && request.resource.data.ownerId == userId
           && request.resource.data.id == birthdayId
           && request.resource.data.name is string
           && request.resource.data.name.size() > 0
-          && (request.resource.data.schemaVersion == 1 || request.resource.data.schemaVersion == 2);
+          && request.resource.data.schemaVersion == 1
+          && request.resource.data.calendarType in ['solar', 'lunar']
+          && request.resource.data.reminder.enabled is bool
+          && request.resource.data.reminder.daysBefore is int
+          && request.resource.data.reminder.daysBefore >= 0
+          && request.resource.data.reminder.hour is int
+          && request.resource.data.reminder.hour >= 0
+          && request.resource.data.reminder.hour <= 23
+          && request.resource.data.reminder.minute is int
+          && request.resource.data.reminder.minute >= 0
+          && request.resource.data.reminder.minute <= 59;
       }
 
       match /preferences/{document=**} {
@@ -27,6 +73,15 @@ service cloud.firestore {
       }
     }
 
+    // ----- legacy / global birthdays -----------------------------------
+    // Production architecture is /users/{uid}/birthdays/{id}. The
+    // top-level collection is denied outright so legacy callers cannot
+    // reintroduce it.
+    match /birthdays/{document=**} {
+      allow read, write: if false;
+    }
+
+    // ----- catch-all ---------------------------------------------------
     match /{document=**} {
       allow read, write: if false;
     }

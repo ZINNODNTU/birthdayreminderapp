@@ -42,6 +42,22 @@ Phase 8  AI Backend
 Phase 9  Release / CI / Observability
 ```
 
+## Phase 3.5 — Auth reset + Firestore reset (2026-08-27)
+
+* Replaced email/password registration, login, and reset with
+  Google-only authentication. The UI now has exactly two buttons:
+  `Tiếp tục với Google` and `Tiếp tục trên thiết bị`.
+* `UserProfileRepository.ensureProfile()` upserts the canonical
+  `/users/{uid}` document on every fresh sign-in.
+* Standardized the Firestore path to `/users/{uid}/birthdays/{id}`.
+  The legacy top-level `/birthdays/{id}` collection was deleted from
+  the live Firebase project and the security rules now deny it
+  outright.
+* 22 emulator tests cover the new schema, validation, and the
+  legacy-path denial.
+* Phase 5 SyncManager remains in `stash@{0}` and will be reapplied
+  on top of this schema.
+
 ## Dependency graph
 
 ```

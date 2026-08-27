@@ -5,6 +5,11 @@ import '../../../core/auth/auth_failure.dart';
 import '../../../core/auth/auth_repository.dart';
 import '../../../core/session/session_controller.dart';
 
+/// Google-only authentication + Local Mode entry screen.
+///
+/// The screen intentionally does NOT collect any credentials itself:
+/// authentication is delegated to the platform's Google account chooser,
+/// and the "Continue on device" path is provided by [SessionController].
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
 
@@ -13,38 +18,19 @@ class AuthScreen extends StatefulWidget {
 }
 
 class _AuthScreenState extends State<AuthScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  bool _isLoading = false;
-  bool _isLogin = true;
+  bool _googleInFlight = false;
+  bool _localInFlight = false;
 
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
-    setState(() => _isLoading = true);
-    final auth = context.read<AuthRepository>();
+  Future<void> _signInWithGoogle() async {
+    if (_googleInFlight || _localInFlight) return;
+    setState(() => _googleInFlight = true);
     try {
-      if (_isLogin) {
-        await auth.signInWithEmail(
-          _emailController.text.trim(),
-          _passwordController.text,
-        );
-      } else {
-        await auth.registerWithEmail(
-          _emailController.text.trim(),
-          _passwordController.text,
-        );
-      }
-      if (!mounted) return;
+      await context.read<AuthRepository>().signInWithGoogle();
+      // AuthGate listens to authStateChanges and routes to Homepage.
     } on AuthFailure catch (e) {
       if (!mounted) return;
+      // Cancellation is not an error — keep the user where they are.
+      if (e is AuthFailureCancelled) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(_mapFailureMessage(e))));
@@ -54,159 +40,125 @@ class _AuthScreenState extends State<AuthScreen> {
         const SnackBar(content: Text('Đã xảy ra lỗi, vui lòng thử lại')),
       );
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) setState(() => _googleInFlight = false);
     }
   }
 
   Future<void> _continueOnDevice() async {
-    setState(() => _isLoading = true);
+    if (_googleInFlight || _localInFlight) return;
+    setState(() => _localInFlight = true);
     try {
       await context.read<SessionController>().enableLocalMode();
-      if (!mounted) return;
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) setState(() => _localInFlight = false);
     }
   }
 
   String _mapFailureMessage(AuthFailure failure) {
     return switch (failure) {
       AuthFailureNetwork() => 'Không có kết nối mạng',
-      AuthFailureInvalidEmail() => 'Email không hợp lệ',
-      AuthFailureInvalidCredential() => 'Sai email hoặc mật khẩu',
-      AuthFailureWrongPassword() => 'Sai mật khẩu',
-      AuthFailureUserNotFound() => 'Không tìm thấy người dùng',
       AuthFailureUserDisabled() => 'Tài khoản đã bị vô hiệu hóa',
-      AuthFailureEmailAlreadyInUse() => 'Email đã được sử dụng',
-      AuthFailureWeakPassword() => 'Mật khẩu quá yếu (tối thiểu 6 ký tự)',
-      AuthFailureOperationNotAllowed() => 'Phương thức đăng nhập chưa được bật',
+      AuthFailureOperationNotAllowed() =>
+        'Đăng nhập bằng Google chưa được bật. Vui lòng liên hệ quản trị viên.',
       AuthFailureTooManyRequests() => 'Quá nhiều yêu cầu, vui lòng thử lại sau',
       _ => 'Đã xảy ra lỗi, vui lòng thử lại',
     };
   }
 
-  static final RegExp _emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
-
-  String? _validateEmail(String? v) {
-    final value = v?.trim() ?? '';
-    if (value.isEmpty) return 'Vui lòng nhập email';
-    if (!_emailRegex.hasMatch(value)) return 'Email không hợp lệ';
-    return null;
-  }
-
-  String? _validatePassword(String? v) {
-    final value = v ?? '';
-    if (value.isEmpty) return 'Vui lòng nhập mật khẩu';
-    if (!_isLogin && value.length < 6) {
-      return 'Mật khẩu phải có ít nhất 6 ký tự';
-    }
-    return null;
-  }
-
-  Future<void> _forgotPassword() async {
-    final email = _emailController.text.trim();
-    if (email.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Vui lòng nhập email để đặt lại mật khẩu'),
-        ),
-      );
-      return;
-    }
-    setState(() => _isLoading = true);
-    final auth = context.read<AuthRepository>();
-    try {
-      await auth.sendPasswordResetEmail(email);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Email đặt lại mật khẩu đã được gửi')),
-      );
-    } on AuthFailure catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(_mapFailureMessage(e))));
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Đã xảy ra lỗi')));
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final inFlight = _googleInFlight || _localInFlight;
     return Scaffold(
-      appBar: AppBar(title: Text(_isLogin ? 'Đăng nhập' : 'Đăng ký')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              TextFormField(
-                controller: _emailController,
-                decoration: const InputDecoration(labelText: 'Email'),
-                keyboardType: TextInputType.emailAddress,
-                validator: _validateEmail,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _passwordController,
-                decoration: const InputDecoration(labelText: 'Mật khẩu'),
-                obscureText: true,
-                validator: _validatePassword,
-              ),
-              const SizedBox(height: 20),
-              if (_isLoading)
-                const CircularProgressIndicator()
-              else
-                ElevatedButton(
-                  onPressed: _submit,
-                  child: Text(_isLogin ? 'Đăng nhập' : 'Đăng ký'),
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Icon(
+                  Icons.cake_outlined,
+                  size: 72,
+                  color: theme.colorScheme.primary,
                 ),
-              const SizedBox(height: 12),
-              if (_isLogin)
-                TextButton(
-                  onPressed: _forgotPassword,
-                  child: const Text('Quên mật khẩu?'),
+                const SizedBox(height: 16),
+                Text(
+                  'Birthday Reminder',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.headlineSmall,
                 ),
-              TextButton(
-                onPressed: () => setState(() => _isLogin = !_isLogin),
-                child: Text(
-                  _isLogin
-                      ? 'Chưa có tài khoản? Đăng ký'
-                      : 'Đã có tài khoản? Đăng nhập',
-                ),
-              ),
-              const SizedBox(height: 24),
-              const Row(
-                children: [
-                  Expanded(child: Divider()),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 8),
-                    child: Text('hoặc'),
+                const SizedBox(height: 8),
+                Text(
+                  'Đừng để một sinh nhật nào trôi qua mà không được nhớ đến.',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
-                  Expanded(child: Divider()),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Bạn vẫn có thể sử dụng sinh nhật, lịch và nhắc nhở trên '
-                'thiết bị. Các tính năng đồng bộ đám mây yêu cầu đăng nhập.',
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodySmall,
-              ),
-              const SizedBox(height: 12),
-              OutlinedButton.icon(
-                onPressed: _isLoading ? null : _continueOnDevice,
-                icon: const Icon(Icons.devices),
-                label: const Text('Tiếp tục trên thiết bị'),
-              ),
-            ],
+                ),
+                const SizedBox(height: 32),
+                FilledButton.icon(
+                  key: const ValueKey('continue_with_google_button'),
+                  onPressed: inFlight ? null : _signInWithGoogle,
+                  icon:
+                      _googleInFlight
+                          ? const SizedBox(
+                            height: 18,
+                            width: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                          : const Text(
+                            'G',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 18,
+                            ),
+                          ),
+                  label: const Text('Tiếp tục với Google'),
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    const Expanded(child: Divider()),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: Text('hoặc', style: theme.textTheme.bodySmall),
+                    ),
+                    const Expanded(child: Divider()),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                OutlinedButton.icon(
+                  key: const ValueKey('continue_on_device_button'),
+                  onPressed: inFlight ? null : _continueOnDevice,
+                  icon:
+                      _localInFlight
+                          ? const SizedBox(
+                            height: 18,
+                            width: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                          : const Icon(Icons.devices),
+                  label: const Text('Tiếp tục trên thiết bị'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Bạn vẫn có thể sử dụng sinh nhật, lịch và nhắc nhở trên '
+                  'thiết bị. Các tính năng đồng bộ đám mây yêu cầu đăng nhập.',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

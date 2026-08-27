@@ -103,11 +103,11 @@ class FakeUser implements User {
       Future.value();
 }
 
-/// Behavior-controllable AuthRepository double.
+/// Behavior-controllable AuthRepository double for Google-only tests.
 ///
 /// - Tracks how many times each method was invoked.
 /// - Lets each call succeed by default or throw an [AuthFailure] set via
-///   [signInFailure] / [registerFailure] / [resetFailure].
+///   [signInWithGoogleFailure] / [signOutFailure].
 /// - Stream-based auth state so [AuthGate] rebuilds.
 class FakeAuthRepository implements AuthRepository {
   FakeAuthRepository({User? initialUser}) {
@@ -126,19 +126,11 @@ class FakeAuthRepository implements AuthRepository {
     }
   }
 
-  int signInCalls = 0;
-  int registerCalls = 0;
-  int resetCalls = 0;
+  int signInWithGoogleCalls = 0;
   int signOutCalls = 0;
-  String? lastSignInEmail;
-  String? lastSignInPassword;
-  String? lastRegisterEmail;
-  String? lastRegisterPassword;
-  String? lastResetEmail;
 
-  AuthFailure? signInFailure;
-  AuthFailure? registerFailure;
-  AuthFailure? resetFailure;
+  AuthFailure? signInWithGoogleFailure;
+  AuthFailure? signOutFailure;
 
   @override
   User? get currentUser => _user;
@@ -157,36 +149,20 @@ class FakeAuthRepository implements AuthRepository {
   void setUser(User? user) => _emit(user);
 
   @override
-  Future<void> signInWithEmail(String email, String password) async {
-    signInCalls++;
-    lastSignInEmail = email;
-    lastSignInPassword = password;
-    final failure = signInFailure;
+  Future<User?> signInWithGoogle() async {
+    signInWithGoogleCalls++;
+    final failure = signInWithGoogleFailure;
     if (failure != null) throw failure;
-    setUser(FakeUser(email));
-  }
-
-  @override
-  Future<void> registerWithEmail(String email, String password) async {
-    registerCalls++;
-    lastRegisterEmail = email;
-    lastRegisterPassword = password;
-    final failure = registerFailure;
-    if (failure != null) throw failure;
-    setUser(FakeUser(email));
-  }
-
-  @override
-  Future<void> sendPasswordResetEmail(String email) async {
-    resetCalls++;
-    lastResetEmail = email;
-    final failure = resetFailure;
-    if (failure != null) throw failure;
+    final user = FakeUser('fake@gmail.com');
+    setUser(user);
+    return user;
   }
 
   @override
   Future<void> signOut() async {
     signOutCalls++;
+    final failure = signOutFailure;
+    if (failure != null) throw failure;
     setUser(null);
   }
 

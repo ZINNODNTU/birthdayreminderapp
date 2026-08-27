@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../controllers/birthday_controller.dart';
 import '../core/auth/firebase_auth_repository.dart';
+import '../core/auth/user_profile_repository.dart';
 import '../core/session/session_controller.dart';
 import '../core/session/session_repository.dart';
 import '../features/birthdays/data/birthday_repository.dart';
@@ -83,11 +84,13 @@ class AppDependencies {
             ),
       ),
       Provider<FirebaseAuthRepository>(create: (_) => FirebaseAuthRepository()),
+      Provider<UserProfileRepository>(create: (_) => UserProfileRepository()),
       Provider<SessionRepository>(create: (_) => SessionRepository()),
       ChangeNotifierProvider<SessionController>(
         create:
             (ctx) => SessionController(
               repository: ctx.read<SessionRepository>(),
+              profileRepository: ctx.read<UserProfileRepository>(),
               authStateChanges:
                   ctx.read<FirebaseAuthRepository>().authStateChanges,
             ),

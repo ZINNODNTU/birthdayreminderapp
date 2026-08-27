@@ -1,40 +1,45 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
+/// Generic authentication failure surfaced by [AuthRepository].
+///
+/// The mapping is deliberately narrow: only the Google Sign-In /
+/// FirebaseAuth codes we actually handle are surfaced. Everything else
+/// collapses to [AuthFailureUnknown] so callers don't need to special-case
+/// every Firebase error string.
 sealed class AuthFailure {
   const AuthFailure();
-  static AuthFailure fromFirebase(dynamic e) {
+  static AuthFailure fromAny(Object? error) {
+    if (error is AuthFailure) return error;
     String code = '';
-    if (e is FirebaseAuthException) {
-      code = e.code;
+    if (error is FirebaseAuthException) {
+      code = error.code;
+    } else if (error is GoogleSignInException) {
+      code = error.code.name;
     } else {
-      // Test doubles may expose a `code` field/getter; respect it.
-      final dynamic dyn = e;
+      final dynamic dyn = error;
       try {
         final dynamic raw = dyn?.code;
-        if (raw is String) code = raw;
+        if (raw is String) {
+          code = raw;
+        } else if (raw is GoogleSignInExceptionCode) {
+          code = raw.name;
+        }
       } catch (_) {}
     }
     switch (code) {
       case 'network-request-failed':
         return AuthFailureNetwork();
-      case 'invalid-email':
-        return AuthFailureInvalidEmail();
-      case 'invalid-credential':
-        return AuthFailureInvalidCredential();
-      case 'wrong-password':
-        return AuthFailureWrongPassword();
-      case 'user-not-found':
-        return AuthFailureUserNotFound();
       case 'user-disabled':
         return AuthFailureUserDisabled();
-      case 'email-already-in-use':
-        return AuthFailureEmailAlreadyInUse();
-      case 'weak-password':
-        return AuthFailureWeakPassword();
       case 'operation-not-allowed':
         return AuthFailureOperationNotAllowed();
       case 'too-many-requests':
         return AuthFailureTooManyRequests();
+      // google_sign_in 6.x surfaces cancellation as a typed enum.
+      case 'canceled':
+      case 'sign_in_canceled':
+        return AuthFailureCancelled();
       default:
         return AuthFailureUnknown();
     }
@@ -43,22 +48,13 @@ sealed class AuthFailure {
 
 class AuthFailureNetwork extends AuthFailure {}
 
-class AuthFailureInvalidEmail extends AuthFailure {}
-
-class AuthFailureInvalidCredential extends AuthFailure {}
-
-class AuthFailureWrongPassword extends AuthFailure {}
-
-class AuthFailureUserNotFound extends AuthFailure {}
-
 class AuthFailureUserDisabled extends AuthFailure {}
-
-class AuthFailureEmailAlreadyInUse extends AuthFailure {}
-
-class AuthFailureWeakPassword extends AuthFailure {}
 
 class AuthFailureOperationNotAllowed extends AuthFailure {}
 
 class AuthFailureTooManyRequests extends AuthFailure {}
+
+/// User dismissed the Google account chooser. Not a hard error.
+class AuthFailureCancelled extends AuthFailure {}
 
 class AuthFailureUnknown extends AuthFailure {}

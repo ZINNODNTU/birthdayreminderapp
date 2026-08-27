@@ -55,6 +55,19 @@ discarded (with a one-shot toast). If local is newer, local wins and the
 remote copy is overwritten. Ties resolve in favour of the authenticated
 device.
 
+## Phase 3 — Google-only auth + standardized schema (2026-08-27)
+
+* Removed email/password registration, login, and reset. The only
+  sign-in path is Google. See `docs/AUTHENTICATION.md`.
+* Standardized the canonical Firestore schema. Profile lives at
+  `/users/{uid}` and birthdays at
+  `/users/{uid}/birthdays/{id}`. See `docs/FIRESTORE_SCHEMA.md`.
+* `BirthdayRemoteRepository` + `BirthdayFirestoreMapper` are the
+  cloud-side equivalent of the SQLite repository. UI code must not
+  reach for `FirebaseFirestore` directly.
+* No local→cloud auto-upload yet. The SyncManager in
+  `stash@{0}` (Phase 5) is the gate for that.
+
 ## Phase 2 → Phase 5 hand-off
 
 When Phase 5 starts it will introduce:

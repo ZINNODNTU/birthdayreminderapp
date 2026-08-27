@@ -1,5 +1,31 @@
 # CURRENT_ARCHITECTURE.md
 
+## Recent Updates
+
+### 2026-08-27 — Google-only Auth + Standardized Firestore Schema
+
+* `AuthRepository` is `currentUser`, `authStateChanges`,
+  `signInWithGoogle()`, `signOut()`. Email/password registration,
+  login, and reset are removed.
+* `FirebaseAuthRepository` uses `google_sign_in ^7.2.x` and validates
+  `providerData.contains('google.com')` before returning the user.
+* `UserProfileRepository.ensureProfile(user)` upserts
+  `/users/{uid}` on every fresh sign-in. Schema:
+  `uid`, `email`, `displayName`, `photoUrl`, `provider: 'google.com'`,
+  `createdAt`, `updatedAt`, `lastLoginAt`, `schemaVersion: 1`.
+* `BirthdayFirestoreMapper` and `BirthdayRemoteRepository` are the
+  canonical converters / repository for `/users/{uid}/birthdays/{id}`.
+* `firestore.rules` enforces Google-only writes; legacy
+  `/birthdays/{...}` is denied.
+* 22 emulator tests cover the new schema and rules.
+* Local SQLite is the source of truth until Phase 5 SyncManager
+  lands (currently `stash@{0}`).
+
+The pre-existing architecture described below is still largely
+accurate for everything that doesn't touch auth or cloud.
+
+---
+
 ## Repository Overview
 - **Project**: birthdayreminderapp (Flutter)
 - **Git**: Single commit `6496266 Initial commit`, branch: `main`

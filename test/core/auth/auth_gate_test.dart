@@ -6,7 +6,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:birthdayreminderapp/controllers/birthday_controller.dart';
 import 'package:birthdayreminderapp/core/auth/auth_gate.dart';
 import 'package:birthdayreminderapp/core/auth/auth_repository.dart';
+import 'package:birthdayreminderapp/core/auth/user_profile_repository.dart';
 import 'package:birthdayreminderapp/core/session/session_controller.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:birthdayreminderapp/core/session/session_repository.dart';
 import 'package:birthdayreminderapp/features/auth/views/auth_screen.dart';
 import 'package:birthdayreminderapp/features/birthdays/data/birthday_repository.dart';
@@ -80,11 +82,13 @@ Widget _wrap({
             ),
       ),
       Provider<AuthRepository>.value(value: repo),
+      Provider<UserProfileRepository>(create: (_) => _NoopProfileRepo()),
       Provider<SessionRepository>.value(value: sessionRepo),
       ChangeNotifierProvider<SessionController>(
         create:
             (ctx) => SessionController(
               repository: ctx.read<SessionRepository>(),
+              profileRepository: ctx.read<UserProfileRepository>(),
               authStateChanges: ctx.read<AuthRepository>().authStateChanges,
             ),
       ),
@@ -99,6 +103,14 @@ Future<void> _settle(WidgetTester tester) async {
   for (var i = 0; i < 10; i++) {
     await tester.pump(const Duration(milliseconds: 50));
   }
+}
+
+/// Stub UserProfileRepository that throws if invoked. The AuthGate
+/// happy paths never call it because the fake auth doesn't emit a
+/// real Firebase user — we don't need to seed a profile document.
+class _NoopProfileRepo implements UserProfileRepository {
+  @override
+  Future<void> ensureProfile(User user) async {}
 }
 
 void main() {
@@ -187,7 +199,7 @@ void main() {
 
       expect(find.byType(AuthScreen), findsOneWidget);
 
-      await repo.signInWithEmail('a@b.com', 'pw');
+      await repo.signInWithGoogle();
       await _settle(tester);
 
       expect(find.byType(Homepage), findsOneWidget);

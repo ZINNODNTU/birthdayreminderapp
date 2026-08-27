@@ -1,266 +1,176 @@
+import 'package:birthdayreminderapp/core/auth/auth_failure.dart';
+import 'package:birthdayreminderapp/core/auth/auth_repository.dart';
+import 'package:birthdayreminderapp/core/auth/user_profile_repository.dart';
+import 'package:birthdayreminderapp/core/session/app_session_mode.dart';
+import 'package:birthdayreminderapp/core/session/session_controller.dart';
+import 'package:birthdayreminderapp/core/session/session_repository.dart';
+import 'package:birthdayreminderapp/features/auth/views/auth_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
-import 'package:birthdayreminderapp/core/auth/auth_failure.dart';
-import 'package:birthdayreminderapp/core/auth/auth_repository.dart';
-import 'package:birthdayreminderapp/features/auth/views/auth_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../helpers/fake_auth_repository.dart';
 
 class _DelayedAuthRepository extends FakeAuthRepository {
+  _DelayedAuthRepository();
   @override
-  Future<void> signInWithEmail(String email, String password) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    await super.signInWithEmail(email, password);
+  Future<User?> signInWithGoogle() async {
+    await Future<void>.delayed(const Duration(milliseconds: 500));
+    return super.signInWithGoogle();
   }
 }
 
-Widget _wrap(AuthRepository repo, Widget child) {
-  return Provider<AuthRepository>.value(
-    value: repo,
-    child: MaterialApp(home: child),
+/// Trivial stub that satisfies the type-check without touching Firebase.
+/// AuthScreen never calls the profile repository directly.
+class _NoopProfileRepository implements UserProfileRepository {
+  @override
+  Future<void> ensureProfile(User user) async {}
+}
+
+Widget _wrap(AuthRepository repo) {
+  return MultiProvider(
+    providers: [
+      Provider<AuthRepository>.value(value: repo),
+      Provider<UserProfileRepository>(create: (_) => _NoopProfileRepository()),
+      ChangeNotifierProvider<SessionController>(
+        create:
+            (ctx) => SessionController(
+              repository: SessionRepository(),
+              profileRepository: ctx.read<UserProfileRepository>(),
+              authStateChanges: repo.authStateChanges,
+            ),
+      ),
+    ],
+    child: const MaterialApp(home: AuthScreen()),
   );
 }
 
 void main() {
-  testWidgets('AuthScreen shows email and password fields', (tester) async {
-    final repo = FakeAuthRepository();
-    await tester.pumpWidget(_wrap(repo, const AuthScreen()));
-
-    expect(find.text('Email'), findsOneWidget);
-    expect(find.text('Mật khẩu'), findsOneWidget);
-    expect(find.widgetWithText(ElevatedButton, 'Đăng nhập'), findsOneWidget);
-    expect(find.text('Quên mật khẩu?'), findsOneWidget);
-    expect(find.text('Chưa có tài khoản? Đăng ký'), findsOneWidget);
+  setUp(() async {
+    SharedPreferences.setMockInitialValues({});
   });
 
-  testWidgets('AuthScreen switches to register form when toggle tapped', (
-    tester,
-  ) async {
-    final repo = FakeAuthRepository();
-    await tester.pumpWidget(_wrap(repo, const AuthScreen()));
+  group('AuthScreen Google-only UI', () {
+    testWidgets('shows Google and Local Mode buttons', (tester) async {
+      final repo = FakeAuthRepository();
+      await tester.pumpWidget(_wrap(repo));
+      await tester.pumpAndSettle();
 
-    expect(find.text('Chưa có tài khoản? Đăng ký'), findsOneWidget);
+      expect(find.text('Tiếp tục với Google'), findsOneWidget);
+      expect(find.text('Tiếp tục trên thiết bị'), findsOneWidget);
+    });
 
-    await tester.tap(find.text('Chưa có tài khoản? Đăng ký'));
-    await tester.pumpAndSettle();
+    testWidgets('does NOT show email / password / register / forgot', (
+      tester,
+    ) async {
+      final repo = FakeAuthRepository();
+      await tester.pumpWidget(_wrap(repo));
+      await tester.pumpAndSettle();
 
-    expect(find.widgetWithText(ElevatedButton, 'Đăng ký'), findsOneWidget);
-    expect(find.text('Đã có tài khoản? Đăng nhập'), findsOneWidget);
-    expect(find.text('Quên mật khẩu?'), findsNothing);
+      expect(find.text('Email'), findsNothing);
+      expect(find.text('Mật khẩu'), findsNothing);
+      expect(find.text('Đăng ký'), findsNothing);
+      expect(find.text('Quên mật khẩu?'), findsNothing);
+      expect(find.text('Đăng nhập'), findsNothing);
+    });
   });
 
-  testWidgets('AuthScreen calls signIn on valid login submit', (tester) async {
-    final repo = FakeAuthRepository();
-    await tester.pumpWidget(_wrap(repo, const AuthScreen()));
+  group('Google sign-in flow', () {
+    testWidgets('tap Google triggers signInWithGoogle', (tester) async {
+      final repo = FakeAuthRepository();
+      await tester.pumpWidget(_wrap(repo));
+      await tester.pumpAndSettle();
 
-    await tester.enterText(
-      find.byType(TextFormField).first,
-      'test@example.com',
-    );
-    await tester.enterText(find.byType(TextFormField).last, 'password123');
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Đăng nhập'));
-    await tester.pump();
+      await tester.tap(find.text('Tiếp tục với Google'));
+      await tester.pumpAndSettle();
 
-    expect(repo.signInCalls, 1);
-    expect(repo.lastSignInEmail, 'test@example.com');
-    expect(repo.lastSignInPassword, 'password123');
-    expect(repo.currentUser, isNotNull);
-    expect(repo.currentUser?.email, 'test@example.com');
+      expect(repo.signInWithGoogleCalls, 1);
+      expect(repo.currentUser, isNotNull);
+    });
+
+    testWidgets('cancellation is silent (no snackbar, AuthScreen stays)', (
+      tester,
+    ) async {
+      final repo =
+          FakeAuthRepository()
+            ..signInWithGoogleFailure = AuthFailureCancelled();
+      await tester.pumpWidget(_wrap(repo));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Tiếp tục với Google'));
+      await tester.pumpAndSettle();
+
+      expect(repo.signInWithGoogleCalls, 1);
+      expect(repo.currentUser, isNull);
+      expect(find.byType(AuthScreen), findsOneWidget);
+    });
+
+    testWidgets('failure surfaces friendly Vietnamese message', (tester) async {
+      final repo =
+          FakeAuthRepository()..signInWithGoogleFailure = AuthFailureNetwork();
+      await tester.pumpWidget(_wrap(repo));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Tiếp tục với Google'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Không có kết nối mạng'), findsOneWidget);
+    });
+
+    testWidgets('loading indicator blocks duplicate taps', (tester) async {
+      final repo = _DelayedAuthRepository();
+      await tester.pumpWidget(_wrap(repo));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Tiếp tục với Google'));
+      await tester.pump();
+
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+      // Double-tap is a no-op because the button is disabled.
+      await tester.tap(find.text('Tiếp tục với Google'), warnIfMissed: false);
+      await tester.pumpAndSettle();
+
+      expect(repo.signInWithGoogleCalls, 1);
+    });
   });
 
-  testWidgets('AuthScreen shows friendly message on failed signIn', (
-    tester,
-  ) async {
-    final repo =
-        FakeAuthRepository()..signInFailure = AuthFailureInvalidCredential();
-    await tester.pumpWidget(_wrap(repo, const AuthScreen()));
+  group('Local Mode', () {
+    testWidgets('tap Local Mode enables AppSessionMode.local', (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final sessionRepo = SessionRepository();
+      await sessionRepo.setLocalModeEnabled(false);
 
-    await tester.enterText(
-      find.byType(TextFormField).first,
-      'test@example.com',
-    );
-    await tester.enterText(find.byType(TextFormField).last, 'password123');
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Đăng nhập'));
-    await tester.pump();
+      final repo = FakeAuthRepository();
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            Provider<AuthRepository>.value(value: repo),
+            Provider<UserProfileRepository>(
+              create: (_) => _NoopProfileRepository(),
+            ),
+            Provider<SessionRepository>.value(value: sessionRepo),
+            ChangeNotifierProvider<SessionController>(
+              create:
+                  (ctx) => SessionController(
+                    repository: ctx.read<SessionRepository>(),
+                    profileRepository: ctx.read<UserProfileRepository>(),
+                    authStateChanges: repo.authStateChanges,
+                  ),
+            ),
+          ],
+          child: const MaterialApp(home: AuthScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.text('Sai email hoặc mật khẩu'), findsOneWidget);
-  });
+      await tester.tap(find.text('Tiếp tục trên thiết bị'));
+      await tester.pumpAndSettle();
 
-  testWidgets('AuthScreen shows loading indicator and blocks duplicate submit', (
-    tester,
-  ) async {
-    final repo = _DelayedAuthRepository();
-    await tester.pumpWidget(_wrap(repo, const AuthScreen()));
-
-    await tester.enterText(
-      find.byType(TextFormField).first,
-      'test@example.com',
-    );
-    await tester.enterText(find.byType(TextFormField).last, 'password123');
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Đăng nhập'));
-    await tester.pump();
-
-    // Button is replaced by a progress indicator -> double-submit is impossible.
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
-    expect(find.widgetWithText(ElevatedButton, 'Đăng nhập'), findsNothing);
-
-    // Let the 500ms delay finish and confirm signIn actually ran.
-    await tester.pumpAndSettle();
-    expect(repo.signInCalls, 1);
-  });
-
-  testWidgets('AuthScreen validates empty email', (tester) async {
-    final repo = FakeAuthRepository();
-    await tester.pumpWidget(_wrap(repo, const AuthScreen()));
-
-    await tester.enterText(find.byType(TextFormField).first, '');
-    await tester.enterText(find.byType(TextFormField).last, 'password123');
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Đăng nhập'));
-    await tester.pump();
-
-    expect(find.text('Vui lòng nhập email'), findsOneWidget);
-    expect(repo.signInCalls, 0);
-  });
-
-  testWidgets('AuthScreen rejects invalid email format', (tester) async {
-    final repo = FakeAuthRepository();
-    await tester.pumpWidget(_wrap(repo, const AuthScreen()));
-
-    await tester.enterText(find.byType(TextFormField).first, 'not-an-email');
-    await tester.enterText(find.byType(TextFormField).last, 'password123');
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Đăng nhập'));
-    await tester.pump();
-
-    expect(find.text('Email không hợp lệ'), findsOneWidget);
-    expect(repo.signInCalls, 0);
-  });
-
-  testWidgets('AuthScreen validates empty password', (tester) async {
-    final repo = FakeAuthRepository();
-    await tester.pumpWidget(_wrap(repo, const AuthScreen()));
-
-    await tester.enterText(
-      find.byType(TextFormField).first,
-      'test@example.com',
-    );
-    await tester.enterText(find.byType(TextFormField).last, '');
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Đăng nhập'));
-    await tester.pump();
-
-    expect(find.text('Vui lòng nhập mật khẩu'), findsOneWidget);
-    expect(repo.signInCalls, 0);
-  });
-
-  testWidgets('AuthScreen calls register on valid register submit', (
-    tester,
-  ) async {
-    final repo = FakeAuthRepository();
-    await tester.pumpWidget(_wrap(repo, const AuthScreen()));
-
-    await tester.tap(find.text('Chưa có tài khoản? Đăng ký'));
-    await tester.pumpAndSettle();
-
-    await tester.enterText(find.byType(TextFormField).first, 'new@example.com');
-    await tester.enterText(find.byType(TextFormField).last, 'password123');
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Đăng ký'));
-    await tester.pump();
-
-    expect(repo.registerCalls, 1);
-    expect(repo.lastRegisterEmail, 'new@example.com');
-    expect(repo.lastRegisterPassword, 'password123');
-  });
-
-  testWidgets('AuthScreen shows friendly message when email already in use', (
-    tester,
-  ) async {
-    final repo =
-        FakeAuthRepository()..registerFailure = AuthFailureEmailAlreadyInUse();
-    await tester.pumpWidget(_wrap(repo, const AuthScreen()));
-
-    await tester.tap(find.text('Chưa có tài khoản? Đăng ký'));
-    await tester.pumpAndSettle();
-
-    await tester.enterText(find.byType(TextFormField).first, 'dup@example.com');
-    await tester.enterText(find.byType(TextFormField).last, 'password123');
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Đăng ký'));
-    await tester.pump();
-
-    expect(find.text('Email đã được sử dụng'), findsOneWidget);
-  });
-
-  testWidgets('AuthScreen rejects weak password during register', (
-    tester,
-  ) async {
-    final repo = FakeAuthRepository();
-    await tester.pumpWidget(_wrap(repo, const AuthScreen()));
-
-    await tester.tap(find.text('Chưa có tài khoản? Đăng ký'));
-    await tester.pumpAndSettle();
-
-    await tester.enterText(
-      find.byType(TextFormField).first,
-      'weak@example.com',
-    );
-    await tester.enterText(find.byType(TextFormField).last, '123');
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Đăng ký'));
-    await tester.pump();
-
-    expect(find.text('Mật khẩu phải có ít nhất 6 ký tự'), findsOneWidget);
-    expect(repo.registerCalls, 0);
-  });
-
-  testWidgets('AuthScreen shows friendly weak-password message from repo', (
-    tester,
-  ) async {
-    final repo =
-        FakeAuthRepository()..registerFailure = AuthFailureWeakPassword();
-    await tester.pumpWidget(_wrap(repo, const AuthScreen()));
-
-    await tester.tap(find.text('Chưa có tài khoản? Đăng ký'));
-    await tester.pumpAndSettle();
-
-    await tester.enterText(
-      find.byType(TextFormField).first,
-      'weak@example.com',
-    );
-    await tester.enterText(find.byType(TextFormField).last, 'password123');
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Đăng ký'));
-    await tester.pump();
-
-    expect(find.text('Mật khẩu quá yếu (tối thiểu 6 ký tự)'), findsOneWidget);
-  });
-
-  testWidgets('AuthScreen forgot password calls sendPasswordResetEmail', (
-    tester,
-  ) async {
-    final repo = FakeAuthRepository();
-    await tester.pumpWidget(_wrap(repo, const AuthScreen()));
-
-    await tester.enterText(
-      find.byType(TextFormField).first,
-      'test@example.com',
-    );
-    await tester.tap(find.text('Quên mật khẩu?'));
-    await tester.pump();
-
-    expect(repo.resetCalls, 1);
-    expect(repo.lastResetEmail, 'test@example.com');
-    expect(find.text('Email đặt lại mật khẩu đã được gửi'), findsOneWidget);
-  });
-
-  testWidgets('AuthScreen forgot password validates empty email', (
-    tester,
-  ) async {
-    final repo = FakeAuthRepository();
-    await tester.pumpWidget(_wrap(repo, const AuthScreen()));
-
-    await tester.tap(find.text('Quên mật khẩu?'));
-    await tester.pump();
-
-    expect(
-      find.text('Vui lòng nhập email để đặt lại mật khẩu'),
-      findsOneWidget,
-    );
-    expect(repo.resetCalls, 0);
+      final ctx = tester.element(find.byType(AuthScreen));
+      expect(ctx.read<SessionController>().mode, AppSessionMode.local);
+    });
   });
 }
