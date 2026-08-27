@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../core/auth/auth_repository.dart';
+
 import '../../../core/auth/auth_failure.dart';
+import '../../../core/auth/auth_repository.dart';
+import '../../../core/session/session_controller.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -51,6 +53,16 @@ class _AuthScreenState extends State<AuthScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Đã xảy ra lỗi, vui lòng thử lại')),
       );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _continueOnDevice() async {
+    setState(() => _isLoading = true);
+    try {
+      await context.read<SessionController>().enableLocalMode();
+      if (!mounted) return;
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -125,9 +137,10 @@ class _AuthScreenState extends State<AuthScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(title: Text(_isLogin ? 'Đăng nhập' : 'Đăng ký')),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
@@ -168,6 +181,30 @@ class _AuthScreenState extends State<AuthScreen> {
                       ? 'Chưa có tài khoản? Đăng ký'
                       : 'Đã có tài khoản? Đăng nhập',
                 ),
+              ),
+              const SizedBox(height: 24),
+              const Row(
+                children: [
+                  Expanded(child: Divider()),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8),
+                    child: Text('hoặc'),
+                  ),
+                  Expanded(child: Divider()),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Bạn vẫn có thể sử dụng sinh nhật, lịch và nhắc nhở trên '
+                'thiết bị. Các tính năng đồng bộ đám mây yêu cầu đăng nhập.',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodySmall,
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: _isLoading ? null : _continueOnDevice,
+                icon: const Icon(Icons.devices),
+                label: const Text('Tiếp tục trên thiết bị'),
               ),
             ],
           ),

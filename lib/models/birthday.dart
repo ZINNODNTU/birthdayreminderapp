@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:lunar/lunar.dart';
 
+import '../core/db/db_schema.dart';
+import '../core/db/sync_status.dart';
+
 enum CalendarType { solar, lunar }
 
 class LunarDateTime {
@@ -8,7 +11,7 @@ class LunarDateTime {
   final int month;
   final int year;
 
-  LunarDateTime({
+  const LunarDateTime({
     required this.day,
     required this.month,
     required this.year,
@@ -28,9 +31,7 @@ class LunarDateTime {
     final solar = lunar.getSolar();
     return DateTime(solar.getYear(), solar.getMonth(), solar.getDay());
   }
-
 }
-
 
 class Birthday {
   final String id;
@@ -48,6 +49,15 @@ class Birthday {
   final bool repeatAnnually;
   final String? note;
 
+  // Phase 2: sync-ready metadata. Existing local records had no real values
+  // so they get filled with the migration time on upgrade.
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
+  final DateTime? deletedAt;
+  final SyncStatus syncStatus;
+  final String? ownerUid;
+  final int schemaVersion;
+
   Birthday({
     required this.id,
     required this.name,
@@ -63,52 +73,93 @@ class Birthday {
     this.isRecurringNotificationEnabled = true,
     this.repeatAnnually = true,
     this.note,
+    this.createdAt,
+    this.updatedAt,
+    this.deletedAt,
+    this.syncStatus = SyncStatus.localOnly,
+    this.ownerUid,
+    this.schemaVersion = DbSchema.birthdaySchemaVersion,
   });
 
-  Map<String, dynamic> toMap() {
+  /// Generic map representation. Kept for backward compatibility with the
+  /// existing widget tests; new code should prefer [toDbMap].
+  Map<String, dynamic> toMap() => toDbMap();
+
+  /// Generic parser. Tries to read metadata columns if present, otherwise
+  /// leaves them null/default.
+  factory Birthday.fromMap(Map<String, dynamic> map) => fromDbMap(map);
+
+  Map<String, dynamic> toDbMap() {
     return {
-      'id': id,
-      'name': name,
-      'avatarBase64': avatarBase64,
-      'gender': gender,
-      'nickname': nickname,
-      'relationship': relationship,
-      'solarBirthday': solarBirthday.toIso8601String(),
-      'lunarDay': lunarBirthday.day,
-      'lunarMonth': lunarBirthday.month,
-      'lunarYear': lunarBirthday.year,
-      'calendarType': calendarType.toString(),
-      'remindBeforeDays': remindBeforeDays,
-      'remindTime': '${remindTime.hour}:${remindTime.minute}',
-      'isRecurringNotificationEnabled': isRecurringNotificationEnabled ? 1 : 0,
-      'repeatAnnually': repeatAnnually ? 1 : 0,
-      'note': note,
+      DbSchema.colId: id,
+      DbSchema.colName: name,
+      DbSchema.colAvatarBase64: avatarBase64,
+      DbSchema.colGender: gender,
+      DbSchema.colNickname: nickname,
+      DbSchema.colRelationship: relationship,
+      DbSchema.colSolarBirthday: solarBirthday.toIso8601String(),
+      DbSchema.colLunarDay: lunarBirthday.day,
+      DbSchema.colLunarMonth: lunarBirthday.month,
+      DbSchema.colLunarYear: lunarBirthday.year,
+      DbSchema.colCalendarType: calendarType.toString(),
+      DbSchema.colRemindBeforeDays: remindBeforeDays,
+      DbSchema.colRemindTime: '${remindTime.hour}:${remindTime.minute}',
+      DbSchema.colIsRecurringNotificationEnabled:
+          isRecurringNotificationEnabled ? 1 : 0,
+      DbSchema.colRepeatAnnually: repeatAnnually ? 1 : 0,
+      DbSchema.colNote: note,
+      DbSchema.colCreatedAt: createdAt?.toIso8601String(),
+      DbSchema.colUpdatedAt: updatedAt?.toIso8601String(),
+      DbSchema.colDeletedAt: deletedAt?.toIso8601String(),
+      DbSchema.colSyncStatus: syncStatus.storageValue,
+      DbSchema.colOwnerUid: ownerUid,
+      DbSchema.colSchemaVersion: schemaVersion,
     };
   }
 
-  factory Birthday.fromMap(Map<String, dynamic> map) {
+  static Birthday fromDbMap(Map<String, dynamic> map) {
     return Birthday(
-      id: map['id'],
-      name: map['name'],
-      avatarBase64: map['avatarBase64'],
-      gender: map['gender'],
-      nickname: map['nickname'],
-      relationship: map['relationship'],
-      solarBirthday: DateTime.parse(map['solarBirthday']),
+      id: map[DbSchema.colId] as String,
+      name: map[DbSchema.colName] as String,
+      avatarBase64: map[DbSchema.colAvatarBase64] as String?,
+      gender: map[DbSchema.colGender] as String?,
+      nickname: map[DbSchema.colNickname] as String?,
+      relationship: map[DbSchema.colRelationship] as String?,
+      solarBirthday: DateTime.parse(map[DbSchema.colSolarBirthday] as String),
       lunarBirthday: LunarDateTime(
-        day: map['lunarDay'],
-        month: map['lunarMonth'],
-        year: map['lunarYear'],
+        day: map[DbSchema.colLunarDay] as int,
+        month: map[DbSchema.colLunarMonth] as int,
+        year: map[DbSchema.colLunarYear] as int,
       ),
-      calendarType: CalendarType.values.firstWhere((e) => e.toString() == map['calendarType']),
-      remindBeforeDays: map['remindBeforeDays'],
+      calendarType: CalendarType.values.firstWhere(
+        (e) => e.toString() == map[DbSchema.colCalendarType],
+      ),
+      remindBeforeDays: map[DbSchema.colRemindBeforeDays] as int,
       remindTime: TimeOfDay(
-        hour: int.parse(map['remindTime'].split(':')[0]),
-        minute: int.parse(map['remindTime'].split(':')[1]),
+        hour: int.parse(map[DbSchema.colRemindTime].toString().split(':')[0]),
+        minute: int.parse(map[DbSchema.colRemindTime].toString().split(':')[1]),
       ),
-      isRecurringNotificationEnabled: map['isRecurringNotificationEnabled'] == 1,
-      repeatAnnually: map['repeatAnnually'] == 1,
-      note: map['note'],
+      isRecurringNotificationEnabled:
+          map[DbSchema.colIsRecurringNotificationEnabled] == 1,
+      repeatAnnually: map[DbSchema.colRepeatAnnually] == 1,
+      note: map[DbSchema.colNote] as String?,
+      createdAt: _parseDateOrNull(map[DbSchema.colCreatedAt]),
+      updatedAt: _parseDateOrNull(map[DbSchema.colUpdatedAt]),
+      deletedAt: _parseDateOrNull(map[DbSchema.colDeletedAt]),
+      syncStatus: SyncStatus.fromStorage(
+        map[DbSchema.colSyncStatus] as String?,
+      ),
+      ownerUid: map[DbSchema.colOwnerUid] as String?,
+      schemaVersion:
+          (map[DbSchema.colSchemaVersion] as int?) ??
+          DbSchema.birthdaySchemaVersion,
     );
+  }
+
+  static DateTime? _parseDateOrNull(Object? value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    if (value is String && value.isNotEmpty) return DateTime.parse(value);
+    return null;
   }
 }

@@ -1,34 +1,47 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+
+import '../features/birthdays/data/birthday_repository.dart';
 import '../models/birthday.dart';
-import '../services/local_db_service.dart';
 import '../services/notification_service.dart';
 
+/// Owns the in-memory list of birthdays and forwards mutations to the
+/// repository and the notification scheduler.
 class BirthdayController with ChangeNotifier {
-  final LocalDBService _localDbService = LocalDBService();
-  final NotificationService _notificationService = NotificationService();
+  BirthdayController({
+    required BirthdayRepository repository,
+    required NotificationService notificationService,
+  })  : _repository = repository,
+        _notificationService = notificationService {
+    loadBirthdays();
+  }
+
+  final BirthdayRepository _repository;
+  final NotificationService _notificationService;
 
   List<Birthday> _birthdays = [];
+  bool _disposed = false;
 
   List<Birthday> get birthdays => _birthdays;
 
-  BirthdayController({bool skipInit = false}) {
-    if (!skipInit) _init();
+  void _safeNotify() {
+    if (!_disposed) notifyListeners();
   }
 
-  Future<void> _init() async {
-    await _notificationService.initialize(); // Đảm bảo thông báo được khởi tạo
-    await loadBirthdays();
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
   }
 
   Future<void> loadBirthdays() async {
-    _birthdays = await _localDbService.getBirthdays();
-    notifyListeners();
+    _birthdays = await _repository.getBirthdays();
+    _safeNotify();
   }
 
   Future<void> addBirthday(Birthday birthday) async {
-    await _localDbService.insertBirthday(birthday);
-    _birthdays.add(birthday);
-    notifyListeners();
+    await _repository.createBirthday(birthday);
+    _birthdays = await _repository.getBirthdays();
+    _safeNotify();
 
     if (birthday.isRecurringNotificationEnabled) {
       await _notificationService.scheduleBirthdayNotification(birthday);
@@ -36,14 +49,13 @@ class BirthdayController with ChangeNotifier {
   }
 
   Future<void> updateBirthday(Birthday birthday) async {
-    await _localDbService.updateBirthday(birthday);
+    await _repository.updateBirthday(birthday);
     final index = _birthdays.indexWhere((b) => b.id == birthday.id);
     if (index != -1) {
       _birthdays[index] = birthday;
-      notifyListeners();
+      _safeNotify();
     }
 
-    // Hủy thông báo cũ trước khi lập lại (dù người dùng có thay đổi thời gian hay không)
     await _notificationService.cancelNotification(birthday.id);
 
     if (birthday.isRecurringNotificationEnabled) {
@@ -52,9 +64,9 @@ class BirthdayController with ChangeNotifier {
   }
 
   Future<void> deleteBirthday(String id) async {
-    await _localDbService.deleteBirthday(id);
-    _birthdays.removeWhere((b) => b.id == id);
-    notifyListeners();
+    await _repository.deleteBirthday(id);
+    _birthdays = await _repository.getBirthdays();
+    _safeNotify();
 
     await _notificationService.cancelNotification(id);
   }
@@ -63,17 +75,18 @@ class BirthdayController with ChangeNotifier {
     await _notificationService.testNotification(birthday);
   }
 
-  /// Dùng trong trường hợp thêm từ danh bạ hoặc import, tránh trùng lặp
+  /// Used by sync flows (e.g. cloud restore) to add or merge a birthday
+  /// without firing notifications.
   Future<void> addOrUpdateBirthday(Birthday birthday) async {
-    final existingIndex = _birthdays.indexWhere((b) => b.id == birthday.id);
+    final existingIndex =
+        _birthdays.indexWhere((b) => b.id == birthday.id);
 
     if (existingIndex != -1) {
       final existing = _birthdays[existingIndex];
-
       if (existing != birthday) {
+        await _repository.updateBirthday(birthday);
         _birthdays[existingIndex] = birthday;
-        await _localDbService.updateBirthday(birthday);
-        notifyListeners();
+        _safeNotify();
 
         await _notificationService.cancelNotification(birthday.id);
         if (birthday.isRecurringNotificationEnabled) {
@@ -81,9 +94,9 @@ class BirthdayController with ChangeNotifier {
         }
       }
     } else {
-      _birthdays.add(birthday);
-      await _localDbService.insertBirthday(birthday);
-      notifyListeners();
+      await _repository.createBirthday(birthday);
+      _birthdays = await _repository.getBirthdays();
+      _safeNotify();
 
       if (birthday.isRecurringNotificationEnabled) {
         await _notificationService.scheduleBirthdayNotification(birthday);

@@ -4,7 +4,8 @@ import '../controllers/birthday_controller.dart';
 import '../services/firestore_service.dart';
 import '../services/csv_export_service.dart';
 import '../core/auth/auth_repository.dart';
-// import '../services/csv_import_service.dart'; // Uncomment nếu có dịch vụ import
+import '../core/session/app_session_mode.dart';
+import '../core/session/session_controller.dart';
 import 'calendar_view.dart';
 import 'birthday_list_view.dart';
 import 'birthday_add_edit_view.dart';
@@ -29,6 +30,11 @@ class _HomepageState extends State<Homepage> {
   }
 
   Future<void> _backupToFirestore(BuildContext context) async {
+    final session = context.read<SessionController>();
+    if (session.mode != AppSessionMode.authenticated) {
+      _showCloudUnavailable(context);
+      return;
+    }
     final controller = Provider.of<BirthdayController>(context, listen: false);
     final firestoreService = FirestoreService();
 
@@ -49,6 +55,11 @@ class _HomepageState extends State<Homepage> {
   }
 
   Future<void> _syncFromFirestore(BuildContext context) async {
+    final session = context.read<SessionController>();
+    if (session.mode != AppSessionMode.authenticated) {
+      _showCloudUnavailable(context);
+      return;
+    }
     final controller = Provider.of<BirthdayController>(context, listen: false);
     final firestoreService = FirestoreService();
 
@@ -67,6 +78,15 @@ class _HomepageState extends State<Homepage> {
         context,
       ).showSnackBar(SnackBar(content: Text(error.message)));
     }
+  }
+
+  void _showCloudUnavailable(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Đăng nhập để sử dụng tính năng đồng bộ đám mây.'),
+        duration: Duration(seconds: 3),
+      ),
+    );
   }
 
   Future<void> _exportToCsv(BuildContext context) async {
@@ -101,7 +121,9 @@ class _HomepageState extends State<Homepage> {
   */
 
   Future<void> _signOut(BuildContext context) async {
+    final session = context.read<SessionController>();
     await context.read<AuthRepository>().signOut();
+    await session.disableLocalMode();
   }
 
   void _showAddBirthdayOptions() {
@@ -188,6 +210,11 @@ class _HomepageState extends State<Homepage> {
               title: const Text('Xóa toàn bộ trên Firestore'),
               onTap: () async {
                 Navigator.pop(context);
+                final session = context.read<SessionController>();
+                if (session.mode != AppSessionMode.authenticated) {
+                  _showCloudUnavailable(context);
+                  return;
+                }
                 final confirm = await showDialog<bool>(
                   context: context,
                   builder:

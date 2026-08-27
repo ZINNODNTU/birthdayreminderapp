@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/birthday.dart';
 import 'dart:convert';
 import 'package:intl/intl.dart';
@@ -46,21 +47,25 @@ class _BirthdayDetailViewState extends State<BirthdayDetailView> {
     });
 
     try {
-      final prompt = relationship != null && relationship.isNotEmpty
-          ? 'Gợi ý 5 món quà sinh nhật phù hợp cho người ${gender.toLowerCase()} với mối quan hệ là $relationship.'
-          : 'Gợi ý 5 món quà sinh nhật phù hợp cho người ${gender.toLowerCase()}.';
+      final prompt =
+          relationship != null && relationship.isNotEmpty
+              ? 'Gợi ý 5 món quà sinh nhật phù hợp cho người ${gender.toLowerCase()} với mối quan hệ là $relationship.'
+              : 'Gợi ý 5 món quà sinh nhật phù hợp cho người ${gender.toLowerCase()}.';
       final suggestions = await GeminiService.getGiftSuggestions(prompt);
       setState(() {
         _giftSuggestions = suggestions;
       });
-    } catch (e) {
+    } catch (_) {
+      if (!mounted) return;
       setState(() {
-        _error = 'Đã xảy ra lỗi: ${e.toString()}';
+        _error = 'AI Assistant hiện chưa khả dụng.';
       });
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -68,9 +73,13 @@ class _BirthdayDetailViewState extends State<BirthdayDetailView> {
     final gender = widget.birthday.gender;
     final relationship = widget.birthday.relationship;
 
-    if (gender == null || gender.isEmpty || relationship == null || relationship.isEmpty) {
+    if (gender == null ||
+        gender.isEmpty ||
+        relationship == null ||
+        relationship.isEmpty) {
       setState(() {
-        _wishError = 'Vui lòng chọn đầy đủ giới tính và mối quan hệ để hiển thị tính năng gợi ý câu chúc';
+        _wishError =
+            'Vui lòng chọn đầy đủ giới tính và mối quan hệ để hiển thị tính năng gợi ý câu chúc';
         _wishSuggestions = [];
       });
       return;
@@ -102,9 +111,10 @@ class _BirthdayDetailViewState extends State<BirthdayDetailView> {
       setState(() {
         _wishSuggestions = suggestions;
       });
-    } catch (e) {
+    } catch (_) {
+      if (!mounted) return;
       setState(() {
-        _wishError = 'Đã xảy ra lỗi: ${e.toString()}';
+        _wishError = 'AI Assistant hiện chưa khả dụng.';
       });
     } finally {
       setState(() {
@@ -126,20 +136,21 @@ class _BirthdayDetailViewState extends State<BirthdayDetailView> {
   @override
   Widget build(BuildContext context) {
     final birthday = widget.birthday;
-    final image = birthday.avatarBase64 != null
-        ? ClipOval(
-      child: Image.memory(
-        base64Decode(birthday.avatarBase64!),
-        width: 100,
-        height: 100,
-        fit: BoxFit.cover,
-      ),
-    )
-        : const CircleAvatar(
-      radius: 50,
-      backgroundColor: Colors.blueGrey,
-      child: Icon(Icons.person, size: 60, color: Colors.white),
-    );
+    final image =
+        birthday.avatarBase64 != null
+            ? ClipOval(
+              child: Image.memory(
+                base64Decode(birthday.avatarBase64!),
+                width: 100,
+                height: 100,
+                fit: BoxFit.cover,
+              ),
+            )
+            : const CircleAvatar(
+              radius: 50,
+              backgroundColor: Colors.blueGrey,
+              child: Icon(Icons.person, size: 60, color: Colors.white),
+            );
 
     final age = _calculateAge(birthday.solarBirthday);
     final dateFormat = DateFormat('dd/MM/yyyy', 'vi');
@@ -169,8 +180,12 @@ class _BirthdayDetailViewState extends State<BirthdayDetailView> {
           IconButton(
             icon: const Icon(Icons.share, color: Colors.white),
             onPressed: () {
-              Share.share(
-                  'Sinh nhật của ${birthday.name} vào ngày ${dateFormat.format(birthday.solarBirthday)}');
+              SharePlus.instance.share(
+                ShareParams(
+                  text:
+                      'Sinh nhật của ${birthday.name} vào ngày ${dateFormat.format(birthday.solarBirthday)}',
+                ),
+              );
             },
           ),
         ],
@@ -185,10 +200,7 @@ class _BirthdayDetailViewState extends State<BirthdayDetailView> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: image,
-                ),
+                child: Padding(padding: const EdgeInsets.all(16), child: image),
               ),
             ),
             const SizedBox(height: 24),
@@ -211,20 +223,22 @@ class _BirthdayDetailViewState extends State<BirthdayDetailView> {
             else if (_error != null)
               Text(_error!, style: const TextStyle(color: Colors.red))
             else if (_giftSuggestions.isNotEmpty)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Gợi ý quà:',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                    ..._giftSuggestions.map((gift) => ListTile(
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Gợi ý quà:',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  ..._giftSuggestions.map(
+                    (gift) => ListTile(
                       leading: const Icon(Icons.recommend, color: Colors.teal),
                       title: Text(gift),
-                    )),
-                  ],
-                ),
+                    ),
+                  ),
+                ],
+              ),
 
             const SizedBox(height: 24),
 
@@ -233,17 +247,20 @@ class _BirthdayDetailViewState extends State<BirthdayDetailView> {
               children: [
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    value: _wishLanguage,
+                    initialValue: _wishLanguage,
                     decoration: const InputDecoration(
                       labelText: 'Ngôn ngữ chúc',
                       border: OutlineInputBorder(),
                     ),
-                    items: _languages
-                        .map((lang) => DropdownMenuItem(
-                      value: lang,
-                      child: Text(lang),
-                    ))
-                        .toList(),
+                    items:
+                        _languages
+                            .map(
+                              (lang) => DropdownMenuItem(
+                                value: lang,
+                                child: Text(lang),
+                              ),
+                            )
+                            .toList(),
                     onChanged: (value) {
                       if (value != null) {
                         setState(() {
@@ -271,27 +288,36 @@ class _BirthdayDetailViewState extends State<BirthdayDetailView> {
             else if (_wishError != null)
               Text(_wishError!, style: const TextStyle(color: Colors.red))
             else if (_wishSuggestions.isNotEmpty)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Câu chúc gợi ý:',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                    ..._wishSuggestions.map((wish) => ListTile(
-                      leading: const Icon(Icons.celebration, color: Colors.deepOrange),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Câu chúc gợi ý:',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  ..._wishSuggestions.map(
+                    (wish) => ListTile(
+                      leading: const Icon(
+                        Icons.celebration,
+                        color: Colors.deepOrange,
+                      ),
                       title: Text(wish),
-                    )),
-                  ],
-                ),
+                    ),
+                  ),
+                ],
+              ),
 
             const SizedBox(height: 24),
             ElevatedButton.icon(
               icon: const Icon(Icons.notifications_active),
               label: const Text('Thông báo thử'),
               onPressed: () async {
-                await BirthdayController().testNotification(birthday);
+                await Provider.of<BirthdayController>(
+                  context,
+                  listen: false,
+                ).testNotification(birthday);
+                if (!context.mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: const Text('Đã gửi thông báo thử'),
@@ -311,7 +337,11 @@ class _BirthdayDetailViewState extends State<BirthdayDetailView> {
   }
 
   Widget _buildInfoCard(
-      BuildContext context, Birthday birthday, int age, DateFormat dateFormat) {
+    BuildContext context,
+    Birthday birthday,
+    int age,
+    DateFormat dateFormat,
+  ) {
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -327,8 +357,11 @@ class _BirthdayDetailViewState extends State<BirthdayDetailView> {
               buildInfoRow('Biệt danh', birthday.nickname!, context),
             if (birthday.relationship != null)
               buildInfoRow('Mối quan hệ', birthday.relationship!, context),
-            buildInfoRow('Ngày sinh dương',
-                dateFormat.format(birthday.solarBirthday), context),
+            buildInfoRow(
+              'Ngày sinh dương',
+              dateFormat.format(birthday.solarBirthday),
+              context,
+            ),
             buildInfoRow(
               'Ngày sinh âm',
               '${birthday.lunarBirthday.day.toString().padLeft(2, '0')}/${birthday.lunarBirthday.month.toString().padLeft(2, '0')}',
@@ -346,9 +379,16 @@ class _BirthdayDetailViewState extends State<BirthdayDetailView> {
               birthday.repeatAnnually ? 'Có' : 'Không',
               context,
             ),
-            buildInfoRow('Nhắc trước', '${birthday.remindBeforeDays} ngày', context),
             buildInfoRow(
-                'Thời gian nhắc', birthday.remindTime.format(context), context),
+              'Nhắc trước',
+              '${birthday.remindBeforeDays} ngày',
+              context,
+            ),
+            buildInfoRow(
+              'Thời gian nhắc',
+              birthday.remindTime.format(context),
+              context,
+            ),
             buildInfoRow(
               'Thông báo lặp',
               birthday.isRecurringNotificationEnabled ? 'Bật' : 'Tắt',
@@ -381,9 +421,9 @@ class _BirthdayDetailViewState extends State<BirthdayDetailView> {
           Expanded(
             child: Text(
               value,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Colors.grey.shade900,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyLarge?.copyWith(color: Colors.grey.shade900),
             ),
           ),
         ],
