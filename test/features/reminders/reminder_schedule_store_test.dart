@@ -19,14 +19,12 @@ void main() {
 
     test('round-trip preserves entries', () async {
       final entries = {
-        'birthday:a:daysBefore:0:h:8:m:0':
-            const ManagedReminderEntry(
+        'birthday:a:daysBefore:0:h:8:m:0': const ManagedReminderEntry(
           scheduleKey: 'birthday:a:daysBefore:0:h:8:m:0',
           notificationId: 123,
           fingerprint: 'fp-123',
         ),
-        'birthday:b:daysBefore:3:h:9:m:0':
-            const ManagedReminderEntry(
+        'birthday:b:daysBefore:3:h:9:m:0': const ManagedReminderEntry(
           scheduleKey: 'birthday:b:daysBefore:3:h:9:m:0',
           notificationId: 456,
           fingerprint: 'fp-456',

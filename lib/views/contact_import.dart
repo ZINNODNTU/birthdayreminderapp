@@ -1,7 +1,7 @@
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
-import 'package:flutter_contacts_service/flutter_contacts_service.dart';
-import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
@@ -16,11 +16,9 @@ class ContactImport extends StatefulWidget {
 }
 
 class _ContactImportState extends State<ContactImport> {
-  List<ContactInfo> _allContacts = [];
-  List<ContactInfo> _filteredContacts = [];
-  final Set<ContactInfo> _selectedContacts = {};
-
-  bool _selectAll = false;
+  final Set<String> _selectedIds = {};
+  List<Contact> _contacts = [];
+  bool _loading = true;
 
   @override
   void initState() {
@@ -29,66 +27,83 @@ class _ContactImportState extends State<ContactImport> {
   }
 
   Future<void> _loadContacts() async {
-    if (await Permission.contacts.request().isGranted) {
-      final controller = Provider.of<BirthdayController>(context, listen: false);
-      final existingNames = controller.birthdays.map((b) => b.name).toSet();
-
-      final contacts = await FlutterContactsService.getContacts(photoHighResolution: true);
-      final castedContacts = contacts.cast<ContactInfo>();
-
-      // Lọc bỏ các danh bạ đã thêm
-      final filtered = castedContacts.where((contact) {
-        final name = contact.displayName?.trim();
-        return name != null && !existingNames.contains(name);
-      }).toList();
-
-      setState(() {
-        _allContacts = castedContacts;
-        _filteredContacts = filtered;
-      });
-    } else {
+    final permission = await FlutterContacts.permissions.request(
+      PermissionType.read,
+    );
+    final allowed =
+        permission == PermissionStatus.granted ||
+        permission == PermissionStatus.limited;
+    if (!mounted) return;
+    if (!allowed) {
+      setState(() => _loading = false);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Không có quyền truy cập danh bạ')),
       );
+      return;
     }
+
+    final existingNames =
+        context
+            .read<BirthdayController>()
+            .birthdays
+            .map((birthday) => birthday.name.trim().toLowerCase())
+            .toSet();
+    final contacts = await FlutterContacts.getAll(
+      properties: const {ContactProperty.name, ContactProperty.photoThumbnail},
+    );
+    if (!mounted) return;
+    setState(() {
+      _contacts =
+          contacts
+              .where((contact) => (contact.displayName ?? '').trim().isNotEmpty)
+              .where(
+                (contact) =>
+                    !existingNames.contains(
+                      (contact.displayName ?? '').trim().toLowerCase(),
+                    ),
+              )
+              .where((contact) => contact.id != null)
+              .toList();
+      _loading = false;
+    });
   }
 
   Future<void> _saveSelectedContacts() async {
-    final controller = Provider.of<BirthdayController>(context, listen: false);
+    final controller = context.read<BirthdayController>();
     final now = DateTime.now();
-
-    for (final contact in _selectedContacts) {
-      final birthday = Birthday(
-        id: const Uuid().v4(),
-        name: contact.displayName ?? 'Không tên',
-        avatarBase64: contact.avatar != null ? base64Encode(contact.avatar!) : null,
-        gender: null,
-        nickname: null,
-        relationship: null,
-        solarBirthday: now,
-        lunarBirthday: LunarDateTime.fromDateTime(now),
-        calendarType: CalendarType.solar,
-        remindBeforeDays: 0,
-        remindTime: const TimeOfDay(hour: 9, minute: 0),
-        isRecurringNotificationEnabled: true,
-        repeatAnnually: true,
-        note: null,
+    for (final contact in _contacts.where(
+      (contact) => _selectedIds.contains(contact.id!),
+    )) {
+      await controller.addBirthday(
+        Birthday(
+          id: const Uuid().v4(),
+          name: contact.displayName ?? 'Không tên',
+          avatarBase64:
+              contact.photo?.thumbnail == null
+                  ? null
+                  : base64Encode(contact.photo!.thumbnail!),
+          solarBirthday: now,
+          lunarBirthday: LunarDateTime.fromDateTime(now),
+          calendarType: CalendarType.solar,
+          remindBeforeDays: 0,
+          remindTime: const TimeOfDay(hour: 9, minute: 0),
+          isRecurringNotificationEnabled: true,
+          repeatAnnually: true,
+        ),
       );
-
-      await controller.addBirthday(birthday);
     }
-
-    Navigator.pop(context);
+    if (mounted) Navigator.pop(context);
   }
 
-  void _toggleSelectAll() {
+  void _toggleAll() {
     setState(() {
-      if (_selectAll) {
-        _selectedContacts.clear();
+      if (_selectedIds.length == _contacts.length) {
+        _selectedIds.clear();
       } else {
-        _selectedContacts.addAll(_filteredContacts);
+        _selectedIds
+          ..clear()
+          ..addAll(_contacts.map((contact) => contact.id!));
       }
-      _selectAll = !_selectAll;
     });
   }
 
@@ -97,18 +112,22 @@ class _ContactImportState extends State<ContactImport> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          _selectedContacts.isEmpty
+          _selectedIds.isEmpty
               ? 'Chọn từ danh bạ'
-              : 'Đã chọn: ${_selectedContacts.length}',
+              : 'Đã chọn: ${_selectedIds.length}',
         ),
         actions: [
-          if (_filteredContacts.isNotEmpty)
+          if (_contacts.isNotEmpty)
             IconButton(
-              icon: Icon(_selectAll ? Icons.clear_all : Icons.select_all),
-              tooltip: _selectAll ? 'Bỏ chọn tất cả' : 'Chọn tất cả',
-              onPressed: _toggleSelectAll,
+              icon: Icon(
+                _selectedIds.length == _contacts.length
+                    ? Icons.clear_all
+                    : Icons.select_all,
+              ),
+              tooltip: 'Chọn hoặc bỏ chọn tất cả',
+              onPressed: _toggleAll,
             ),
-          if (_selectedContacts.isNotEmpty)
+          if (_selectedIds.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.check),
               tooltip: 'Lưu',
@@ -116,34 +135,38 @@ class _ContactImportState extends State<ContactImport> {
             ),
         ],
       ),
-      body: _filteredContacts.isEmpty
-          ? const Center(child: Text('Không còn danh bạ nào để thêm'))
-          : ListView.builder(
-        itemCount: _filteredContacts.length,
-        itemBuilder: (context, index) {
-          final contact = _filteredContacts[index];
-          final isSelected = _selectedContacts.contains(contact);
-
-          return CheckboxListTile(
-            value: isSelected,
-            onChanged: (value) {
-              setState(() {
-                if (value == true) {
-                  _selectedContacts.add(contact);
-                } else {
-                  _selectedContacts.remove(contact);
-                }
-              });
-            },
-            title: Text(contact.displayName ?? 'Không tên'),
-            secondary: contact.avatar != null
-                ? CircleAvatar(
-              backgroundImage: MemoryImage(contact.avatar!),
-            )
-                : const CircleAvatar(child: Icon(Icons.person)),
-          );
-        },
-      ),
+      body:
+          _loading
+              ? const Center(child: CircularProgressIndicator())
+              : _contacts.isEmpty
+              ? const Center(child: Text('Không còn danh bạ nào để thêm'))
+              : ListView.builder(
+                itemCount: _contacts.length,
+                itemBuilder: (context, index) {
+                  final contact = _contacts[index];
+                  return CheckboxListTile(
+                    value: _selectedIds.contains(contact.id!),
+                    onChanged: (selected) {
+                      setState(() {
+                        if (selected ?? false) {
+                          _selectedIds.add(contact.id!);
+                        } else {
+                          _selectedIds.remove(contact.id!);
+                        }
+                      });
+                    },
+                    title: Text(contact.displayName ?? 'Không tên'),
+                    secondary:
+                        contact.photo?.thumbnail == null
+                            ? const CircleAvatar(child: Icon(Icons.person))
+                            : CircleAvatar(
+                              backgroundImage: MemoryImage(
+                                contact.photo!.thumbnail!,
+                              ),
+                            ),
+                  );
+                },
+              ),
     );
   }
 }

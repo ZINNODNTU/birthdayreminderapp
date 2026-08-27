@@ -24,9 +24,10 @@ class LocalBirthdayRepository implements BirthdayRepository {
     final stamped = birthday.copyWith(
       createdAt: birthday.createdAt ?? now,
       updatedAt: now,
-      syncStatus: birthday.ownerUid == null
-          ? SyncStatus.localOnly
-          : SyncStatus.pendingUpload,
+      syncStatus:
+          birthday.ownerUid == null
+              ? SyncStatus.localOnly
+              : SyncStatus.pendingUpload,
     );
     await _db.insertBirthday(stamped);
   }
@@ -81,8 +82,8 @@ extension BirthdayCopy on Birthday {
       calendarType: calendarType ?? this.calendarType,
       remindBeforeDays: remindBeforeDays ?? this.remindBeforeDays,
       remindTime: remindTime ?? this.remindTime,
-      isRecurringNotificationEnabled: isRecurringNotificationEnabled ??
-          this.isRecurringNotificationEnabled,
+      isRecurringNotificationEnabled:
+          isRecurringNotificationEnabled ?? this.isRecurringNotificationEnabled,
       repeatAnnually: repeatAnnually ?? this.repeatAnnually,
       note: note ?? this.note,
       createdAt: createdAt ?? this.createdAt,

@@ -75,7 +75,8 @@ class CsvExportService {
         await folder.create(recursive: true);
       }
 
-      final fileName = 'birthdays_export_${DateTime.now().millisecondsSinceEpoch}.csv';
+      final fileName =
+          'birthdays_export_${DateTime.now().millisecondsSinceEpoch}.csv';
       final file = File('${folder.path}/$fileName');
 
       // Add UTF-8 BOM to support Vietnamese characters in Excel
@@ -107,7 +108,9 @@ class CsvExportService {
   static Future<Directory?> _getExportDirectory() async {
     try {
       if (Platform.isAndroid) {
-        final dirs = await getExternalStorageDirectories(type: StorageDirectory.downloads);
+        final dirs = await getExternalStorageDirectories(
+          type: StorageDirectory.downloads,
+        );
         return dirs?.first ?? await getExternalStorageDirectory();
       } else if (Platform.isIOS) {
         return await getApplicationDocumentsDirectory();

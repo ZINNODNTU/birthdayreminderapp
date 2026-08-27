@@ -12,7 +12,7 @@ class SessionController extends ChangeNotifier {
   SessionController({
     required SessionRepository repository,
     required Stream<User?> authStateChanges,
-  })  : _repository = repository {
+  }) : _repository = repository {
     _authSub = authStateChanges.listen(_onAuthChanged);
     _bootstrap();
   }
@@ -27,9 +27,7 @@ class SessionController extends ChangeNotifier {
   bool get isReady => _bootstrapDone;
 
   Future<void> _bootstrap() async {
-    _mode = await _repository.resolveMode(
-      isAuthenticated: _lastAuthenticated,
-    );
+    _mode = await _repository.resolveMode(isAuthenticated: _lastAuthenticated);
     _bootstrapDone = true;
     notifyListeners();
   }

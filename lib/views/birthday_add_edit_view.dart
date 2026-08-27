@@ -11,7 +11,7 @@ class BirthdayAddEditView extends StatefulWidget {
   const BirthdayAddEditView({super.key, this.birthday});
 
   @override
-  _BirthdayAddEditViewState createState() => _BirthdayAddEditViewState();
+  State<BirthdayAddEditView> createState() => _BirthdayAddEditViewState();
 }
 
 class _BirthdayAddEditViewState extends State<BirthdayAddEditView> {
@@ -68,7 +68,8 @@ class _BirthdayAddEditViewState extends State<BirthdayAddEditView> {
   bool isValidAge(DateTime birthday, {int minAge = 0, int maxAge = 120}) {
     final now = DateTime.now();
     int age = now.year - birthday.year;
-    if (now.month < birthday.month || (now.month == birthday.month && now.day < birthday.day)) {
+    if (now.month < birthday.month ||
+        (now.month == birthday.month && now.day < birthday.day)) {
       age--;
     }
     return age >= minAge && age <= maxAge;
@@ -79,6 +80,7 @@ class _BirthdayAddEditViewState extends State<BirthdayAddEditView> {
     final image = await picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
       final bytes = await image.readAsBytes();
+      if (!mounted) return;
       setState(() {
         _avatarBase64 = base64Encode(bytes);
       });
@@ -89,7 +91,9 @@ class _BirthdayAddEditViewState extends State<BirthdayAddEditView> {
     if (_formKey.currentState!.validate()) {
       if (!isValidAge(_solarBirthday)) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Tuổi phải nằm trong khoảng từ 0 đến 120.')),
+          const SnackBar(
+            content: Text('Tuổi phải nằm trong khoảng từ 0 đến 120.'),
+          ),
         );
         return;
       }
@@ -112,7 +116,10 @@ class _BirthdayAddEditViewState extends State<BirthdayAddEditView> {
         note: _note,
       );
 
-      final controller = Provider.of<BirthdayController>(context, listen: false);
+      final controller = Provider.of<BirthdayController>(
+        context,
+        listen: false,
+      );
       widget.birthday == null
           ? controller.addBirthday(birthday)
           : controller.updateBirthday(birthday);
@@ -125,7 +132,9 @@ class _BirthdayAddEditViewState extends State<BirthdayAddEditView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.birthday == null ? 'Thêm sinh nhật' : 'Sửa sinh nhật'),
+        title: Text(
+          widget.birthday == null ? 'Thêm sinh nhật' : 'Sửa sinh nhật',
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -137,17 +146,25 @@ class _BirthdayAddEditViewState extends State<BirthdayAddEditView> {
                 onTap: _pickImage,
                 child: CircleAvatar(
                   radius: 40,
-                  backgroundImage: _avatarBase64 != null
-                      ? MemoryImage(base64Decode(_avatarBase64!))
-                      : null,
-                  child: _avatarBase64 == null ? const Icon(Icons.add_a_photo) : null,
+                  backgroundImage:
+                      _avatarBase64 != null
+                          ? MemoryImage(base64Decode(_avatarBase64!))
+                          : null,
+                  child:
+                      _avatarBase64 == null
+                          ? const Icon(Icons.add_a_photo)
+                          : null,
                 ),
               ),
               const SizedBox(height: 16),
               TextFormField(
                 initialValue: _name,
                 decoration: const InputDecoration(labelText: 'Tên *'),
-                validator: (value) => value == null || value.isEmpty ? 'Vui lòng nhập tên' : null,
+                validator:
+                    (value) =>
+                        value == null || value.isEmpty
+                            ? 'Vui lòng nhập tên'
+                            : null,
                 onSaved: (value) => _name = value!,
               ),
               TextFormField(
@@ -156,7 +173,7 @@ class _BirthdayAddEditViewState extends State<BirthdayAddEditView> {
                 onSaved: (value) => _nickname = value,
               ),
               DropdownButtonFormField<String>(
-                value: _gender?.isNotEmpty == true ? _gender : '',
+                initialValue: _gender?.isNotEmpty == true ? _gender : '',
                 decoration: const InputDecoration(labelText: 'Giới tính'),
                 isExpanded: true,
                 onChanged: (value) {
@@ -171,7 +188,6 @@ class _BirthdayAddEditViewState extends State<BirthdayAddEditView> {
                 onSaved: (value) => _gender = value != '' ? value : null,
               ),
 
-
               TextFormField(
                 initialValue: _relationship,
                 decoration: const InputDecoration(labelText: 'Mối quan hệ'),
@@ -183,30 +199,34 @@ class _BirthdayAddEditViewState extends State<BirthdayAddEditView> {
                 onSaved: (value) => _note = value,
               ),
               const SizedBox(height: 16),
-              Row(
-                children: [
-                  const Text('Loại lịch:'),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: RadioListTile<CalendarType>(
-                      title: const Text('Dương lịch'),
-                      value: CalendarType.solar,
-                      groupValue: _calendarType,
-                      onChanged: (value) => setState(() => _calendarType = value!),
+              RadioGroup<CalendarType>(
+                groupValue: _calendarType,
+                onChanged: (value) {
+                  if (value != null) setState(() => _calendarType = value);
+                },
+                child: Row(
+                  children: const [
+                    Text('Loại lịch:'),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: RadioListTile<CalendarType>(
+                        title: Text('Dương lịch'),
+                        value: CalendarType.solar,
+                      ),
                     ),
-                  ),
-                  Expanded(
-                    child: RadioListTile<CalendarType>(
-                      title: const Text('Âm lịch'),
-                      value: CalendarType.lunar,
-                      groupValue: _calendarType,
-                      onChanged: (value) => setState(() => _calendarType = value!),
+                    Expanded(
+                      child: RadioListTile<CalendarType>(
+                        title: Text('Âm lịch'),
+                        value: CalendarType.lunar,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               ListTile(
-                title: Text('Ngày sinh dương: ${_solarBirthday.day}/${_solarBirthday.month}/${_solarBirthday.year}'),
+                title: Text(
+                  'Ngày sinh dương: ${_solarBirthday.day}/${_solarBirthday.month}/${_solarBirthday.year}',
+                ),
                 trailing: const Icon(Icons.calendar_today),
                 onTap: () async {
                   DateTime? picked = await showDatePicker(
@@ -215,10 +235,15 @@ class _BirthdayAddEditViewState extends State<BirthdayAddEditView> {
                     firstDate: DateTime(1900),
                     lastDate: DateTime.now(),
                   );
+                  if (!context.mounted) return;
                   if (picked != null) {
                     if (!isValidAge(picked)) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Tuổi không hợp lệ. Tuổi phải từ 0 đến 120.')),
+                        const SnackBar(
+                          content: Text(
+                            'Tuổi không hợp lệ. Tuổi phải từ 0 đến 120.',
+                          ),
+                        ),
                       );
                       return;
                     }
@@ -230,12 +255,17 @@ class _BirthdayAddEditViewState extends State<BirthdayAddEditView> {
                 },
               ),
               ListTile(
-                title: Text('Ngày sinh âm: ${_lunarBirthday.day}/${_lunarBirthday.month}'),
+                title: Text(
+                  'Ngày sinh âm: ${_lunarBirthday.day}/${_lunarBirthday.month}',
+                ),
               ),
               DropdownButtonFormField<int>(
-                decoration: const InputDecoration(labelText: 'Nhắc trước (ngày)'),
-                value: _remindBeforeDays,
-                onChanged: (value) => setState(() => _remindBeforeDays = value ?? 0),
+                decoration: const InputDecoration(
+                  labelText: 'Nhắc trước (ngày)',
+                ),
+                initialValue: _remindBeforeDays,
+                onChanged:
+                    (value) => setState(() => _remindBeforeDays = value ?? 0),
                 items: List.generate(31, (index) {
                   return DropdownMenuItem(value: index, child: Text('$index'));
                 }),
@@ -248,6 +278,7 @@ class _BirthdayAddEditViewState extends State<BirthdayAddEditView> {
                     context: context,
                     initialTime: _remindTime,
                   );
+                  if (!context.mounted) return;
                   if (picked != null) {
                     setState(() => _remindTime = picked);
                   }
@@ -256,18 +287,19 @@ class _BirthdayAddEditViewState extends State<BirthdayAddEditView> {
               CheckboxListTile(
                 title: const Text('Lặp lại hàng năm'),
                 value: _repeatAnnually,
-                onChanged: (val) => setState(() => _repeatAnnually = val ?? true),
+                onChanged:
+                    (val) => setState(() => _repeatAnnually = val ?? true),
               ),
               CheckboxListTile(
                 title: const Text('Bật thông báo định kỳ'),
                 value: _isRecurringNotificationEnabled,
-                onChanged: (val) => setState(() => _isRecurringNotificationEnabled = val ?? true),
+                onChanged:
+                    (val) => setState(
+                      () => _isRecurringNotificationEnabled = val ?? true,
+                    ),
               ),
               const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _submitForm,
-                child: const Text('Lưu'),
-              ),
+              ElevatedButton(onPressed: _submitForm, child: const Text('Lưu')),
             ],
           ),
         ),

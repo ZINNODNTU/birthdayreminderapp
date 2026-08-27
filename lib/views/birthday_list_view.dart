@@ -4,8 +4,7 @@ import 'package:provider/provider.dart';
 import '../controllers/birthday_controller.dart';
 import '../models/birthday.dart';
 import 'birthday_detail_view.dart';
-import 'birthday_add_edit_view.dart';
-import 'contact_import.dart';
+
 import 'birthday_item.dart';
 
 class BirthdayListView extends StatefulWidget {
@@ -26,34 +25,46 @@ class _BirthdayListViewState extends State<BirthdayListView> {
     final birthdays = context.watch<BirthdayController>().birthdays;
 
     // Lọc danh sách sinh nhật theo tên tìm kiếm
-    final filteredBirthdays = birthdays.where((birthday) {
-      return birthday.name.toLowerCase().contains(_searchQuery.toLowerCase());
-    }).toList();
+    final filteredBirthdays =
+        birthdays.where((birthday) {
+          return birthday.name.toLowerCase().contains(
+            _searchQuery.toLowerCase(),
+          );
+        }).toList();
 
     // Hàm để lấy ngày tháng trong năm hiện tại với sinh nhật (day, month)
-    DateTime _getNextBirthdayDate(Birthday birthday) {
+    DateTime getNextBirthdayDate(Birthday birthday) {
       final now = DateTime.now();
       final currentYear = now.year;
-      final birthdayDate = DateTime(currentYear, birthday.solarBirthday.month, birthday.solarBirthday.day);
+      final birthdayDate = DateTime(
+        currentYear,
+        birthday.solarBirthday.month,
+        birthday.solarBirthday.day,
+      );
       // Nếu sinh nhật trong năm nay đã qua thì lấy năm sau
       if (birthdayDate.isBefore(now) && !birthdayDate.isAtSameMomentAs(now)) {
-        return DateTime(currentYear + 1, birthday.solarBirthday.month, birthday.solarBirthday.day);
+        return DateTime(
+          currentYear + 1,
+          birthday.solarBirthday.month,
+          birthday.solarBirthday.day,
+        );
       }
       return birthdayDate;
     }
 
     // Sắp xếp danh sách theo _sortAscending
     filteredBirthdays.sort((a, b) {
-      final dateA = _getNextBirthdayDate(a);
-      final dateB = _getNextBirthdayDate(b);
+      final dateA = getNextBirthdayDate(a);
+      final dateB = getNextBirthdayDate(b);
       return _sortAscending ? dateA.compareTo(dateB) : dateB.compareTo(dateA);
     });
 
     return Scaffold(
       appBar: AppBar(
-        title: _isSelectionMode
-            ? Text('Đã chọn: ${_selectedBirthdays.length}')
-            : null,
+        title:
+            _isSelectionMode
+                ? Text('Đã chọn: ${_selectedBirthdays.length}')
+                : null,
         actions: [
           if (_isSelectionMode) ...[
             IconButton(
@@ -81,34 +92,35 @@ class _BirthdayListViewState extends State<BirthdayListView> {
                   _sortAscending = value;
                 });
               },
-              itemBuilder: (context) => [
-                PopupMenuItem(
-                  value: true,
-                  child: Row(
-                    children: [
-                      if (_sortAscending)
-                        const Icon(Icons.check, color: Colors.blue)
-                      else
-                        const SizedBox(width: 24),
-                      const SizedBox(width: 8),
-                      const Text('Sinh nhật gần đến'),
-                    ],
-                  ),
-                ),
-                PopupMenuItem(
-                  value: false,
-                  child: Row(
-                    children: [
-                      if (!_sortAscending)
-                        const Icon(Icons.check, color: Colors.blue)
-                      else
-                        const SizedBox(width: 24),
-                      const SizedBox(width: 8),
-                      const Text('Sinh nhật xa'),
-                    ],
-                  ),
-                ),
-              ],
+              itemBuilder:
+                  (context) => [
+                    PopupMenuItem(
+                      value: true,
+                      child: Row(
+                        children: [
+                          if (_sortAscending)
+                            const Icon(Icons.check, color: Colors.blue)
+                          else
+                            const SizedBox(width: 24),
+                          const SizedBox(width: 8),
+                          const Text('Sinh nhật gần đến'),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: false,
+                      child: Row(
+                        children: [
+                          if (!_sortAscending)
+                            const Icon(Icons.check, color: Colors.blue)
+                          else
+                            const SizedBox(width: 24),
+                          const SizedBox(width: 8),
+                          const Text('Sinh nhật xa'),
+                        ],
+                      ),
+                    ),
+                  ],
             ),
           ],
         ],
@@ -133,39 +145,43 @@ class _BirthdayListViewState extends State<BirthdayListView> {
           // Danh sách sinh nhật
           filteredBirthdays.isEmpty
               ? const Expanded(
-            child: Center(child: Text('Chưa có sinh nhật nào')),
-          )
+                child: Center(child: Text('Chưa có sinh nhật nào')),
+              )
               : Expanded(
-            child: ListView.builder(
-              itemCount: filteredBirthdays.length,
-              itemBuilder: (context, index) {
-                final birthday = filteredBirthdays[index];
-                final isSelected = _selectedBirthdays.contains(birthday);
+                child: ListView.builder(
+                  itemCount: filteredBirthdays.length,
+                  itemBuilder: (context, index) {
+                    final birthday = filteredBirthdays[index];
+                    final isSelected = _selectedBirthdays.contains(birthday);
 
-                return GestureDetector(
-                  onLongPress: () => _toggleSelectionMode(birthday),
-                  onTap: () => _isSelectionMode
-                      ? _toggleSelection(birthday)
-                      : _openBirthdayDetail(context, birthday),
-                  child: Container(
-                    color: isSelected
-                        ? Colors.blue.withOpacity(0.2)
-                        : Colors.transparent,
-                    child: BirthdayItem(birthday: birthday),
-                  ),
-                );
-              },
-            ),
-          ),
+                    return GestureDetector(
+                      onLongPress: () => _toggleSelectionMode(birthday),
+                      onTap:
+                          () =>
+                              _isSelectionMode
+                                  ? _toggleSelection(birthday)
+                                  : _openBirthdayDetail(context, birthday),
+                      child: Container(
+                        color:
+                            isSelected
+                                ? Colors.blue.withValues(alpha: 0.2)
+                                : Colors.transparent,
+                        child: BirthdayItem(birthday: birthday),
+                      ),
+                    );
+                  },
+                ),
+              ),
         ],
       ),
-      floatingActionButton: _isSelectionMode
-          ? FloatingActionButton(
-        onPressed: _deleteSelected,
-        tooltip: 'Xóa đã chọn',
-        child: const Icon(Icons.delete),
-      )
-          : null,
+      floatingActionButton:
+          _isSelectionMode
+              ? FloatingActionButton(
+                onPressed: _deleteSelected,
+                tooltip: 'Xóa đã chọn',
+                child: const Icon(Icons.delete),
+              )
+              : null,
     );
   }
 
@@ -212,47 +228,7 @@ class _BirthdayListViewState extends State<BirthdayListView> {
   void _openBirthdayDetail(BuildContext context, Birthday birthday) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => BirthdayDetailView(birthday: birthday),
-      ),
-    );
-  }
-
-  void _navigateToAddManual(BuildContext context) {
-    Navigator.pop(context);
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const BirthdayAddEditView()),
-    );
-  }
-
-  void _navigateToImportContacts(BuildContext context) {
-    Navigator.pop(context);
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const ContactImport()),
-    );
-  }
-
-  void _showAddOptionsDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Thêm sinh nhật'),
-          content: const Text('Chọn cách thêm sinh nhật:'),
-          actions: [
-            TextButton(
-              onPressed: () => _navigateToAddManual(context),
-              child: const Text('Thêm thủ công'),
-            ),
-            TextButton(
-              onPressed: () => _navigateToImportContacts(context),
-              child: const Text('Nhập từ danh bạ'),
-            ),
-          ],
-        );
-      },
+      MaterialPageRoute(builder: (_) => BirthdayDetailView(birthday: birthday)),
     );
   }
 }

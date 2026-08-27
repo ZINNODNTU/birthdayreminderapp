@@ -43,3 +43,44 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# 🔒 Secrets & Environment Files
+.env
+.env.*
+!firebase_options.dart
+lib/env/
+ios/Flutter/AppFrameworkInfo.plist
+firebase-debug.log
+firebase-debug.*.log.json
+.firestore/
+functions/.env
+functions/node_modules/
+functions/package-lock.json
+firebase-tests/node_modules/
+.firebaserc
+firebase-export/
+
+# 🔒 Firebase generated files (regenerate via flutterfire configure)
+# Do NOT commit per-environment google-services.json — use CI to generate
+# For local dev, keep in .gitignore
+# Android: android/app/google-services.json
+# iOS: ios/Runner/GoogleService-Info.plist
+
+# 🔒 Crashlytics / build artifacts
+crashlytics-build.properties
+
+# 🔒 IDE
+.idea/
+.vscode/
+
+# 🔒 Phase 7 release output (APK + manifest live here for self-update staging)
+dist/
+
+# 🔒 Android Gradle intermediate reports (regenerated on each build)
+android/build/
+
+# 🔒 Firebase emulator runtime logs (regenerated when emulator starts)
+firestore-debug.log
+
+# 🔒 Temporary instrumentation from local dev sessions
+inst_user_settings.tmp

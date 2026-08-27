@@ -1,0 +1,34 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedInAs(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    match /users/{userId} {
+      allow read, create, update, delete: if signedInAs(userId);
+
+      match /birthdays/{birthdayId} {
+        allow read, delete: if signedInAs(userId);
+        allow create, update: if signedInAs(userId)
+          && request.resource.data.ownerId == userId
+          && request.resource.data.id == birthdayId
+          && request.resource.data.name is string
+          && request.resource.data.name.size() > 0
+          && (request.resource.data.schemaVersion == 1 || request.resource.data.schemaVersion == 2);
+      }
+
+      match /preferences/{document=**} {
+        allow read, write: if signedInAs(userId);
+      }
+
+      match /devices/{deviceId} {
+        allow read, write: if signedInAs(userId);
+      }
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

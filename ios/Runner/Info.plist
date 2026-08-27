@@ -5,7 +5,11 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Birthdayreminderapp</string>
+	<string>Birthday Reminder</string>
+	<key>NSContactsUsageDescription</key>
+	<string>Ứng dụng chỉ đọc danh bạ trên thiết bị để bạn chọn và nhập người có ngày sinh.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Ứng dụng cần truy cập ảnh bạn chọn để đặt ảnh đại diện sinh nhật.</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>

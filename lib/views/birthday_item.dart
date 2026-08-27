@@ -7,11 +7,7 @@ class BirthdayItem extends StatelessWidget {
   final Birthday birthday;
   final VoidCallback? onTap;
 
-  const BirthdayItem({
-    super.key,
-    required this.birthday,
-    this.onTap,
-  });
+  const BirthdayItem({super.key, required this.birthday, this.onTap});
 
   int calculateAge(DateTime birthDate) {
     final today = DateTime.now();
@@ -42,9 +38,15 @@ class BirthdayItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final image = birthday.avatarBase64 != null
-        ? Image.memory(base64Decode(birthday.avatarBase64!), width: 48, height: 48, fit: BoxFit.cover)
-        : const Icon(Icons.person, size: 48);
+    final image =
+        birthday.avatarBase64 != null
+            ? Image.memory(
+              base64Decode(birthday.avatarBase64!),
+              width: 48,
+              height: 48,
+              fit: BoxFit.cover,
+            )
+            : const Icon(Icons.person, size: 48);
 
     final int age = calculateAge(birthday.solarBirthday);
     final int days = daysUntilNextBirthday(birthday.solarBirthday);

@@ -77,7 +77,8 @@ class DefaultBirthdayEngine implements BirthdayEngine {
         // True age: subtract a year if the occurrence has not yet
         // reached the birthday's month/day.
         var age = occ.year - birthday.solarBirthday.year;
-        final beforeBirthday = occ.month < birthday.solarBirthday.month ||
+        final beforeBirthday =
+            occ.month < birthday.solarBirthday.month ||
             (occ.month == birthday.solarBirthday.month &&
                 occ.day < birthday.solarBirthday.day);
         if (beforeBirthday) age--;

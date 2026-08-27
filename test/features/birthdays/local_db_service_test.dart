@@ -100,5 +100,3 @@ void main() {
     expect(DbSchema.databaseVersion, 2);
   });
 }
-
-

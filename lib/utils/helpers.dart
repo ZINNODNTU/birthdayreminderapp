@@ -1,6 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
-import 'package:image_picker/image_picker.dart';
 import 'package:image/image.dart' as img;
 import 'package:share_plus/share_plus.dart';
 
@@ -16,7 +14,8 @@ class Helpers {
   }
 
   static Future<void> shareBirthday(String name, DateTime date) async {
-    final text = 'Don\'t forget ${name}\'s birthday on ${date.day}/${date.month}/${date.year}!';
-    await Share.share(text);
+    final text =
+        'Don\'t forget $name\'s birthday on ${date.day}/${date.month}/${date.year}!';
+    await SharePlus.instance.share(ShareParams(text: text));
   }
 }
