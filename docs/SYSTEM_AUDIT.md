@@ -6,6 +6,7 @@ Baseline: AUTH RECOVERY DONE at commit `d9091e2`. 39 tests pass, analyze clean, 
 
 1. Release builds use **debug signing key** (`android/app/build.gradle.kts:42`). Shipping this APK means the next release with a real key cannot be installed as an update (signature mismatch). Users would have to uninstall → reinstall → lose all local data.
 2. **Lunar birthday recurrence** computes the date from the *original* lunar year (`LunarDateTime.toSolarDateTime` always uses stored `year`). For every anniversary after the birth year, the lunar date drifts because the lunar→solar mapping shifts each year. Affects `notification_service` scheduling and the calendar/list views.
+   **RESOLVED IN PHASE 3** — see `docs/BIRTHDAY_DOMAIN.md`. `BirthdayEngine.occurrenceInYear` re-converts per target year.
 3. **Notification IDs use `birthday.id.hashCode`** (`notification_service.dart:102, 130`). Multiple birthdays can collide; future edits to `id` (UUID change) silently invalidate existing reminders.
 
 ## High risks

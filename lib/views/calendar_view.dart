@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:lunar/lunar.dart';
 import '../controllers/birthday_controller.dart';
+import '../features/birthdays/domain/birthday_engine.dart';
 import '../models/birthday.dart';
 import 'birthday_detail_view.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -24,10 +25,19 @@ class _CalendarViewState extends State<CalendarView> {
     return date1.day == date2.day && date1.month == date2.month;
   }
 
+  /// Resolve a [Birthday] to its solar occurrence in [year] using the
+  /// shared [BirthdayEngine]. Lunar birthdays are re-converted per year
+  /// (the recurring-lunar fix).
+  DateTime _occurrence(Birthday b, int year, BirthdayEngine engine) {
+    return engine.occurrenceInYear(b, year);
+  }
+
   @override
   Widget build(BuildContext context) {
     final birthdays = Provider.of<BirthdayController>(context).birthdays;
+    final engine = context.read<BirthdayEngine>();
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final focusedYear = _focusedDay.year;
 
     Widget buildDayCell(DateTime day, bool isSelected, bool isToday) {
       final lunar = Lunar.fromDate(day);
@@ -35,8 +45,12 @@ class _CalendarViewState extends State<CalendarView> {
           birthdays.where((b) {
             final date =
                 b.calendarType == CalendarType.solar
-                    ? b.solarBirthday
-                    : b.lunarBirthday.toSolarDateTime();
+                    ? DateTime(
+                      focusedYear,
+                      b.solarBirthday.month,
+                      b.solarBirthday.day,
+                    )
+                    : _occurrence(b, focusedYear, engine);
             return isSameDayAndMonth(date, day);
           }).length;
 
@@ -149,8 +163,12 @@ class _CalendarViewState extends State<CalendarView> {
                 return birthdays.where((b) {
                   final date =
                       b.calendarType == CalendarType.solar
-                          ? b.solarBirthday
-                          : b.lunarBirthday.toSolarDateTime();
+                          ? DateTime(
+                            focusedYear,
+                            b.solarBirthday.month,
+                            b.solarBirthday.day,
+                          )
+                          : _occurrence(b, focusedYear, engine);
                   return isSameDayAndMonth(date, day);
                 }).toList();
               },
@@ -197,8 +215,12 @@ class _CalendarViewState extends State<CalendarView> {
                 birthdays.where((b) {
                       final date =
                           b.calendarType == CalendarType.solar
-                              ? b.solarBirthday
-                              : b.lunarBirthday.toSolarDateTime();
+                              ? DateTime(
+                                focusedYear,
+                                b.solarBirthday.month,
+                                b.solarBirthday.day,
+                              )
+                              : _occurrence(b, focusedYear, engine);
                       return isSameDayAndMonth(date, _selectedDay);
                     }).isEmpty
                     ? Center(
@@ -217,8 +239,12 @@ class _CalendarViewState extends State<CalendarView> {
                           birthdays.where((b) {
                             final date =
                                 b.calendarType == CalendarType.solar
-                                    ? b.solarBirthday
-                                    : b.lunarBirthday.toSolarDateTime();
+                                    ? DateTime(
+                                      focusedYear,
+                                      b.solarBirthday.month,
+                                      b.solarBirthday.day,
+                                    )
+                                    : _occurrence(b, focusedYear, engine);
                             return isSameDayAndMonth(date, _selectedDay);
                           }).length,
                       itemBuilder: (context, index) {
@@ -226,8 +252,12 @@ class _CalendarViewState extends State<CalendarView> {
                             birthdays.where((b) {
                               final date =
                                   b.calendarType == CalendarType.solar
-                                      ? b.solarBirthday
-                                      : b.lunarBirthday.toSolarDateTime();
+                                      ? DateTime(
+                                        focusedYear,
+                                        b.solarBirthday.month,
+                                        b.solarBirthday.day,
+                                      )
+                                      : _occurrence(b, focusedYear, engine);
                               return isSameDayAndMonth(date, _selectedDay);
                             }).toList()[index];
                         return Card(

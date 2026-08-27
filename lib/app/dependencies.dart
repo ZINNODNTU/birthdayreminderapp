@@ -7,6 +7,9 @@ import '../core/session/session_controller.dart';
 import '../core/session/session_repository.dart';
 import '../features/birthdays/data/birthday_repository.dart';
 import '../features/birthdays/data/local_birthday_repository.dart';
+import '../features/birthdays/domain/birthday_engine.dart';
+import '../features/birthdays/domain/default_birthday_engine.dart';
+import '../features/birthdays/domain/lunar_calendar_service.dart';
 import '../services/local_db_service.dart';
 import '../services/notification_service.dart';
 
@@ -25,11 +28,19 @@ class AppDependencies {
       Provider<BirthdayRepository>(
         create: (ctx) => LocalBirthdayRepository(ctx.read<LocalDbService>()),
       ),
+      Provider<LunarCalendarService>(
+        create: (_) => const LunarCalendarService(),
+      ),
+      Provider<BirthdayEngine>(
+        create:
+            (ctx) => DefaultBirthdayEngine(ctx.read<LunarCalendarService>()),
+      ),
       ChangeNotifierProvider<BirthdayController>(
         create:
             (ctx) => BirthdayController(
               repository: ctx.read<BirthdayRepository>(),
               notificationService: ctx.read<NotificationService>(),
+              engine: ctx.read<BirthdayEngine>(),
             ),
       ),
       Provider<FirebaseAuthRepository>(create: (_) => FirebaseAuthRepository()),

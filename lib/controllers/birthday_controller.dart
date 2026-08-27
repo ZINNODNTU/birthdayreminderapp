@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../features/birthdays/data/birthday_repository.dart';
+import '../features/birthdays/domain/birthday_engine.dart';
 import '../models/birthday.dart';
 import '../services/notification_service.dart';
 
@@ -10,18 +11,33 @@ class BirthdayController with ChangeNotifier {
   BirthdayController({
     required BirthdayRepository repository,
     required NotificationService notificationService,
-  })  : _repository = repository,
-        _notificationService = notificationService {
+    required BirthdayEngine engine,
+  }) : _repository = repository,
+       _notificationService = notificationService,
+       _engine = engine {
     loadBirthdays();
   }
 
   final BirthdayRepository _repository;
   final NotificationService _notificationService;
+  final BirthdayEngine _engine;
 
   List<Birthday> _birthdays = [];
   bool _disposed = false;
 
   List<Birthday> get birthdays => _birthdays;
+
+  /// Sort the in-memory list by days until next birthday. Stable sort —
+  /// equal days keep insertion order. Returns a new list.
+  List<Birthday> sortedByUpcoming({DateTime? from}) {
+    final list = [..._birthdays];
+    list.sort(
+      (a, b) => _engine
+          .daysUntilNextBirthday(a, from: from)
+          .compareTo(_engine.daysUntilNextBirthday(b, from: from)),
+    );
+    return list;
+  }
 
   void _safeNotify() {
     if (!_disposed) notifyListeners();
@@ -44,7 +60,10 @@ class BirthdayController with ChangeNotifier {
     _safeNotify();
 
     if (birthday.isRecurringNotificationEnabled) {
-      await _notificationService.scheduleBirthdayNotification(birthday);
+      await _notificationService.scheduleBirthdayNotification(
+        birthday,
+        _engine,
+      );
     }
   }
 
@@ -59,7 +78,10 @@ class BirthdayController with ChangeNotifier {
     await _notificationService.cancelNotification(birthday.id);
 
     if (birthday.isRecurringNotificationEnabled) {
-      await _notificationService.scheduleBirthdayNotification(birthday);
+      await _notificationService.scheduleBirthdayNotification(
+        birthday,
+        _engine,
+      );
     }
   }
 
@@ -72,14 +94,13 @@ class BirthdayController with ChangeNotifier {
   }
 
   Future<void> testNotification(Birthday birthday) async {
-    await _notificationService.testNotification(birthday);
+    await _notificationService.testNotification(birthday, _engine);
   }
 
   /// Used by sync flows (e.g. cloud restore) to add or merge a birthday
   /// without firing notifications.
   Future<void> addOrUpdateBirthday(Birthday birthday) async {
-    final existingIndex =
-        _birthdays.indexWhere((b) => b.id == birthday.id);
+    final existingIndex = _birthdays.indexWhere((b) => b.id == birthday.id);
 
     if (existingIndex != -1) {
       final existing = _birthdays[existingIndex];
@@ -90,7 +111,10 @@ class BirthdayController with ChangeNotifier {
 
         await _notificationService.cancelNotification(birthday.id);
         if (birthday.isRecurringNotificationEnabled) {
-          await _notificationService.scheduleBirthdayNotification(birthday);
+          await _notificationService.scheduleBirthdayNotification(
+            birthday,
+            _engine,
+          );
         }
       }
     } else {
@@ -99,7 +123,10 @@ class BirthdayController with ChangeNotifier {
       _safeNotify();
 
       if (birthday.isRecurringNotificationEnabled) {
-        await _notificationService.scheduleBirthdayNotification(birthday);
+        await _notificationService.scheduleBirthdayNotification(
+          birthday,
+          _engine,
+        );
       }
     }
   }

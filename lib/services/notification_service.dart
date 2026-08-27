@@ -1,52 +1,34 @@
-import 'dart:developer' as devtools show log;
+import 'dart:async';
+import 'dart:developer' as devtools;
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:flutter/material.dart';
 import 'package:timezone/timezone.dart' as tz;
-import 'package:timezone/data/latest.dart' as tz;
-import 'package:flutter_native_timezone/flutter_native_timezone.dart';
-import 'package:permission_handler/permission_handler.dart';
+
+import '../features/birthdays/domain/birthday_engine.dart';
 import '../models/birthday.dart';
 
+/// Wraps `flutter_local_notifications`. Notification IDs intentionally
+/// still use `birthday.id.hashCode` — that's a Phase 4 concern.
 class NotificationService {
-  static final NotificationService _instance = NotificationService._internal();
-  factory NotificationService() => _instance;
-  NotificationService._internal();
-
-  late FlutterLocalNotificationsPlugin _notificationsPlugin;
+  final FlutterLocalNotificationsPlugin _notificationsPlugin =
+      FlutterLocalNotificationsPlugin();
   bool _isInitialized = false;
 
   Future<void> initialize() async {
     if (_isInitialized) return;
 
-    _notificationsPlugin = FlutterLocalNotificationsPlugin();
-    tz.initializeTimeZones();
-
-    final String timeZoneName = await FlutterNativeTimezone.getLocalTimezone();
-    tz.setLocalLocation(tz.getLocation(timeZoneName));
-
-    final status = await Permission.notification.status;
-    if (!status.isGranted) {
-      final result = await Permission.notification.request();
-      if (!result.isGranted) {
-        devtools.log("❌ Notification permission NOT granted");
-        return;
-      }
-    }
-
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const iosSettings = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
-    );
-
-    const settings = InitializationSettings(
-      android: androidSettings,
-      iOS: iosSettings,
-    );
+    const AndroidInitializationSettings androidSettings =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+    const DarwinInitializationSettings iosSettings =
+        DarwinInitializationSettings(
+          requestAlertPermission: true,
+          requestBadgePermission: true,
+          requestSoundPermission: true,
+        );
 
     await _notificationsPlugin.initialize(
-      settings,
+      const InitializationSettings(android: androidSettings, iOS: iosSettings),
       onDidReceiveNotificationResponse: (response) {
         devtools.log('🟣 Notification clicked: ${response.payload}');
       },
@@ -56,27 +38,37 @@ class NotificationService {
     devtools.log('✅ Notification service initialized');
   }
 
-  Future<void> scheduleBirthdayNotification(Birthday birthday) async {
+  /// Schedule the next occurrence of [birthday] using [engine] for the
+  /// correct solar date in the next applicable year. The reminder offset
+  /// and time-of-day still come from the [Birthday] record itself.
+  Future<void> scheduleBirthdayNotification(
+    Birthday birthday,
+    BirthdayEngine engine,
+  ) async {
     await initialize();
 
     final DateTime now = DateTime.now();
+    final DateTime birthdayDate = engine.occurrenceInYear(birthday, now.year);
 
-    // Chuyển đổi ngày sinh nhật thành ngày dương nếu là âm lịch
-    final DateTime birthdayDate = birthday.calendarType == CalendarType.solar
-        ? birthday.solarBirthday
-        : birthday.lunarBirthday.toSolarDateTime();
-
-    // Xác định năm sinh nhật tiếp theo (năm nay hoặc năm sau)
-    DateTime nextBirthday = DateTime(now.year, birthdayDate.month, birthdayDate.day);
+    DateTime nextBirthday = DateTime(
+      birthdayDate.year,
+      birthdayDate.month,
+      birthdayDate.day,
+    );
     if (nextBirthday.isBefore(now)) {
-      nextBirthday = DateTime(now.year + 1, birthdayDate.month, birthdayDate.day);
+      final nextYearDate = engine.occurrenceInYear(birthday, now.year + 1);
+      nextBirthday = DateTime(
+        nextYearDate.year,
+        nextYearDate.month,
+        nextYearDate.day,
+      );
     }
 
-    // Ngày cần nhắc = ngày sinh - số ngày trước
-    final DateTime remindDate = nextBirthday.subtract(Duration(days: birthday.remindBeforeDays));
+    final DateTime remindDate = nextBirthday.subtract(
+      Duration(days: birthday.remindBeforeDays),
+    );
 
-    // Tạo TZDateTime với múi giờ cục bộ
-    tz.TZDateTime scheduledTime = tz.TZDateTime.local(
+    final tz.TZDateTime scheduledTime = tz.TZDateTime.local(
       remindDate.year,
       remindDate.month,
       remindDate.day,
@@ -103,10 +95,13 @@ class NotificationService {
       ),
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       payload: birthday.id,
-      matchDateTimeComponents: DateTimeComponents.dayOfMonthAndTime, // 🔁 Lặp lại hằng năm
+      matchDateTimeComponents:
+          DateTimeComponents.dayOfMonthAndTime, // 🔁 Lặp lại hằng năm
     );
 
-    devtools.log('✅ Scheduled yearly notification for ${birthday.name} at $scheduledTime');
+    devtools.log(
+      '✅ Scheduled yearly notification for ${birthday.name} at $scheduledTime',
+    );
   }
 
   Future<void> cancelNotification(String id) async {
@@ -115,14 +110,13 @@ class NotificationService {
     devtools.log('❌ Canceled notification for $id');
   }
 
-  Future<void> testNotification(Birthday birthday) async {
+  Future<void> testNotification(
+    Birthday birthday,
+    BirthdayEngine engine,
+  ) async {
     await initialize();
 
-    final int days = daysUntilNextBirthday(
-      birthday.calendarType == CalendarType.solar
-          ? birthday.solarBirthday
-          : birthday.lunarBirthday.toSolarDateTime(),
-    );
+    final int days = engine.daysUntilNextBirthday(birthday);
 
     await _notificationsPlugin.show(
       birthday.id.hashCode,
@@ -143,16 +137,10 @@ class NotificationService {
         ),
       ),
     );
-
-    devtools.log('✅ Immediate test notification shown for ${birthday.name}');
-  }
-
-  int daysUntilNextBirthday(DateTime birthday) {
-    final now = DateTime.now();
-    DateTime nextBirthday = DateTime(now.year, birthday.month, birthday.day);
-    if (nextBirthday.isBefore(now)) {
-      nextBirthday = DateTime(now.year + 1, birthday.month, birthday.day);
-    }
-    return nextBirthday.difference(now).inDays;
   }
 }
+
+// Re-export the foundation type to silence "unused_import" when this file
+// is consumed without the rest of the app.
+// ignore: unused_element
+typedef _Debug = ChangeNotifier;
