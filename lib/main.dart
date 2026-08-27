@@ -4,6 +4,6 @@ import 'app/app.dart';
 import 'app/bootstrap.dart';
 
 void main() async {
-  await AppBootstrap.run();
-  runApp(const BirthdayReminderApp());
+  final prefs = await AppBootstrap.run();
+  runApp(BirthdayReminderApp(prefs: prefs));
 }

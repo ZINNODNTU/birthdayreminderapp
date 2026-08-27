@@ -2,23 +2,27 @@ import 'package:flutter/foundation.dart';
 
 import '../features/birthdays/data/birthday_repository.dart';
 import '../features/birthdays/domain/birthday_engine.dart';
-import '../models/birthday.dart';
 import '../services/notification_service.dart';
+import '../features/reminders/services/reminder_scheduler.dart';
+import '../models/birthday.dart';
 
 /// Owns the in-memory list of birthdays and forwards mutations to the
-/// repository and the notification scheduler.
+/// repository and the reminder scheduler.
 class BirthdayController with ChangeNotifier {
   BirthdayController({
     required BirthdayRepository repository,
+    required ReminderScheduler reminderScheduler,
     required NotificationService notificationService,
     required BirthdayEngine engine,
   }) : _repository = repository,
+       _scheduler = reminderScheduler,
        _notificationService = notificationService,
        _engine = engine {
     loadBirthdays();
   }
 
   final BirthdayRepository _repository;
+  final ReminderScheduler _scheduler;
   final NotificationService _notificationService;
   final BirthdayEngine _engine;
 
@@ -27,8 +31,6 @@ class BirthdayController with ChangeNotifier {
 
   List<Birthday> get birthdays => _birthdays;
 
-  /// Sort the in-memory list by days until next birthday. Stable sort —
-  /// equal days keep insertion order. Returns a new list.
   List<Birthday> sortedByUpcoming({DateTime? from}) {
     final list = [..._birthdays];
     list.sort(
@@ -58,13 +60,7 @@ class BirthdayController with ChangeNotifier {
     await _repository.createBirthday(birthday);
     _birthdays = await _repository.getBirthdays();
     _safeNotify();
-
-    if (birthday.isRecurringNotificationEnabled) {
-      await _notificationService.scheduleBirthdayNotification(
-        birthday,
-        _engine,
-      );
-    }
+    await _scheduler.scheduleNext(birthday);
   }
 
   Future<void> updateBirthday(Birthday birthday) async {
@@ -74,31 +70,24 @@ class BirthdayController with ChangeNotifier {
       _birthdays[index] = birthday;
       _safeNotify();
     }
-
-    await _notificationService.cancelNotification(birthday.id);
-
-    if (birthday.isRecurringNotificationEnabled) {
-      await _notificationService.scheduleBirthdayNotification(
-        birthday,
-        _engine,
-      );
-    }
+    await _scheduler.scheduleNext(birthday);
   }
 
   Future<void> deleteBirthday(String id) async {
+    await _scheduler.cancelAllFor(id);
     await _repository.deleteBirthday(id);
     _birthdays = await _repository.getBirthdays();
     _safeNotify();
-
-    await _notificationService.cancelNotification(id);
   }
 
   Future<void> testNotification(Birthday birthday) async {
-    await _notificationService.testNotification(birthday, _engine);
+    final days = _engine.daysUntilNextBirthday(birthday);
+    await _notificationService.showTestNotification(
+      title: 'Thông báo thử',
+      body: 'Sinh nhật của ${birthday.name} còn $days ngày nữa',
+    );
   }
 
-  /// Used by sync flows (e.g. cloud restore) to add or merge a birthday
-  /// without firing notifications.
   Future<void> addOrUpdateBirthday(Birthday birthday) async {
     final existingIndex = _birthdays.indexWhere((b) => b.id == birthday.id);
 
@@ -108,26 +97,13 @@ class BirthdayController with ChangeNotifier {
         await _repository.updateBirthday(birthday);
         _birthdays[existingIndex] = birthday;
         _safeNotify();
-
-        await _notificationService.cancelNotification(birthday.id);
-        if (birthday.isRecurringNotificationEnabled) {
-          await _notificationService.scheduleBirthdayNotification(
-            birthday,
-            _engine,
-          );
-        }
+        await _scheduler.scheduleNext(birthday);
       }
     } else {
       await _repository.createBirthday(birthday);
       _birthdays = await _repository.getBirthdays();
       _safeNotify();
-
-      if (birthday.isRecurringNotificationEnabled) {
-        await _notificationService.scheduleBirthdayNotification(
-          birthday,
-          _engine,
-        );
-      }
+      await _scheduler.scheduleNext(birthday);
     }
   }
 }

@@ -8,6 +8,9 @@ Baseline: AUTH RECOVERY DONE at commit `d9091e2`. 39 tests pass, analyze clean, 
 2. **Lunar birthday recurrence** computes the date from the *original* lunar year (`LunarDateTime.toSolarDateTime` always uses stored `year`). For every anniversary after the birth year, the lunar date drifts because the lunar→solar mapping shifts each year. Affects `notification_service` scheduling and the calendar/list views.
    **RESOLVED IN PHASE 3** — see `docs/BIRTHDAY_DOMAIN.md`. `BirthdayEngine.occurrenceInYear` re-converts per target year.
 3. **Notification IDs use `birthday.id.hashCode`** (`notification_service.dart:102, 130`). Multiple birthdays can collide; future edits to `id` (UUID change) silently invalidate existing reminders.
+   **RESOLVED IN PHASE 4** — see `docs/NOTIFICATION_ENGINE.md`. `NotificationIdFactory` (FNV-1a 31-bit) derives the id from a deterministic schedule key.
+   **Reconciliation gap** — no startup pass to re-sync reminders after reboot / package replacement.
+   **RESOLVED IN PHASE 4** — `NotificationReconciler.reconcile()` runs post-first-frame on every app start.
 
 ## High risks
 
