@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../controllers/birthday_controller.dart';
 import '../services/firestore_service.dart';
 import '../services/csv_export_service.dart';
+import '../core/auth/auth_repository.dart';
 // import '../services/csv_import_service.dart'; // Uncomment nếu có dịch vụ import
 import 'calendar_view.dart';
 import 'birthday_list_view.dart';
@@ -19,10 +20,7 @@ class Homepage extends StatefulWidget {
 class _HomepageState extends State<Homepage> {
   int _selectedIndex = 0;
 
-  final List<Widget> _pages = const [
-    CalendarView(),
-    BirthdayListView(),
-  ];
+  final List<Widget> _pages = const [CalendarView(), BirthdayListView()];
 
   void _onItemTapped(int index) {
     setState(() {
@@ -34,33 +32,50 @@ class _HomepageState extends State<Homepage> {
     final controller = Provider.of<BirthdayController>(context, listen: false);
     final firestoreService = FirestoreService();
 
-    for (final birthday in controller.birthdays) {
-      await firestoreService.backupBirthday(birthday);
+    try {
+      for (final birthday in controller.birthdays) {
+        await firestoreService.backupBirthday(birthday);
+      }
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Đã sao lưu lên Firestore')));
+    } on StateError catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
     }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Đã sao lưu lên Firestore')),
-    );
   }
 
   Future<void> _syncFromFirestore(BuildContext context) async {
     final controller = Provider.of<BirthdayController>(context, listen: false);
     final firestoreService = FirestoreService();
 
-    final firestoreBirthdays = await firestoreService.getBackedUpBirthdays();
-    for (final birthday in firestoreBirthdays) {
-      await controller.addOrUpdateBirthday(birthday);
+    try {
+      final firestoreBirthdays = await firestoreService.getBackedUpBirthdays();
+      for (final birthday in firestoreBirthdays) {
+        await controller.addOrUpdateBirthday(birthday);
+      }
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Đã đồng bộ từ Firestore')));
+    } on StateError catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
     }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Đã đồng bộ từ Firestore')),
-    );
   }
 
   Future<void> _exportToCsv(BuildContext context) async {
     final controller = Provider.of<BirthdayController>(context, listen: false);
-    final path = await CsvExportService.exportBirthdaysToCsv(controller.birthdays);
+    final path = await CsvExportService.exportBirthdaysToCsv(
+      controller.birthdays,
+    );
 
+    if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -84,6 +99,10 @@ class _HomepageState extends State<Homepage> {
     );
   }
   */
+
+  Future<void> _signOut(BuildContext context) async {
+    await context.read<AuthRepository>().signOut();
+  }
 
   void _showAddBirthdayOptions() {
     showModalBottomSheet(
@@ -136,16 +155,17 @@ class _HomepageState extends State<Homepage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Birthday Reminder'),
-      ),
+      appBar: AppBar(title: const Text('Birthday Reminder')),
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
             const DrawerHeader(
               decoration: BoxDecoration(color: Colors.blue),
-              child: Text('Tùy chọn', style: TextStyle(color: Colors.white, fontSize: 24)),
+              child: Text(
+                'Tùy chọn',
+                style: TextStyle(color: Colors.white, fontSize: 24),
+              ),
             ),
             ListTile(
               leading: const Icon(Icons.backup),
@@ -170,27 +190,33 @@ class _HomepageState extends State<Homepage> {
                 Navigator.pop(context);
                 final confirm = await showDialog<bool>(
                   context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Xác nhận xóa'),
-                    content: const Text('Bạn có chắc muốn xóa tất cả sinh nhật trên Firestore không?'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, false),
-                        child: const Text('Hủy'),
+                  builder:
+                      (context) => AlertDialog(
+                        title: const Text('Xác nhận xóa'),
+                        content: const Text(
+                          'Bạn có chắc muốn xóa tất cả sinh nhật trên Firestore không?',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            child: const Text('Hủy'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, true),
+                            child: const Text('Xóa'),
+                          ),
+                        ],
                       ),
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, true),
-                        child: const Text('Xóa'),
-                      ),
-                    ],
-                  ),
                 );
 
                 if (confirm == true) {
                   final firestoreService = FirestoreService();
                   await firestoreService.deleteAllBirthdays();
+                  if (!context.mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Đã xóa toàn bộ dữ liệu trên Firestore')),
+                    const SnackBar(
+                      content: Text('Đã xóa toàn bộ dữ liệu trên Firestore'),
+                    ),
                   );
                 }
               },
@@ -214,6 +240,15 @@ class _HomepageState extends State<Homepage> {
               },
             ),
             */
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.logout),
+              title: const Text('Đăng xuất'),
+              onTap: () async {
+                Navigator.pop(context);
+                await _signOut(context);
+              },
+            ),
           ],
         ),
       ),

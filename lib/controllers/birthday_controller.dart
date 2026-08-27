@@ -1,20 +1,18 @@
 import 'package:flutter/material.dart';
 import '../models/birthday.dart';
 import '../services/local_db_service.dart';
-import '../services/firestore_service.dart';
 import '../services/notification_service.dart';
 
 class BirthdayController with ChangeNotifier {
   final LocalDBService _localDbService = LocalDBService();
-  final FirestoreService _firestoreService = FirestoreService();
   final NotificationService _notificationService = NotificationService();
 
   List<Birthday> _birthdays = [];
 
   List<Birthday> get birthdays => _birthdays;
 
-  BirthdayController() {
-    _init();
+  BirthdayController({bool skipInit = false}) {
+    if (!skipInit) _init();
   }
 
   Future<void> _init() async {
