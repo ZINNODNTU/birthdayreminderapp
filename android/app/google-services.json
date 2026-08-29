@@ -12,7 +12,12 @@
           "package_name": "com.example.birthdayreminderapp"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "922005299348-mt4pfojkj5bo2lb5nl362ksebb61tast.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyC018Tshtn9IIGUNJyZPLC_NkXDFY-q-Jo"
@@ -20,7 +25,63 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "922005299348-mt4pfojkj5bo2lb5nl362ksebb61tast.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "922005299348-1k37ersfg432hpk4qvmsrop0hhpb3uo9.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.birthdayreminderapp"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:922005299348:android:bf458c4098372872e21481",
+        "android_client_info": {
+          "package_name": "com.zinnodntu.birthdayreminderapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "922005299348-235pmhbi829dqjnujt43hci49o87pkr5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.zinnodntu.birthdayreminderapp",
+            "certificate_hash": "edcdc4c2590b81f5c0805f0e0877fb5e35096ed1"
+          }
+        },
+        {
+          "client_id": "922005299348-mt4pfojkj5bo2lb5nl362ksebb61tast.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC018Tshtn9IIGUNJyZPLC_NkXDFY-q-Jo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "922005299348-mt4pfojkj5bo2lb5nl362ksebb61tast.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "922005299348-1k37ersfg432hpk4qvmsrop0hhpb3uo9.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.birthdayreminderapp"
+              }
+            }
+          ]
         }
       }
     }

@@ -7,6 +7,8 @@ import '../core/auth/firebase_auth_repository.dart';
 import '../core/auth/user_profile_repository.dart';
 import '../core/session/session_controller.dart';
 import '../core/session/session_repository.dart';
+import '../features/birthdays/data/birthday_firestore_mapper.dart';
+import '../features/birthdays/data/birthday_remote_repository.dart';
 import '../features/birthdays/data/birthday_repository.dart';
 import '../features/birthdays/data/local_birthday_repository.dart';
 import '../features/birthdays/domain/birthday_engine.dart';
@@ -17,6 +19,7 @@ import '../features/reminders/services/notification_id_factory.dart';
 import '../features/reminders/services/notification_permission_service.dart';
 import '../features/reminders/services/notification_reconciler.dart';
 import '../features/reminders/services/reminder_scheduler.dart';
+import '../features/sync/sync_manager.dart';
 import '../services/local_db_service.dart';
 import '../services/notification_service.dart';
 
@@ -81,15 +84,37 @@ class AppDependencies {
               reminderScheduler: ctx.read<ReminderScheduler>(),
               notificationService: ctx.read<NotificationService>(),
               engine: ctx.read<BirthdayEngine>(),
+              authRepository: ctx.read<FirebaseAuthRepository>(),
+              syncManager: ctx.read<SyncManager>(),
             ),
       ),
       Provider<FirebaseAuthRepository>(create: (_) => FirebaseAuthRepository()),
       Provider<UserProfileRepository>(create: (_) => UserProfileRepository()),
+      Provider<BirthdayRemoteRepository>(
+        create:
+            (ctx) => FirestoreBirthdayRemoteRepository(
+              mapper: ctx.read<BirthdayFirestoreMapper>(),
+            ),
+      ),
+      Provider<SyncManager>(
+        create:
+            (ctx) => SyncManager(
+              local: ctx.read<BirthdayRepository>(),
+              remote: ctx.read<BirthdayRemoteRepository>(),
+              authGate: ctx.read<FirebaseAuthRepository>().authStateChanges,
+              uidProvider: () {
+                final user = ctx.read<FirebaseAuthRepository>().currentUser;
+                return user?.uid ?? '';
+              },
+            ),
+        dispose: (_, mgr) => mgr.dispose(),
+      ),
       Provider<SessionRepository>(create: (_) => SessionRepository()),
       ChangeNotifierProvider<SessionController>(
         create:
             (ctx) => SessionController(
               repository: ctx.read<SessionRepository>(),
+              authRepository: ctx.read<FirebaseAuthRepository>(),
               profileRepository: ctx.read<UserProfileRepository>(),
               authStateChanges:
                   ctx.read<FirebaseAuthRepository>().authStateChanges,

@@ -117,6 +117,7 @@ void main() {
               create:
                   (ctx) => SessionController(
                     repository: ctx.read<SessionRepository>(),
+                    authRepository: ctx.read<AuthRepository>(),
                     profileRepository: ctx.read<UserProfileRepository>(),
                     authStateChanges:
                         ctx.read<AuthRepository>().authStateChanges,

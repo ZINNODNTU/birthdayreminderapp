@@ -1,11 +1,16 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import 'package:birthdayreminderapp/controllers/birthday_controller.dart';
 import 'package:birthdayreminderapp/core/auth/auth_gate.dart';
 import 'package:birthdayreminderapp/core/auth/auth_repository.dart';
 import 'package:birthdayreminderapp/core/auth/user_profile_repository.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:birthdayreminderapp/core/session/app_session_mode.dart';
 import 'package:birthdayreminderapp/core/session/session_controller.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:birthdayreminderapp/core/session/session_repository.dart';
+import 'package:birthdayreminderapp/features/auth/views/auth_screen.dart';
 import 'package:birthdayreminderapp/features/birthdays/data/birthday_repository.dart';
 import 'package:birthdayreminderapp/features/birthdays/data/local_birthday_repository.dart';
 import 'package:birthdayreminderapp/features/birthdays/domain/birthday_engine.dart';
@@ -18,25 +23,23 @@ import 'package:birthdayreminderapp/features/reminders/services/reminder_schedul
 import 'package:birthdayreminderapp/services/local_db_service.dart';
 import 'package:birthdayreminderapp/services/notification_service.dart';
 import 'package:birthdayreminderapp/views/homepage.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
-import '../../helpers/fake_auth_repository.dart';
-import '../../helpers/fake_notification_service.dart';
+import '../helpers/fake_auth_repository.dart';
+import '../helpers/fake_notification_service.dart';
 
-Widget _tree({
+Widget _wrap({
   required AuthRepository repo,
   required SessionRepository sessionRepo,
   BirthdayRepository? birthdayRepo,
+  FakeNotificationService? fakeNotifications,
 }) {
+  final fake = fakeNotifications ?? FakeNotificationService();
   return MultiProvider(
     providers: [
       Provider<LocalDbService>(create: (_) => LocalDbService()),
-      Provider<NotificationService>.value(value: FakeNotificationService()),
+      Provider<NotificationService>.value(value: fake),
       Provider<BirthdayRepository>(
         create:
             (ctx) =>
@@ -95,13 +98,12 @@ Widget _tree({
   );
 }
 
-/// Trivial stub — the local-mode happy path doesn't need a real profile.
+late SharedPreferences sharedPrefs;
+
 class _NoopProfileRepo implements UserProfileRepository {
   @override
   Future<void> ensureProfile(User user) async {}
 }
-
-late SharedPreferences sharedPrefs;
 
 void main() {
   setUpAll(() async {
@@ -115,72 +117,36 @@ void main() {
     sharedPrefs = await SharedPreferences.getInstance();
   });
 
-  testWidgets(
-    'In local mode, tapping "Backup lên Firestore" shows the auth-required snackbar',
-    (tester) async {
-      tester.view.physicalSize = const Size(1080, 2000);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+  testWidgets('local → exit → AuthScreen shows Google button', (tester) async {
+    tester.view.physicalSize = const Size(1080, 1920);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
 
-      final repo = FakeAuthRepository();
-      repo.setUser(null);
-      final sessionRepo = SessionRepository();
-      await sessionRepo.setLocalModeEnabled(true);
+    final repo = FakeAuthRepository();
+    repo.setUser(null);
+    final sessionRepo = SessionRepository();
 
-      await tester.pumpWidget(_tree(repo: repo, sessionRepo: sessionRepo));
-      await tester.pumpAndSettle();
+    await tester.pumpWidget(_wrap(repo: repo, sessionRepo: sessionRepo));
+    await tester.pumpAndSettle();
 
-      expect(find.byType(Homepage), findsOneWidget);
-      final ctx = tester.element(find.byType(Homepage));
-      final mode = ctx.read<SessionController>().mode;
-      expect(mode, AppSessionMode.local);
+    expect(find.byType(AuthScreen), findsOneWidget);
+    expect(find.byType(Homepage), findsNothing);
 
-      // Open drawer
-      await tester.tap(find.byTooltip('Open navigation menu'));
-      await tester.pumpAndSettle();
-      await tester.pumpAndSettle();
+    // Enable local mode by tapping the button.
+    await tester.tap(find.text('Tiếp tục trên thiết bị'));
+    await tester.pumpAndSettle();
 
-      final itemFinder = find.byKey(const ValueKey('drawer_backup_local'));
-      await tester.tap(itemFinder);
-      await tester.pumpAndSettle();
+    expect(find.byType(Homepage), findsOneWidget);
+    expect(find.byType(AuthScreen), findsNothing);
 
-      expect(
-        find.text('Đăng nhập để sử dụng tính năng đồng bộ đám mây.'),
-        findsOneWidget,
-      );
-    },
-  );
+    // Get SessionController from the context of Homepage and disable local mode.
+    final ctx = tester.element(find.byType(Homepage));
+    await ctx.read<SessionController>().disableLocalMode();
+    await tester.pumpAndSettle();
 
-  testWidgets(
-    'In local mode, tapping "Xóa toàn bộ trên Firestore" also blocks gracefully',
-    (tester) async {
-      tester.view.physicalSize = const Size(1080, 10000);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-
-      final repo = FakeAuthRepository();
-      repo.setUser(null);
-      final sessionRepo = SessionRepository();
-      await sessionRepo.setLocalModeEnabled(true);
-
-      await tester.pumpWidget(_tree(repo: repo, sessionRepo: sessionRepo));
-      await tester.pumpAndSettle();
-
-      // Open drawer
-      await tester.tap(find.byTooltip('Open navigation menu'));
-      await tester.pumpAndSettle();
-      await tester.pumpAndSettle();
-
-      final itemFinder = find.byKey(const ValueKey('drawer_delete_all_local'));
-      await tester.tap(itemFinder);
-      await tester.pumpAndSettle();
-
-      expect(
-        find.text('Đăng nhập để sử dụng tính năng đồng bộ đám mây.'),
-        findsOneWidget,
-      );
-    },
-  );
+    // Should be back on AuthScreen with Google button.
+    expect(find.byType(AuthScreen), findsOneWidget);
+    expect(find.text('Tiếp tục với Google'), findsOneWidget);
+  });
 }

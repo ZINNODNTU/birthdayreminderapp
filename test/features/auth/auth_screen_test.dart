@@ -38,6 +38,7 @@ Widget _wrap(AuthRepository repo) {
         create:
             (ctx) => SessionController(
               repository: SessionRepository(),
+              authRepository: repo,
               profileRepository: ctx.read<UserProfileRepository>(),
               authStateChanges: repo.authStateChanges,
             ),
@@ -156,6 +157,7 @@ void main() {
               create:
                   (ctx) => SessionController(
                     repository: ctx.read<SessionRepository>(),
+                    authRepository: repo,
                     profileRepository: ctx.read<UserProfileRepository>(),
                     authStateChanges: repo.authStateChanges,
                   ),

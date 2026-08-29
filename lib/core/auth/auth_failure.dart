@@ -36,10 +36,17 @@ sealed class AuthFailure {
         return AuthFailureOperationNotAllowed();
       case 'too-many-requests':
         return AuthFailureTooManyRequests();
-      // google_sign_in 6.x surfaces cancellation as a typed enum.
       case 'canceled':
       case 'sign_in_canceled':
+      case 'userCanceled':
         return AuthFailureCancelled();
+      case 'clientConfigurationError':
+      case 'providerConfigurationError':
+      case 'misconfiguredProvider':
+        return AuthFailureConfiguration();
+      case 'uiUnavailable':
+      case 'interrupted':
+        return AuthFailureUiUnavailable();
       default:
         return AuthFailureUnknown();
     }
@@ -56,5 +63,12 @@ class AuthFailureTooManyRequests extends AuthFailure {}
 
 /// User dismissed the Google account chooser. Not a hard error.
 class AuthFailureCancelled extends AuthFailure {}
+
+/// Google Sign-In configuration error — usually means the OAuth client
+/// isn't registered for the app's SHA fingerprint.
+class AuthFailureConfiguration extends AuthFailure {}
+
+/// Google Sign-In can't present the UI on this platform.
+class AuthFailureUiUnavailable extends AuthFailure {}
 
 class AuthFailureUnknown extends AuthFailure {}

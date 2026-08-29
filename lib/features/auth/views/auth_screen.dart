@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/auth/auth_failure.dart';
-import '../../../core/auth/auth_repository.dart';
 import '../../../core/session/session_controller.dart';
 
 /// Google-only authentication + Local Mode entry screen.
@@ -25,8 +24,9 @@ class _AuthScreenState extends State<AuthScreen> {
     if (_googleInFlight || _localInFlight) return;
     setState(() => _googleInFlight = true);
     try {
-      await context.read<AuthRepository>().signInWithGoogle();
-      // AuthGate listens to authStateChanges and routes to Homepage.
+      // SessionController is the single source of truth — driving it
+      // here means AuthGate reacts to the mode transition uniformly.
+      await context.read<SessionController>().signInWithGoogle();
     } on AuthFailure catch (e) {
       if (!mounted) return;
       // Cancellation is not an error — keep the user where they are.
@@ -61,6 +61,10 @@ class _AuthScreenState extends State<AuthScreen> {
       AuthFailureOperationNotAllowed() =>
         'Đăng nhập bằng Google chưa được bật. Vui lòng liên hệ quản trị viên.',
       AuthFailureTooManyRequests() => 'Quá nhiều yêu cầu, vui lòng thử lại sau',
+      AuthFailureConfiguration() =>
+        'Đăng nhập Google chưa được cấu hình đúng trên thiết bị này.',
+      AuthFailureUiUnavailable() =>
+        'Trình chọn tài khoản Google không khả dụng trên thiết bị này.',
       _ => 'Đã xảy ra lỗi, vui lòng thử lại',
     };
   }

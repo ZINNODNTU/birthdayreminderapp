@@ -42,6 +42,16 @@ class LocalBirthdayRepository implements BirthdayRepository {
   Future<void> deleteBirthday(String id) => _db.deleteBirthday(id);
 
   @override
+  Future<void> upsertBirthday(Birthday birthday) async {
+    final existing = await _db.getBirthday(birthday.id);
+    if (existing == null) {
+      await createBirthday(birthday);
+    } else {
+      await updateBirthday(birthday);
+    }
+  }
+
+  @override
   Stream<List<Birthday>> watchBirthdays() async* {
     yield await _db.getBirthdays();
   }

@@ -88,6 +88,7 @@ Widget _wrap({
         create:
             (ctx) => SessionController(
               repository: ctx.read<SessionRepository>(),
+              authRepository: ctx.read<AuthRepository>(),
               profileRepository: ctx.read<UserProfileRepository>(),
               authStateChanges: ctx.read<AuthRepository>().authStateChanges,
             ),
@@ -200,13 +201,13 @@ void main() {
       expect(find.byType(AuthScreen), findsOneWidget);
 
       await repo.signInWithGoogle();
-      await _settle(tester);
+      await tester.pumpAndSettle();
 
       expect(find.byType(Homepage), findsOneWidget);
       expect(find.byType(AuthScreen), findsNothing);
 
       await repo.signOut();
-      await _settle(tester);
+      await tester.pumpAndSettle();
 
       expect(find.byType(AuthScreen), findsOneWidget);
       expect(find.byType(Homepage), findsNothing);

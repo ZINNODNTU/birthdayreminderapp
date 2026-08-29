@@ -8,6 +8,11 @@ abstract interface class BirthdayRepository {
   Future<Birthday?> getBirthday(String id);
   Future<void> createBirthday(Birthday birthday);
   Future<void> updateBirthday(Birthday birthday);
+
+  /// Create-or-update used by SyncManager — never roll back a row that
+  /// already exists, even if the caller supplied different metadata.
+  Future<void> upsertBirthday(Birthday birthday);
+
   Future<void> deleteBirthday(String id);
 
   /// Emits the current list after any mutation. The default implementation
