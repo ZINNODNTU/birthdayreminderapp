@@ -134,10 +134,16 @@ jobs:
             exit 1
           fi
           CERT_OUTPUT="$("$APKSIGNER" verify --print-certs "$APK" 2>&1)"
+          # apksigner output has two possible formats depending on version:
+          #   "Signer #1 certificate SHA-256 digest: ABCD..."
+          #   "V2 Signer: certificate SHA-256 digest: ABCD..." (lines wrapped)
           SIGNER_RAW="$(
             printf '%s\n' "$CERT_OUTPUT" |
-              sed -nE 's/^[[:space:]]*Signer #1 certificate SHA-256 digest:[[:space:]]*([0-9A-Fa-f:]+)[[:space:]]*$/\1/p' |
-              head -n 1
+              grep -oiE '(Signer #1|V2 Signer):?.*SHA-256[[:space:]]+digest:[[:space:]]*[0-9A-Fa-f:]+' |
+              sed -nE 's/.*SHA-256[[:space:]]+digest:[[:space:]]*([0-9A-Fa-f:]+).*/\1/p' |
+              tr -d '\n' |
+              sed 's/[:[:space:]]//g' |
+              head -c 64
           )"
           normalize_sha256() {
             printf '%s' "$1" |
