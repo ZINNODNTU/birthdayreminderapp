@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../controllers/birthday_controller.dart';
 import '../../ai/views/ai_trial_view.dart';
 import '../../backup/presentation/backup_restore_screen.dart';
+import '../../onboarding/presentation/onboarding_screen.dart';
 import '../widgets/ai_settings_card.dart';
 import '../widgets/app_info_card.dart';
 import '../widgets/notification_settings_card.dart';
@@ -71,6 +72,37 @@ class SettingsView extends StatelessWidget {
           const BackupSettingsCard(),
           const SizedBox(height: 16),
           const AiSettingsCard(),
+          const SizedBox(height: 16),
+          Card(
+            elevation: 2,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+                  child: Text(
+                    'HƯỚNG DẪN & TRỢ GIÚP',
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
+                ),
+                ListTile(
+                  key: const Key('settings-onboarding-help'),
+                  leading: const Icon(Icons.menu_book_outlined),
+                  title: const Text('Hướng dẫn sử dụng'),
+                  subtitle: const Text(
+                    'Xem lại cách sử dụng Birthday Reminder',
+                  ),
+                  onTap:
+                      () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const OnboardingScreen(manual: true),
+                        ),
+                      ),
+                ),
+              ],
+            ),
+          ),
           const SizedBox(height: 16),
           const AppInfoCard(),
         ],

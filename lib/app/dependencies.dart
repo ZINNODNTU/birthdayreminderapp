@@ -22,6 +22,7 @@ import '../features/birthdays/domain/birthday_engine.dart';
 import '../features/birthdays/domain/default_birthday_engine.dart';
 import '../features/birthdays/domain/lunar_calendar_service.dart';
 import '../features/birthdays/services/birthday_photo_service.dart';
+import '../features/onboarding/services/onboarding_service.dart';
 import '../features/reminders/data/reminder_schedule_store.dart';
 import '../features/reminders/services/notification_id_factory.dart';
 import '../features/reminders/services/notification_permission_service.dart';
@@ -80,6 +81,13 @@ class AppDependencies {
         create:
             (ctx) => FirestoreBirthdayRemoteRepository(
               mapper: ctx.read<BirthdayFirestoreMapper>(),
+            ),
+      ),
+      Provider<OnboardingService>(
+        create:
+            (ctx) => OnboardingService(
+              preferences: ctx.read<SharedPreferences>(),
+              birthdays: ctx.read<BirthdayRepository>(),
             ),
       ),
 

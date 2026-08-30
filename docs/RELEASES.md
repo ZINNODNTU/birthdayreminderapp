@@ -11,7 +11,8 @@ This file is human-maintained documentation only.
 |---|---:|---|---|---|---|
 | 1.0.0 | 1 | Stable | Legacy | Android debug | Legacy |
 | 1.0.1 | 2 | Migration Bridge | Released | Legacy bridge only | Backup/restore and reinstall guidance |
-| 2.0.0 | 3 | Stable | Prepared | First permanent production signer | Reinstall boundary |
+| 2.0.0 | 3 | Stable | Released | First permanent production signer | Reinstall boundary |
+| 2.0.1 | 4 | Stable | Prepared | Permanent production signer | Normal update + onboarding |
 
 Notes:
 
