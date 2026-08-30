@@ -173,6 +173,12 @@ class BirthdayFirestoreMapper {
     final minute = (reminder?['minute'] as num?)?.toInt() ?? 0;
     final clampedHour = hour.clamp(0, 23);
     final clampedMinute = minute.clamp(0, 59);
+    final rawDaysBefore = reminder?['daysBefore'];
+    final daysBefore = switch (rawDaysBefore) {
+      num value => value.toInt(),
+      String value => int.tryParse(value) ?? 0,
+      _ => 0,
+    };
 
     final birthday = Birthday(
       id: id,
@@ -180,7 +186,7 @@ class BirthdayFirestoreMapper {
       solarBirthday: solar,
       lunarBirthday: lunar,
       calendarType: calendarType,
-      remindBeforeDays: (reminder?['daysBefore'] as num?)?.toInt() ?? 0,
+      remindBeforeDays: daysBefore,
       remindTime: TimeOfDay(hour: clampedHour, minute: clampedMinute),
       isRecurringNotificationEnabled: reminder?['enabled'] as bool? ?? false,
       repeatAnnually: reminder?['repeatAnnually'] as bool? ?? false,

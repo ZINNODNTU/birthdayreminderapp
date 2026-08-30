@@ -4,7 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:flutter/services.dart';
+
+import '../../../controllers/birthday_controller.dart';
+import '../../../core/logging/app_logger.dart';
+import '../../../services/avatar_cache.dart';
 import '../../birthdays/data/birthday_repository.dart';
+import '../../reminders/services/notification_reconciler.dart';
 import '../services/backup_file_service.dart';
 import '../services/backup_service.dart';
 
@@ -25,41 +31,115 @@ class _State extends State<BackupRestoreScreen> {
     preferences: c.read<SharedPreferences>(),
   );
   Future<void> makeBackup() async {
+    if (busy) return;
     setState(() => busy = true);
+    BackupSaveResult? saved;
+    BackupException? failure;
     try {
       final r = await backup(context).createBackup();
-      await BackupFileService().save(r.bytes, r.fileName);
-      if (mounted)
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Đã tạo bản sao lưu: ${r.birthdayCount} sinh nhật, ${r.photoCount} ảnh, ${r.bytes.length} bytes',
+      if (!mounted) return;
+      try {
+        saved = await BackupFileService().save(r.bytes, r.fileName);
+      } on BackupException catch (e, st) {
+        AppLogger.error('BackupSave', e, st);
+        failure = e;
+      } on PlatformException catch (e, st) {
+        AppLogger.error('BackupSave', e, st);
+        failure = BackupException(BackupStage.share, e.message ?? e.code, e);
+      }
+      if (!mounted) return;
+      final messenger = ScaffoldMessenger.of(context);
+      final sizeText = _humanSize(r.bytes.length);
+      switch (saved?.outcome) {
+        case BackupOutcome.savedToUserPath:
+          messenger.showSnackBar(
+            SnackBar(
+              content: Text(
+                'Đã tạo bản sao lưu: ${r.birthdayCount} sinh nhật, '
+                '${r.photoCount} ảnh, $sizeText.',
+              ),
             ),
-          ),
-        );
-    } catch (_) {
-      if (mounted)
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Không thể tạo bản sao lưu.')),
-        );
+          );
+        case BackupOutcome.shared:
+          messenger.showSnackBar(
+            SnackBar(
+              content: Text(
+                'Đã tạo bản sao lưu: ${r.birthdayCount} sinh nhật, '
+                '${r.photoCount} ảnh, $sizeText. Đang mở cửa sổ chia sẻ.',
+              ),
+            ),
+          );
+        case BackupOutcome.shareCancelled:
+          messenger.showSnackBar(
+            SnackBar(
+              content: Text(
+                'Đã tạo bản sao lưu ($sizeText) trong thư mục ứng dụng. '
+                'Bạn có thể mở lại từ đó.',
+              ),
+            ),
+          );
+        case BackupOutcome.shareFailed:
+          messenger.showSnackBar(
+            SnackBar(
+              content: Text(
+                'Đã tạo bản sao lưu ($sizeText) nhưng không mở được '
+                'cửa sổ chia sẻ. File vẫn còn trong thư mục ứng dụng.',
+              ),
+            ),
+          );
+        case null:
+          final stageLabel =
+              failure == null ? '' : ' (lỗi ${failure.stage.name})';
+          messenger.showSnackBar(
+            SnackBar(
+              backgroundColor: Colors.red.shade700,
+              content: Text(
+                'Không thể tạo bản sao lưu$stageLabel: '
+                '${failure?.cause ?? 'không rõ nguyên nhân'}',
+              ),
+            ),
+          );
+      }
+    } catch (e, st) {
+      AppLogger.error('Backup', e, st);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red.shade700,
+          content: Text('Không thể tạo bản sao lưu: $e'),
+        ),
+      );
     } finally {
       if (mounted) setState(() => busy = false);
     }
   }
 
+  String _humanSize(int bytes) {
+    if (bytes < 1024) return '${bytes}B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)}KB';
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)}MB';
+  }
+
   Future<void> beginRestore() async {
-    final bytes = await BackupFileService().pick();
-    if (bytes == null || !mounted) return;
+    if (busy) return;
+    setState(() => busy = true);
     try {
+      final bytes = await BackupFileService().pick();
+      if (bytes == null || !mounted) return;
       final plan = await RestoreService.validateBytes(bytes);
       if (!mounted) return;
       final ok = await showDialog<bool>(
         context: context,
         builder:
             (c) => AlertDialog(
-              title: const Text('Xem trước khôi phục'),
+              title: const Text('Khôi phục dữ liệu?'),
               content: Text(
-                'Ngày sao lưu: ${plan.createdAt}\nPhiên bản: ${plan.appVersion}\nSinh nhật: ${plan.birthdayCount}\nẢnh: ${plan.photoCount}\nCảnh báo: ${plan.warnings.length}\nChế độ: Gộp dữ liệu',
+                'Bản sao lưu: ${plan.createdAt.toLocal()}\n'
+                'Phiên bản: ${plan.appVersion}\n\n'
+                'Bao gồm:\n• ${plan.birthdayCount} sinh nhật\n'
+                '• ${plan.photoCount} ảnh\n'
+                '• Ghi chú và cài đặt liên quan\n\n'
+                'Dữ liệu sẽ được gộp an toàn với dữ liệu hiện tại.',
               ),
               actions: [
                 TextButton(
@@ -75,30 +155,40 @@ class _State extends State<BackupRestoreScreen> {
       );
       if (ok != true || !mounted) return;
       final result = await restore(context).apply(plan);
-      if (mounted)
-        showDialog<void>(
-          context: context,
-          builder:
-              (c) => AlertDialog(
-                title: const Text('Kết quả khôi phục'),
-                content: Text(
-                  'Đã khôi phục: ${result.restored}\nBỏ qua: ${result.skipped}\nXung đột: ${result.conflicts}\nẢnh: ${result.photosRestored}\nẢnh lỗi: ${result.photosFailed}',
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(c),
-                    child: const Text('Đóng'),
-                  ),
-                ],
+      AvatarCache.clear();
+      await context.read<BirthdayController>().loadBirthdays();
+      await context.read<NotificationReconciler>().reconcile();
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder:
+            (c) => AlertDialog(
+              title: const Text('Khôi phục thành công'),
+              content: Text(
+                '${result.restored} sinh nhật\n'
+                '${result.photosRestored} ảnh\n'
+                'Bỏ qua: ${result.skipped}\n'
+                'Xung đột: ${result.conflicts}\n'
+                'Ảnh lỗi: ${result.photosFailed}',
               ),
-        );
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(c),
+                  child: const Text('Đóng'),
+                ),
+              ],
+            ),
+      );
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Bản sao lưu không hợp lệ hoặc không được hỗ trợ.'),
+            content: Text('File sao lưu không hợp lệ hoặc đã bị hỏng.'),
           ),
         );
+      }
+    } finally {
+      if (mounted) setState(() => busy = false);
     }
   }
 

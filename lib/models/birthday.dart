@@ -134,7 +134,7 @@ class Birthday {
       calendarType: CalendarType.values.firstWhere(
         (e) => e.toString() == map[DbSchema.colCalendarType],
       ),
-      remindBeforeDays: map[DbSchema.colRemindBeforeDays] as int,
+      remindBeforeDays: _parseIntOrZero(map[DbSchema.colRemindBeforeDays]),
       remindTime: TimeOfDay(
         hour: int.parse(map[DbSchema.colRemindTime].toString().split(':')[0]),
         minute: int.parse(map[DbSchema.colRemindTime].toString().split(':')[1]),
@@ -154,6 +154,12 @@ class Birthday {
           (map[DbSchema.colSchemaVersion] as int?) ??
           DbSchema.birthdaySchemaVersion,
     );
+  }
+
+  static int _parseIntOrZero(Object? value) {
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? 0;
+    return 0;
   }
 
   static DateTime? _parseDateOrNull(Object? value) {

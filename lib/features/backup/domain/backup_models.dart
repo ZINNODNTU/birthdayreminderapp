@@ -8,7 +8,9 @@ import 'package:flutter/material.dart';
 import '../../../core/db/sync_status.dart';
 import '../../../models/birthday.dart';
 
-const backupSchemaVersion = 1;
+const backupSchemaVersion = 2;
+const supportedBackupSchemaVersions = {1, backupSchemaVersion};
+const backupFormat = 'birthday_reminder_backup';
 const maxBackupBytes = 250 * 1024 * 1024;
 const maxExpandedBytes = 500 * 1024 * 1024;
 const maxEntries = 5000;
@@ -125,6 +127,13 @@ Birthday birthdayFromBackupJson(
     return DateTime.parse(v);
   }
 
+  int reminderDays() {
+    final value = j['remindBeforeDays'];
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? 0;
+    return 0;
+  }
+
   final calendar =
       CalendarType.values
           .where((e) => e.name == need<String>('calendarType'))
@@ -149,7 +158,7 @@ Birthday birthdayFromBackupJson(
       year: need<int>('lunarYear'),
     ),
     calendarType: calendar,
-    remindBeforeDays: need<int>('remindBeforeDays'),
+    remindBeforeDays: reminderDays(),
     remindTime: TimeOfDay(
       hour: need<int>('remindHour'),
       minute: need<int>('remindMinute'),

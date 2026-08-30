@@ -1,9 +1,14 @@
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../models/birthday.dart';
-import '../controllers/birthday_controller.dart';
 import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:flutter/material.dart';
+import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
+
+import '../controllers/birthday_controller.dart';
+import '../features/birthdays/services/birthday_photo_service.dart';
+import '../models/birthday.dart';
 import '../services/avatar_cache.dart';
 
 class BirthdayAddEditView extends StatefulWidget {
@@ -32,6 +37,7 @@ class _BirthdayAddEditViewState extends State<BirthdayAddEditView> {
   late TimeOfDay _remindTime;
   bool _isRecurringNotificationEnabled = true;
   bool _repeatAnnually = true;
+  bool _processingImage = false;
 
   @override
   void initState() {
@@ -77,14 +83,48 @@ class _BirthdayAddEditViewState extends State<BirthdayAddEditView> {
   }
 
   Future<void> _pickImage() async {
-    final picker = ImagePicker();
-    final image = await picker.pickImage(source: ImageSource.gallery);
-    if (image != null) {
-      final bytes = await image.readAsBytes();
+    if (_processingImage) return;
+    setState(() => _processingImage = true);
+    try {
+      final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
+      if (picked == null) return;
+      final cropped = await ImageCropper().cropImage(
+        sourcePath: picked.path,
+        aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
+        compressFormat: ImageCompressFormat.jpg,
+        compressQuality: 95,
+        uiSettings: [
+          AndroidUiSettings(
+            toolbarTitle: 'Cắt ảnh sinh nhật',
+            lockAspectRatio: true,
+            hideBottomControls: false,
+          ),
+          IOSUiSettings(
+            title: 'Cắt ảnh sinh nhật',
+            aspectRatioLockEnabled: true,
+            resetAspectRatioEnabled: false,
+          ),
+        ],
+      );
+      if (cropped == null) return;
+      final raw = Uint8List.fromList(await cropped.readAsBytes());
+      final result = context.read<BirthdayPhotoService>().encodeBytes(raw);
       if (!mounted) return;
-      setState(() {
-        _avatarBase64 = base64Encode(bytes);
-      });
+      if (!result.ok) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Không thể xử lý ảnh đã chọn.')),
+        );
+        return;
+      }
+      setState(() => _avatarBase64 = result.photo!.base64);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Không thể chọn hoặc cắt ảnh.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _processingImage = false);
     }
   }
 

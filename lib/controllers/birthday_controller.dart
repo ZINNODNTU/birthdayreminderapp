@@ -13,6 +13,7 @@ import '../features/sync/sync_manager.dart';
 import '../services/notification_service.dart';
 import '../features/reminders/services/reminder_scheduler.dart';
 import '../core/logging/app_logger.dart';
+import '../features/reminders/domain/birthday_notification_formatter.dart';
 import '../features/reminders/domain/reminder_failure.dart';
 import '../models/birthday.dart';
 
@@ -235,9 +236,21 @@ class BirthdayController with ChangeNotifier {
   }
 
   Future<NotificationTestResult> testNotification(Birthday birthday) async {
+    final now = DateTime.now();
+    final thisYearOccur = _engine.occurrenceInYear(birthday, now.year);
+    final DateTime occurrence;
+    if (thisYearOccur.isAfter(now)) {
+      occurrence = thisYearOccur;
+    } else {
+      occurrence = _engine.occurrenceInYear(birthday, now.year + 1);
+    }
+    final payload = const BirthdayNotificationFormatter().buildForOccurrence(
+      birthday: birthday,
+      occurrence: occurrence,
+    );
     return _notificationService.showTestNotification(
-      title: 'Birthday Reminder',
-      body: 'Đây là thông báo thử 🎂',
+      title: payload.title,
+      body: payload.body,
     );
   }
 

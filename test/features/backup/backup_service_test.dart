@@ -124,6 +124,29 @@ void main() {
       throwsFormatException,
     );
   });
+
+  test('legacy remindBeforeDays missing and numeric string are safe', () {
+    Map<String, dynamic> legacy(Object? days) => {
+      'id': 'legacy-$days',
+      'name': 'Legacy',
+      'solarBirthday': '2000-01-01T00:00:00.000',
+      'lunarDay': 1,
+      'lunarMonth': 1,
+      'lunarYear': 2000,
+      'calendarType': 'solar',
+      if (days != null) 'remindBeforeDays': days,
+      'remindHour': 8,
+      'remindMinute': 0,
+      'notificationEnabled': true,
+      'repeatAnnually': true,
+      'syncStatus': 'localOnly',
+      'schemaVersion': 1,
+    };
+
+    expect(birthdayFromBackupJson(legacy(null)).remindBeforeDays, 0);
+    expect(birthdayFromBackupJson(legacy('2')).remindBeforeDays, 2);
+    expect(birthdayFromBackupJson(legacy('bad')).remindBeforeDays, 0);
+  });
   test('future schema rejected', () async {
     final prefs = await SharedPreferences.getInstance();
     final bytes =

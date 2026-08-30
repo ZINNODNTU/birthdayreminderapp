@@ -32,6 +32,9 @@ class _CalendarViewState extends State<CalendarView> {
     return engine.occurrenceInYear(b, year);
   }
 
+  DateTime _dayKey(DateTime date) =>
+      DateTime.utc(date.year, date.month, date.day);
+
   @override
   Widget build(BuildContext context) {
     final birthdays = Provider.of<BirthdayController>(context).birthdays;
@@ -50,14 +53,31 @@ class _CalendarViewState extends State<CalendarView> {
                 b.solarBirthday.day,
               )
               : _occurrence(b, focusedYear, engine);
-      final key = DateTime(date.year, date.month, date.day);
+      final key = _dayKey(date);
       eventsByDay.putIfAbsent(key, () => []).add(b);
       eventCounts[key] = (eventCounts[key] ?? 0) + 1;
     }
+    final monthEntries =
+        eventsByDay.entries
+            .where(
+              (e) =>
+                  e.key.year == _focusedDay.year &&
+                  e.key.month == _focusedDay.month,
+            )
+            .toList()
+          ..sort((a, b) => a.key.compareTo(b.key));
+    final selectedBirthdays =
+        _selectedDay == null
+            ? const <Birthday>[]
+            : eventsByDay[_dayKey(_selectedDay!)] ?? const <Birthday>[];
+    final monthBirthdayCount = monthEntries.fold<int>(
+      0,
+      (total, entry) => total + entry.value.length,
+    );
 
     Widget buildDayCell(DateTime day, bool isSelected, bool isToday) {
       final lunar = Lunar.fromDate(day);
-      final eventCount = eventCounts[day] ?? 0;
+      final eventCount = eventCounts[_dayKey(day)] ?? 0;
 
       return AnimatedContainer(
         duration: const Duration(milliseconds: 200),
@@ -127,11 +147,12 @@ class _CalendarViewState extends State<CalendarView> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    '$eventCount',
+                    eventCount > 99 ? '99+' : '$eventCount',
                     style: GoogleFonts.poppins(
                       color: Colors.white,
-                      fontSize: 12,
+                      fontSize: 9,
                       fontWeight: FontWeight.bold,
+                      height: 1.1,
                     ),
                   ),
                 ),
@@ -141,193 +162,221 @@ class _CalendarViewState extends State<CalendarView> {
       );
     }
 
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          // Calendar
-          Card(
-            margin: const EdgeInsets.all(16),
-            elevation: 4,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: TableCalendar(
-              locale: 'vi_VN',
-              firstDay: DateTime.utc(2000, 1, 1),
-              lastDay: DateTime.utc(2100, 12, 31),
-              focusedDay: _focusedDay,
-              selectedDayPredicate:
-                  (day) => isSameDayAndMonth(_selectedDay, day),
-              onDaySelected: (selectedDay, focusedDay) {
-                setState(() {
-                  _selectedDay = selectedDay;
-                  _focusedDay = focusedDay;
-                });
-              },
-              eventLoader: (day) => eventsByDay[day] ?? [],
-              calendarStyle: CalendarStyle(
-                markersMaxCount: 0,
-                outsideDaysVisible: false,
-                weekendTextStyle: GoogleFonts.poppins(color: Colors.redAccent),
-                defaultTextStyle: GoogleFonts.poppins(),
-              ),
-              headerStyle: HeaderStyle(
-                formatButtonVisible: false,
-                titleCentered: true,
-                titleTextStyle: GoogleFonts.poppins(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: isDarkMode ? Colors.white : Colors.black87,
+    // Reserve space so the final birthday card always clears the
+    // persistent BottomAppBar + centered FAB + system bottom inset.
+    final bottomSafeArea = MediaQuery.paddingOf(context).bottom;
+    final bottomNavHeight = kBottomNavigationBarHeight + bottomSafeArea;
+    final fabOverlapAllowance = 56.0 + 8.0 + 16.0;
+    final bottomInset = bottomNavHeight + fabOverlapAllowance;
+
+    return Column(
+      children: [
+        Expanded(
+          child: ListView(
+            key: const ValueKey('calendar-scroll'),
+            padding: EdgeInsets.only(bottom: bottomInset),
+            children: [
+              Card(
+                margin: const EdgeInsets.all(16),
+                elevation: 4,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                leftChevronIcon: Icon(
-                  Icons.chevron_left,
-                  color: isDarkMode ? Colors.white70 : Colors.black54,
-                ),
-                rightChevronIcon: Icon(
-                  Icons.chevron_right,
-                  color: isDarkMode ? Colors.white70 : Colors.black54,
-                ),
-              ),
-              calendarBuilders: CalendarBuilders(
-                defaultBuilder:
-                    (context, day, focusedDay) =>
-                        buildDayCell(day, false, false),
-                selectedBuilder:
-                    (context, day, focusedDay) =>
-                        buildDayCell(day, true, false),
-                todayBuilder:
-                    (context, day, focusedDay) =>
-                        buildDayCell(day, false, true),
-              ),
-            ),
-          ),
-          // Birthday List
-          SizedBox(
-            height: 320,
-            child:
-                birthdays.where((b) {
-                      final date =
-                          b.calendarType == CalendarType.solar
-                              ? DateTime(
-                                focusedYear,
-                                b.solarBirthday.month,
-                                b.solarBirthday.day,
-                              )
-                              : _occurrence(b, focusedYear, engine);
-                      return isSameDayAndMonth(date, _selectedDay);
-                    }).isEmpty
-                    ? Center(
-                      child: Text(
-                        'Không có sinh nhật nào trong ngày này.',
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          color:
-                              isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                        ),
-                      ),
-                    )
-                    : ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount:
-                          birthdays.where((b) {
-                            final date =
-                                b.calendarType == CalendarType.solar
-                                    ? DateTime(
-                                      focusedYear,
-                                      b.solarBirthday.month,
-                                      b.solarBirthday.day,
-                                    )
-                                    : _occurrence(b, focusedYear, engine);
-                            return isSameDayAndMonth(date, _selectedDay);
-                          }).length,
-                      itemBuilder: (context, index) {
-                        final b =
-                            birthdays.where((b) {
-                              final date =
-                                  b.calendarType == CalendarType.solar
-                                      ? DateTime(
-                                        focusedYear,
-                                        b.solarBirthday.month,
-                                        b.solarBirthday.day,
-                                      )
-                                      : _occurrence(b, focusedYear, engine);
-                              return isSameDayAndMonth(date, _selectedDay);
-                            }).toList()[index];
-                        return Card(
-                          margin: const EdgeInsets.symmetric(vertical: 8),
-                          elevation: 2,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.all(12),
-                            leading:
-                                b.avatarBase64 != null
-                                    ? CircleAvatar(
-                                      radius: 24,
-                                      backgroundImage:
-                                          AvatarCache.decodeAndCache(
-                                                    b.avatarBase64!,
-                                                  ) !=
-                                                  null
-                                              ? MemoryImage(
-                                                AvatarCache.decodeAndCache(
-                                                  b.avatarBase64!,
-                                                )!,
-                                              )
-                                              : null,
-                                    )
-                                    : CircleAvatar(
-                                      radius: 24,
-                                      backgroundColor: Colors.pink[100],
-                                      child: const Icon(
-                                        Icons.cake,
-                                        color: Colors.pink,
-                                      ),
-                                    ),
-                            title: Text(
-                              b.name,
-                              style: GoogleFonts.poppins(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color:
-                                    isDarkMode ? Colors.white : Colors.black87,
-                              ),
-                            ),
-                            subtitle: Text(
-                              b.calendarType == CalendarType.solar
-                                  ? 'Dương lịch'
-                                  : 'Âm lịch',
-                              style: GoogleFonts.poppins(
-                                fontSize: 12,
-                                color:
-                                    isDarkMode
-                                        ? Colors.grey[400]
-                                        : Colors.grey[600],
-                              ),
-                            ),
-                            trailing: Icon(
-                              Icons.arrow_forward_ios,
-                              size: 16,
-                              color:
-                                  isDarkMode
-                                      ? Colors.white70
-                                      : Colors.grey[600],
-                            ),
-                            onTap:
-                                () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder:
-                                        (_) => BirthdayDetailView(birthday: b),
-                                  ),
-                                ),
-                          ),
-                        );
-                      },
+                child: TableCalendar(
+                  locale: 'vi_VN',
+                  firstDay: DateTime.utc(2000, 1, 1),
+                  lastDay: DateTime.utc(2100, 12, 31),
+                  focusedDay: _focusedDay,
+                  selectedDayPredicate:
+                      (day) =>
+                          _selectedDay != null &&
+                          isSameDayAndMonth(_selectedDay, day),
+                  onDaySelected: (selectedDay, focusedDay) {
+                    setState(() {
+                      _selectedDay =
+                          isSameDayAndMonth(_selectedDay, selectedDay)
+                              ? null
+                              : selectedDay;
+                      _focusedDay = focusedDay;
+                    });
+                  },
+                  onPageChanged: (focusedDay) {
+                    setState(() {
+                      _focusedDay = focusedDay;
+                      _selectedDay = null;
+                    });
+                  },
+                  eventLoader:
+                      (day) => eventsByDay[_dayKey(day)] ?? const <Birthday>[],
+                  calendarStyle: CalendarStyle(
+                    markersMaxCount: 0,
+                    outsideDaysVisible: false,
+                    weekendTextStyle: GoogleFonts.poppins(
+                      color: Colors.redAccent,
                     ),
+                    defaultTextStyle: GoogleFonts.poppins(),
+                  ),
+                  headerStyle: HeaderStyle(
+                    formatButtonVisible: false,
+                    titleCentered: true,
+                    titleTextStyle: GoogleFonts.poppins(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: isDarkMode ? Colors.white : Colors.black87,
+                    ),
+                    leftChevronIcon: Icon(
+                      Icons.chevron_left,
+                      color: isDarkMode ? Colors.white70 : Colors.black54,
+                    ),
+                    rightChevronIcon: Icon(
+                      Icons.chevron_right,
+                      color: isDarkMode ? Colors.white70 : Colors.black54,
+                    ),
+                  ),
+                  calendarBuilders: CalendarBuilders(
+                    defaultBuilder:
+                        (context, day, focusedDay) =>
+                            buildDayCell(day, false, false),
+                    selectedBuilder:
+                        (context, day, focusedDay) =>
+                            buildDayCell(day, true, false),
+                    todayBuilder:
+                        (context, day, focusedDay) =>
+                            buildDayCell(day, false, true),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        _selectedDay == null
+                            ? 'Sinh nhật tháng ${_focusedDay.month} • $monthBirthdayCount'
+                            : 'Sinh nhật ngày ${_selectedDay!.day.toString().padLeft(2, '0')}/${_selectedDay!.month.toString().padLeft(2, '0')}',
+                        key: const ValueKey('calendar-list-title'),
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ),
+                    if (_selectedDay != null)
+                      ActionChip(
+                        key: const ValueKey('calendar-show-month'),
+                        avatar: const Icon(Icons.calendar_month, size: 18),
+                        label: const Text('Xem cả tháng'),
+                        onPressed: () => setState(() => _selectedDay = null),
+                      ),
+                  ],
+                ),
+              ),
+              if (_selectedDay == null && monthEntries.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 24),
+                  child: Center(
+                    child: Text('Không có sinh nhật nào trong tháng này.'),
+                  ),
+                )
+              else if (_selectedDay != null && selectedBirthdays.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 24),
+                  child: Center(
+                    child: Text('Không có sinh nhật nào trong ngày này.'),
+                  ),
+                )
+              else
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    key: ValueKey(
+                      _selectedDay == null
+                          ? 'calendar-month-list'
+                          : 'calendar-day-list',
+                    ),
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (final entry in monthEntries) ...[
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(4, 12, 4, 4),
+                          child: Text(
+                            '${entry.key.day.toString().padLeft(2, '0')}/${entry.key.month.toString().padLeft(2, '0')}',
+                            style: Theme.of(context).textTheme.labelLarge,
+                          ),
+                        ),
+                        for (final birthday in entry.value)
+                          _BirthdayCalendarTile(
+                            birthday: birthday,
+                            isDarkMode: isDarkMode,
+                          ),
+                      ],
+                      if (_selectedDay != null)
+                        for (final birthday in selectedBirthdays)
+                          _BirthdayCalendarTile(
+                            birthday: birthday,
+                            isDarkMode: isDarkMode,
+                          ),
+                    ],
+                  ),
+                ),
+            ],
           ),
-        ],
+        ),
+      ],
+    );
+  }
+}
+
+class _BirthdayCalendarTile extends StatelessWidget {
+  const _BirthdayCalendarTile({
+    required this.birthday,
+    required this.isDarkMode,
+  });
+
+  final Birthday birthday;
+  final bool isDarkMode;
+
+  @override
+  Widget build(BuildContext context) {
+    final avatar =
+        birthday.avatarBase64 == null
+            ? null
+            : AvatarCache.decodeAndCache(birthday.avatarBase64!);
+    return Card(
+      key: ValueKey('calendar-birthday-${birthday.id}'),
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(12),
+        leading: CircleAvatar(
+          radius: 24,
+          backgroundColor: Colors.pink[100],
+          backgroundImage: avatar == null ? null : MemoryImage(avatar),
+          child:
+              avatar == null
+                  ? const Icon(Icons.cake, color: Colors.pink)
+                  : null,
+        ),
+        title: Text(
+          birthday.name,
+          style: GoogleFonts.poppins(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: isDarkMode ? Colors.white : Colors.black87,
+          ),
+        ),
+        subtitle: Text(
+          birthday.calendarType == CalendarType.solar
+              ? 'Dương lịch'
+              : 'Âm lịch',
+        ),
+        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+        onTap:
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => BirthdayDetailView(birthday: birthday),
+              ),
+            ),
       ),
     );
   }

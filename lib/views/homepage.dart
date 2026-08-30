@@ -5,13 +5,13 @@ import '../controllers/birthday_controller.dart';
 import '../core/auth/auth_failure.dart';
 import '../core/session/app_session_mode.dart';
 import '../core/session/session_controller.dart';
-import '../services/csv_export_service.dart';
 import '../services/firestore_service.dart';
 import 'calendar_view.dart';
 import 'birthday_list_view.dart';
 import 'birthday_add_edit_view.dart';
 import 'contact_import.dart';
 import 'settings_view.dart';
+import '../features/onboarding/presentation/onboarding_screen.dart';
 
 class Homepage extends StatefulWidget {
   const Homepage({super.key});
@@ -102,22 +102,6 @@ class _HomepageState extends State<Homepage> {
         const SnackBar(content: Text('Đã xóa toàn bộ dữ liệu trên Firestore')),
       );
     }
-  }
-
-  Future<void> _exportToCsv(BuildContext context) async {
-    final controller = Provider.of<BirthdayController>(context, listen: false);
-    final path = await CsvExportService.exportBirthdaysToCsv(
-      controller.birthdays,
-    );
-
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          path != null ? 'Đã xuất file CSV: $path' : 'Xuất CSV thất bại',
-        ),
-      ),
-    );
   }
 
   Future<void> _exitLocalMode(BuildContext context) async {
@@ -217,6 +201,14 @@ class _HomepageState extends State<Homepage> {
     );
   }
 
+  void _goToGuide() {
+    Navigator.pop(context);
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const OnboardingScreen(manual: true)),
+    );
+  }
+
   /// Rebuild the drawer each frame so it reflects the latest
   /// [AppSessionMode] / [AuthRepository.currentUser].
   @override
@@ -298,6 +290,15 @@ class _HomepageState extends State<Homepage> {
         title: const Text('Cài đặt'),
         subtitle: const Text('Kiểm tra thông báo và quyền ứng dụng'),
         onTap: _goToSettings,
+      ),
+    );
+    tiles.add(
+      ListTile(
+        key: const ValueKey('drawer_guide'),
+        leading: const Icon(Icons.menu_book_outlined),
+        title: const Text('Hướng dẫn sử dụng'),
+        subtitle: const Text('Xem cách sử dụng Birthday Reminder'),
+        onTap: _goToGuide,
       ),
     );
 
@@ -431,19 +432,6 @@ class _HomepageState extends State<Homepage> {
         ),
       );
     }
-    tiles.add(const Divider());
-    tiles.add(
-      ListTile(
-        key: const ValueKey('drawer_export_csv'),
-        leading: const Icon(Icons.file_download),
-        title: const Text('Xuất ra CSV'),
-        onTap: () async {
-          Navigator.pop(context);
-          await _exportToCsv(context);
-        },
-      ),
-    );
-    tiles.add(const Divider());
 
     if (mode == AppSessionMode.authenticated) {
       tiles.add(

@@ -18,6 +18,7 @@ import 'package:birthdayreminderapp/features/birthdays/domain/birthday_engine.da
 import 'package:birthdayreminderapp/features/birthdays/domain/default_birthday_engine.dart';
 
 import 'package:birthdayreminderapp/features/reminders/domain/reminder_schedule.dart';
+import 'package:birthdayreminderapp/features/reminders/domain/reminder_rule.dart';
 
 class _MockNotificationService extends Mock implements NotificationService {}
 
@@ -129,13 +130,52 @@ void main() {
     expect(store.loadAll().length, 1);
   });
 
-  test('3. past current year → next year', () async {
-    final now = DateTime.now();
-    final past = DateTime(now.year - 30, now.month, now.day);
-    final b = make(id: 'p3', solar: past);
-    final result = await scheduler.scheduleNextAnnualReminder(b);
-    expect(result.isOk, isTrue);
-    expect(result.scheduledAt!.year, greaterThan(now.year));
+  test('3. zero-day reminder uses same year before reminder time', () {
+    final b = make(
+      id: 'p3',
+      solar: DateTime(2000, 10, 27),
+      daysBefore: 0,
+      time: const TimeOfDay(hour: 7, minute: 0),
+    );
+    final occurrence = ReminderScheduler.buildNextOccurrence(
+      b,
+      DateTime(2026, 10, 27, 6),
+      engine: engine,
+      rule: ReminderRule.fromBirthday(b),
+    );
+    expect(occurrence!.scheduledAt, DateTime(2026, 10, 27, 7));
+  });
+
+  test('3b. zero-day reminder advances a year after reminder time', () {
+    final b = make(
+      id: 'p3b',
+      solar: DateTime(2000, 10, 27),
+      daysBefore: 0,
+      time: const TimeOfDay(hour: 7, minute: 0),
+    );
+    final occurrence = ReminderScheduler.buildNextOccurrence(
+      b,
+      DateTime(2026, 10, 27, 8),
+      engine: engine,
+      rule: ReminderRule.fromBirthday(b),
+    );
+    expect(occurrence!.scheduledAt, DateTime(2027, 10, 27, 7));
+  });
+
+  test('3c. two-day reminder subtracts two calendar days', () {
+    final b = make(
+      id: 'p3c',
+      solar: DateTime(2000, 10, 27),
+      daysBefore: 2,
+      time: const TimeOfDay(hour: 7, minute: 0),
+    );
+    final occurrence = ReminderScheduler.buildNextOccurrence(
+      b,
+      DateTime(2026, 9, 1),
+      engine: engine,
+      rule: ReminderRule.fromBirthday(b),
+    );
+    expect(occurrence!.scheduledAt, DateTime(2026, 10, 25, 7));
   });
 
   test('4. lunar birthday → next correct lunar date', () async {

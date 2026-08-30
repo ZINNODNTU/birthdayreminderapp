@@ -35,7 +35,7 @@ class ReminderRule {
 
   /// Build a rule directly from the on-record [Birthday] fields.
   factory ReminderRule.fromBirthday(Birthday birthday) => ReminderRule(
-    daysBefore: birthday.remindBeforeDays,
+    daysBefore: birthday.remindBeforeDays < 0 ? 0 : birthday.remindBeforeDays,
     time: birthday.remindTime,
     enabled: birthday.isRecurringNotificationEnabled,
     recurring: birthday.repeatAnnually,

@@ -9,9 +9,11 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/db/db_schema.dart';
+import '../../../core/logging/app_logger.dart';
 import '../../../models/birthday.dart';
 import '../../birthdays/data/birthday_repository.dart';
 import '../domain/backup_models.dart';
+import 'backup_file_service.dart';
 
 class BackupService {
   BackupService({
@@ -50,19 +52,27 @@ class BackupService {
       String? photoFile, hash;
       int? size;
       if (b.avatarBase64?.isNotEmpty == true) {
-        try {
-          final bytes = base64Decode(b.avatarBase64!);
-          if (bytes.length > maxPhotoBytes)
-            throw const FormatException('photo too large');
-          photoFile = 'photos/${b.id}.jpg';
-          hash = sha256.convert(bytes).toString();
-          size = bytes.length;
-          add(photoFile, bytes);
-          photos++;
-        } catch (_) {
+        final clean = BackupFileService.normalizeBase64(b.avatarBase64!);
+        if (clean == null) {
           warnings.add(
             RestoreWarning('corrupt_photo', 'Bỏ qua ảnh lỗi của ${b.name}'),
           );
+        } else {
+          try {
+            final bytes = base64Decode(clean);
+            if (bytes.length > maxPhotoBytes)
+              throw const FormatException('photo too large');
+            photoFile = 'photos/${b.id}.jpg';
+            hash = sha256.convert(bytes).toString();
+            size = bytes.length;
+            add(photoFile, bytes);
+            photos++;
+          } catch (e) {
+            AppLogger.warn('BackupService', 'photo skipped for ${b.id}: $e');
+            warnings.add(
+              RestoreWarning('corrupt_photo', 'Bỏ qua ảnh lỗi của ${b.name}'),
+            );
+          }
         }
       }
       records.add(
@@ -88,6 +98,7 @@ class BackupService {
     final now = DateTime.now().toUtc();
     final manifest = utf8.encode(
       jsonEncode({
+        'format': backupFormat,
         'schemaVersion': backupSchemaVersion,
         'backupType': 'birthday_reminder_full',
         'createdAt': now.toIso8601String(),
@@ -162,9 +173,13 @@ class RestoreService {
       throw const FormatException('Manifest too large');
     final manifest = jsonDecode(utf8.decode(manifestBytes));
     if (manifest is! Map<String, dynamic> ||
-        manifest['schemaVersion'] != backupSchemaVersion ||
-        manifest['backupType'] != 'birthday_reminder_full')
+        manifest['schemaVersion'] is! int ||
+        !supportedBackupSchemaVersions.contains(manifest['schemaVersion']) ||
+        manifest['backupType'] != 'birthday_reminder_full' ||
+        (manifest['schemaVersion'] == backupSchemaVersion &&
+            manifest['format'] != backupFormat)) {
       throw const FormatException('Unsupported backup schema');
+    }
     final files = manifest['files'];
     if (files is! List) throw const FormatException('Invalid checksums');
     for (final item in files) {

@@ -66,10 +66,10 @@ class BirthdayPhotoService {
   static const int maxCompressedBytes = 600 * 1024;
 
   /// Longest-side cap for the JPEG re-encode.
-  static const int maxDimension = 768;
+  static const int maxDimension = 1280;
 
   /// JPEG quality used by the re-encode.
-  static const int jpegQuality = 78;
+  static const int jpegQuality = 84;
 
   /// Take a Base64 JPEG (the format `image_picker` produces) and
   /// return a compressed, hashed payload ready for Firestore.
@@ -82,12 +82,16 @@ class BirthdayPhotoService {
   Future<EncodePhotoResult> encodeForCloud({
     required String base64Input,
   }) async {
-    Uint8List raw;
     try {
-      raw = base64Decode(base64Input);
+      return encodeBytes(base64Decode(base64Input));
     } catch (_) {
       return const EncodePhotoResult.failure('invalid_base64');
     }
+  }
+
+  /// Normalize orientation, resize without upscaling, then JPEG-compress.
+  /// Used immediately after crop so raw camera bytes are never persisted.
+  EncodePhotoResult encodeBytes(Uint8List raw) {
     img.Image? decoded;
     try {
       decoded = img.decodeImage(raw);
@@ -98,8 +102,22 @@ class BirthdayPhotoService {
       return const EncodePhotoResult.failure('invalid_image');
     }
 
-    final resized = _resize(decoded, maxDimension);
-    final compressed = img.encodeJpg(resized, quality: jpegQuality);
+    var resized = _resize(decoded, maxDimension);
+    var quality = jpegQuality;
+    var compressed = img.encodeJpg(resized, quality: quality);
+    while (compressed.length > maxCompressedBytes && quality > 60) {
+      quality -= 6;
+      compressed = img.encodeJpg(resized, quality: quality);
+    }
+    while (compressed.length > maxCompressedBytes &&
+        (resized.width > 640 || resized.height > 640)) {
+      final nextSide =
+          (resized.width >= resized.height ? resized.width : resized.height) *
+          85 ~/
+          100;
+      resized = _resize(resized, nextSide);
+      compressed = img.encodeJpg(resized, quality: quality);
+    }
 
     if (compressed.length > maxCompressedBytes) {
       return EncodePhotoResult.failure('too_large:${compressed.length}');

@@ -76,6 +76,16 @@ class NotificationReconciler {
     for (final b in birthdays) {
       final v3Key = ReminderScheduler.scheduleKeyFor(birthdayId: b.id);
       final existing = keep[v3Key];
+
+      if (!b.isRecurringNotificationEnabled) {
+        if (existing != null) {
+          await _scheduler.cancelAllFor(b.id);
+          keep.remove(v3Key);
+          cancelled++;
+        }
+        continue;
+      }
+
       if (existing != null &&
           existing.scheduledAt != null &&
           existing.scheduledAt!.isAfter(now)) {
@@ -83,16 +93,18 @@ class NotificationReconciler {
         scheduled++;
         continue;
       }
-      // Otherwise drop the orphan.
-      if (existing != null) {
-        // The orphan entry is owned by `b.id`; scheduler.cancelAllFor
-        // removes the OS notification and the matching store entries.
+
+      final hadExpiredEntry = existing != null;
+      if (hadExpiredEntry) {
         await _scheduler.cancelAllFor(b.id);
         keep.remove(v3Key);
         await _store.saveAll(keep);
       }
-      // Only reschedule if repeatAnnually is true.
-      if (b.repeatAnnually) {
+
+      // Every enabled birthday gets its initial reminder. Once a one-shot
+      // entry has fired (represented by its expired store entry), only an
+      // annually repeating birthday may advance to another occurrence.
+      if (!hadExpiredEntry || b.repeatAnnually) {
         final result = await _scheduler.scheduleNextAnnualReminder(b);
         if (result.isOk) {
           scheduled++;

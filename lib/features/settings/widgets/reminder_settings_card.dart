@@ -13,7 +13,10 @@ class ReminderSettingsCard extends StatefulWidget {
 }
 
 class _ReminderSettingsCardState extends State<ReminderSettingsCard> {
+  static const _collapsedCount = 3;
+
   bool _busy = false;
+  bool _expanded = false;
   List<ManagedReminderEntry>? _entries;
   String? _statusMessage;
 
@@ -25,7 +28,18 @@ class _ReminderSettingsCardState extends State<ReminderSettingsCard> {
 
   void _load() {
     final store = context.read<ReminderScheduleStore>();
-    setState(() => _entries = store.loadAll().values.toList(growable: false));
+    final entries = store.loadAll().values.toList(growable: false)
+      ..sort((a, b) {
+        final aTime = a.scheduledAt;
+        final bTime = b.scheduledAt;
+        if (aTime == null) return bTime == null ? 0 : 1;
+        if (bTime == null) return -1;
+        return aTime.compareTo(bTime);
+      });
+    setState(() {
+      _entries = entries;
+      if (entries.length <= _collapsedCount) _expanded = false;
+    });
   }
 
   Future<void> _resync() async {
@@ -49,6 +63,9 @@ class _ReminderSettingsCardState extends State<ReminderSettingsCard> {
   @override
   Widget build(BuildContext context) {
     final entries = _entries ?? const <ManagedReminderEntry>[];
+    final visibleEntries =
+        _expanded ? entries : entries.take(_collapsedCount).toList();
+    final hiddenCount = entries.length - _collapsedCount;
     return Card(
       elevation: 2,
       child: Padding(
@@ -68,35 +85,56 @@ class _ReminderSettingsCardState extends State<ReminderSettingsCard> {
                 child: Text(_statusMessage!),
               ),
             const SizedBox(height: 12),
-            Wrap(
-              spacing: 12,
-              runSpacing: 8,
-              children: [
-                ElevatedButton.icon(
-                  onPressed: _busy ? null : _resync,
-                  icon: const Icon(Icons.sync),
-                  label: const Text('Đồng bộ lại lịch nhắc'),
-                ),
-              ],
+            ElevatedButton.icon(
+              onPressed: _busy ? null : _resync,
+              icon: const Icon(Icons.sync),
+              label: const Text('Đồng bộ lại lịch nhắc'),
             ),
             const SizedBox(height: 12),
             if (entries.isEmpty)
               const Text('Chưa có lịch nhắc nào đang chờ.')
             else
-              ...entries.take(10).map((e) {
-                final dt = _approximateNextFire(e);
-                return ListTile(
-                  dense: true,
-                  leading: const Icon(Icons.event),
-                  title: Text(_safeName(e.scheduleKey)),
-                  subtitle: Text(
-                    dt == null
-                        ? 'ID: ${e.notificationId} • chờ'
-                        : '${DateFormat('dd/MM/yyyy HH:mm').format(dt)} • '
-                            'ID: ${e.notificationId}',
-                  ),
-                );
-              }),
+              AnimatedSize(
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeInOut,
+                alignment: Alignment.topCenter,
+                child: Column(
+                  children: [
+                    for (final e in visibleEntries)
+                      ListTile(
+                        key: ValueKey('reminder-entry-${e.scheduleKey}'),
+                        dense: true,
+                        leading: const Icon(Icons.event),
+                        title: Text(_safeName(e.scheduleKey)),
+                        subtitle: Text(
+                          e.scheduledAt == null
+                              ? 'ID: ${e.notificationId} • chờ'
+                              : '${DateFormat('dd/MM/yyyy HH:mm').format(e.scheduledAt!)} • '
+                                  'ID: ${e.notificationId}',
+                        ),
+                      ),
+                    if (entries.length > _collapsedCount)
+                      Align(
+                        alignment: Alignment.center,
+                        child: TextButton.icon(
+                          key: const ValueKey('reminder-expand-toggle'),
+                          onPressed:
+                              () => setState(() => _expanded = !_expanded),
+                          icon: Icon(
+                            _expanded
+                                ? Icons.keyboard_arrow_up
+                                : Icons.keyboard_arrow_down,
+                          ),
+                          label: Text(
+                            _expanded
+                                ? 'Thu gọn'
+                                : 'Xem thêm $hiddenCount lịch',
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
           ],
         ),
       ),
@@ -111,11 +149,5 @@ class _ReminderSettingsCardState extends State<ReminderSettingsCard> {
       return 'Sinh nhật ${parts[1].substring(0, parts[1].length.clamp(0, 6))}…';
     }
     return 'Lịch nhắc';
-  }
-
-  DateTime? _approximateNextFire(ManagedReminderEntry e) {
-    // The store keeps only an opaque key + id; the reconciler
-    // re-derives the exact fire time.
-    return null;
   }
 }

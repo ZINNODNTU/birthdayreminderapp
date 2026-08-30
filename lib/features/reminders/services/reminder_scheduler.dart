@@ -6,12 +6,15 @@ import '../../../models/birthday.dart';
 import '../../../services/notification_service.dart';
 import '../../birthdays/domain/birthday_engine.dart';
 import '../data/reminder_schedule_store.dart';
+import '../domain/birthday_notification_formatter.dart';
 import '../domain/notification_capability.dart';
 import '../domain/reminder_failure.dart';
 import '../domain/reminder_rule.dart';
 import '../domain/reminder_schedule.dart';
 import 'notification_id_factory.dart';
 import 'notification_permission_service.dart';
+
+const _reminderFormatter = BirthdayNotificationFormatter();
 
 /// One concrete reminder occurrence derived from a birthday. Used by
 /// [ReminderScheduler] to compute the next single annual reminder.
@@ -318,6 +321,10 @@ class ReminderScheduleBuilder {
     required DateTime scheduledAt,
     required NotificationIdFactory idFactory,
   }) {
+    final payload = _reminderFormatter.buildForOccurrence(
+      birthday: birthday,
+      occurrence: occurrenceDate,
+    );
     final key = ReminderScheduler.scheduleKeyFor(birthdayId: birthday.id);
     return ReminderSchedule(
       scheduleKey: key,
@@ -326,10 +333,8 @@ class ReminderScheduleBuilder {
       occurrenceDate: occurrenceDate,
       occurrenceYear: year,
       scheduledAt: scheduledAt,
-      title: 'Sắp đến sinh nhật 🎉',
-      body:
-          '${birthday.name} sẽ có sinh nhật vào ngày '
-          '${occurrenceDate.day}/${occurrenceDate.month}',
+      title: payload.title,
+      body: payload.body,
       payload: 'birthday:${birthday.id}',
     );
   }

@@ -201,7 +201,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 200));
 
       expect(notif.testShown, hasLength(1));
-      expect(notif.testShown.first.title, 'Birthday Reminder');
+      expect(notif.testShown.first.title, contains('Lan'));
       expect(find.text('Đã gửi thông báo thử'), findsOneWidget);
     },
   );
