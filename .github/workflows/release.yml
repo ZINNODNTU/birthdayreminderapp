@@ -133,19 +133,44 @@ jobs:
             echo "::error::apksigner not found"
             exit 1
           fi
-          SIGNER_SHA=$($APKSIGNER verify --print-certs "$APK" | sed -nE 's/^Signer #1 certificate SHA-256 digest:[[:space:]]*//p' | head -1)
-          EXPECTED=$(printf '%s' "${{ secrets.ANDROID_RELEASE_CERT_SHA256 }}" | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')
-          ACTUAL=$(printf '%s' "$SIGNER_SHA" | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')
-          LEGACY_DEBUG_SHA="BD24C39818B6F2D4060CDCF714E28DAEF94F245D28B1721A6F0677E7B73B0DA6"
-          if [[ -z "$ACTUAL" || "$EXPECTED" != "$ACTUAL" ]]; then
-            echo "::error::Signer SHA mismatch or unavailable. expected=$EXPECTED actual=$ACTUAL"
+          CERT_OUTPUT="$("$APKSIGNER" verify --print-certs "$APK" 2>&1)"
+          SIGNER_RAW="$(
+            printf '%s\n' "$CERT_OUTPUT" |
+              sed -nE 's/^[[:space:]]*Signer #1 certificate SHA-256 digest:[[:space:]]*([0-9A-Fa-f:]+)[[:space:]]*$/\1/p' |
+              head -n 1
+          )"
+          normalize_sha256() {
+            printf '%s' "$1" |
+              tr -d '[:space:]:' |
+              tr '[:lower:]' '[:upper:]'
+          }
+          ACTUAL="$(normalize_sha256 "$SIGNER_RAW")"
+          EXPECTED="$(normalize_sha256 "$ANDROID_RELEASE_CERT_SHA256")"
+          LEGACY_DEBUG_SHA="BD:24:C3:98:18:B6:F2:D4:06:0C:DC:F7:14:E2:8D:AE:F9:4F:24:5D:28:B1:72:1A:6F:06:77:E7:B7:3B:0D:A6"
+          LEGACY="$(normalize_sha256 "$LEGACY_DEBUG_SHA")"
+          if [[ ! "$ACTUAL" =~ ^[0-9A-F]{64}$ ]]; then
+            echo "::error::Unable to parse signer SHA256 from APK."
+            echo "apksigner certificate output:"
+            printf '%s\n' "$CERT_OUTPUT"
             exit 1
           fi
-          if [[ "$ACTUAL" == "$LEGACY_DEBUG_SHA" ]]; then
-            echo "::error::Release APK is signed with the forbidden legacy debug certificate."
+          if [[ ! "$EXPECTED" =~ ^[0-9A-F]{64}$ ]]; then
+            echo "::error::ANDROID_RELEASE_CERT_SHA256 is missing or malformed."
+            echo "Expected normalized fingerprint length: ${#EXPECTED}"
             exit 1
           fi
-          echo "Signer verified as the configured non-debug release certificate: $ACTUAL"
+          echo "APK signer SHA256: $ACTUAL"
+          echo "Expected SHA256 length: ${#EXPECTED}"
+          if [[ "$ACTUAL" != "$EXPECTED" ]]; then
+            echo "::error::APK signer does not match configured production certificate."
+            echo "Actual signer: $ACTUAL"
+            exit 1
+          fi
+          if [[ "$ACTUAL" == "$LEGACY" ]]; then
+            echo "::error::Release APK is signed with forbidden legacy debug certificate."
+            exit 1
+          fi
+          echo "Signer verified as configured permanent production certificate."
 
       - name: Rename APK
         run: |
