@@ -123,13 +123,17 @@ class _State extends State<BackupRestoreScreen> {
   Future<void> beginRestore() async {
     if (busy) return;
     setState(() => busy = true);
+    final controller = context.read<BirthdayController>();
+    final reconciler = context.read<NotificationReconciler>();
+    final messenger = ScaffoldMessenger.of(context);
     try {
       final bytes = await BackupFileService().pick();
       if (bytes == null || !mounted) return;
       final plan = await RestoreService.validateBytes(bytes);
       if (!mounted) return;
+      final dialogContext = context;
       final ok = await showDialog<bool>(
-        context: context,
+        context: dialogContext,
         builder:
             (c) => AlertDialog(
               title: const Text('Khôi phục dữ liệu?'),
@@ -156,11 +160,12 @@ class _State extends State<BackupRestoreScreen> {
       if (ok != true || !mounted) return;
       final result = await restore(context).apply(plan);
       AvatarCache.clear();
-      await context.read<BirthdayController>().loadBirthdays();
-      await context.read<NotificationReconciler>().reconcile();
+      await controller.loadBirthdays();
+      await reconciler.reconcile();
       if (!mounted) return;
+      final resultContext = context;
       await showDialog<void>(
-        context: context,
+        context: resultContext,
         builder:
             (c) => AlertDialog(
               title: const Text('Khôi phục thành công'),
@@ -181,7 +186,7 @@ class _State extends State<BackupRestoreScreen> {
       );
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        messenger.showSnackBar(
           const SnackBar(
             content: Text('File sao lưu không hợp lệ hoặc đã bị hỏng.'),
           ),

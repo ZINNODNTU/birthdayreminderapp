@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -84,6 +83,7 @@ class _BirthdayAddEditViewState extends State<BirthdayAddEditView> {
 
   Future<void> _pickImage() async {
     if (_processingImage) return;
+    final photoService = context.read<BirthdayPhotoService>();
     setState(() => _processingImage = true);
     try {
       final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
@@ -108,7 +108,7 @@ class _BirthdayAddEditViewState extends State<BirthdayAddEditView> {
       );
       if (cropped == null) return;
       final raw = Uint8List.fromList(await cropped.readAsBytes());
-      final result = context.read<BirthdayPhotoService>().encodeBytes(raw);
+      final result = photoService.encodeBytes(raw);
       if (!mounted) return;
       if (!result.ok) {
         ScaffoldMessenger.of(context).showSnackBar(
