@@ -11,6 +11,7 @@ import '../../../core/logging/app_logger.dart';
 import '../../../services/avatar_cache.dart';
 import '../../birthdays/data/birthday_repository.dart';
 import '../../reminders/services/notification_reconciler.dart';
+import '../domain/backup_models.dart';
 import '../services/backup_file_service.dart';
 import '../services/backup_service.dart';
 
@@ -131,59 +132,26 @@ class _State extends State<BackupRestoreScreen> {
       if (bytes == null || !mounted) return;
       final plan = await RestoreService.validateBytes(bytes);
       if (!mounted) return;
-      final dialogContext = context;
-      final ok = await showDialog<bool>(
-        context: dialogContext,
-        builder:
-            (c) => AlertDialog(
-              title: const Text('Khôi phục dữ liệu?'),
-              content: Text(
-                'Bản sao lưu: ${plan.createdAt.toLocal()}\n'
-                'Phiên bản: ${plan.appVersion}\n\n'
-                'Bao gồm:\n• ${plan.birthdayCount} sinh nhật\n'
-                '• ${plan.photoCount} ảnh\n'
-                '• Ghi chú và cài đặt liên quan\n\n'
-                'Dữ liệu sẽ được gộp an toàn với dữ liệu hiện tại.',
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(c, false),
-                  child: const Text('Hủy'),
-                ),
-                FilledButton(
-                  onPressed: () => Navigator.pop(c, true),
-                  child: const Text('Khôi phục'),
-                ),
-              ],
-            ),
-      );
+
+      final ok = await _showConfirmDialog(plan);
       if (ok != true || !mounted) return;
+
       final result = await restore(context).apply(plan);
       AvatarCache.clear();
       await controller.loadBirthdays();
       await reconciler.reconcile();
       if (!mounted) return;
-      final resultContext = context;
-      await showDialog<void>(
-        context: resultContext,
-        builder:
-            (c) => AlertDialog(
-              title: const Text('Khôi phục thành công'),
-              content: Text(
-                '${result.restored} sinh nhật\n'
-                '${result.photosRestored} ảnh\n'
-                'Bỏ qua: ${result.skipped}\n'
-                'Xung đột: ${result.conflicts}\n'
-                'Ảnh lỗi: ${result.photosFailed}',
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(c),
-                  child: const Text('Đóng'),
-                ),
-              ],
-            ),
-      );
+
+      await _showSuccessDialog(result);
+    } on BackupException catch (e, st) {
+      AppLogger.error('Restore', e, st);
+      if (mounted) {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('File sao lưu không hợp lệ hoặc đã bị hỏng.'),
+          ),
+        );
+      }
     } catch (_) {
       if (mounted) {
         messenger.showSnackBar(
@@ -195,6 +163,57 @@ class _State extends State<BackupRestoreScreen> {
     } finally {
       if (mounted) setState(() => busy = false);
     }
+  }
+
+  Future<bool?> _showConfirmDialog(RestorePlan plan) {
+    return showAdaptiveDialog<bool>(
+      context: context,
+      builder:
+          (c) => AlertDialog(
+            title: const Text('Khôi phục dữ liệu?'),
+            content: Text(
+              'Bản sao lưu: ${plan.createdAt.toLocal()}\n'
+              'Phiên bản: ${plan.appVersion}\n\n'
+              'Bao gồm:\n• ${plan.birthdayCount} sinh nhật\n'
+              '• ${plan.photoCount} ảnh\n'
+              '• Ghi chú và cài đặt liên quan\n\n'
+              'Dữ liệu sẽ được gộp an toàn với dữ liệu hiện tại.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(c, false),
+                child: const Text('Hủy'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(c, true),
+                child: const Text('Khôi phục'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  Future<void> _showSuccessDialog(RestoreResult result) {
+    return showAdaptiveDialog<void>(
+      context: context,
+      builder:
+          (c) => AlertDialog(
+            title: const Text('Khôi phục thành công'),
+            content: Text(
+              '${result.restored} sinh nhật\n'
+              '${result.photosRestored} ảnh\n'
+              'Bỏ qua: ${result.skipped}\n'
+              'Xung đột: ${result.conflicts}\n'
+              'Ảnh lỗi: ${result.photosFailed}',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(c),
+                child: const Text('Đóng'),
+              ),
+            ],
+          ),
+    );
   }
 
   @override
