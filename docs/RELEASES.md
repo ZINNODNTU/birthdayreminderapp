@@ -10,14 +10,15 @@ This file is human-maintained documentation only.
 | Version | Build | Channel | Status | Signing | Updater |
 |---|---:|---|---|---|---|
 | 1.0.0 | 1 | Stable | Legacy | Android debug | Legacy |
-| 1.0.1 | 2 | Migration Bridge | Prepared | Legacy bridge only | Backup/restore and reinstall guidance |
-| 2.0.0 | 3 | Stable | Planned | Permanent release key | Reinstall boundary |
+| 1.0.1 | 2 | Migration Bridge | Released | Legacy bridge only | Backup/restore and reinstall guidance |
+| 2.0.0 | 3 | Stable | Prepared | First permanent production signer | Reinstall boundary |
 
 Notes:
 
 - `v1.0.0` has an APK but no structured metadata or SHA companion asset.
-- `v1.0.1` adds full-fidelity backup/restore so users can preserve Local Mode data before the signer boundary.
-- `v2.0.0` will be the first permanently signed release and requires a one-time reinstall.
+- `v1.0.1` is released with full-fidelity backup/restore for the signer boundary.
+- `v2.0.0` is the first permanently signed release and requires a one-time reinstall.
+- `v2.0.1`, `v2.1.0`, `v3.0.0`, and every later release must reuse this same permanent key. Never generate a key per release.
 
 ## Legacy v1.0.0 and signing migration
 
