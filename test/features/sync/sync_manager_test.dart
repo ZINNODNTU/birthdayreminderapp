@@ -1,6 +1,8 @@
 import 'package:birthdayreminderapp/core/db/sync_status.dart';
+import 'package:birthdayreminderapp/features/birthdays/data/birthday_firestore_mapper.dart';
 import 'package:birthdayreminderapp/features/birthdays/data/birthday_remote_repository.dart';
 import 'package:birthdayreminderapp/features/birthdays/data/birthday_repository.dart';
+import 'package:birthdayreminderapp/features/birthdays/services/birthday_photo_service.dart';
 import 'package:birthdayreminderapp/features/sync/sync_manager.dart';
 import 'package:birthdayreminderapp/features/birthdays/domain/birthday_sync_copy.dart';
 import 'package:birthdayreminderapp/models/birthday.dart';
@@ -12,6 +14,9 @@ class _FakeLocalRepo implements BirthdayRepository {
 
   @override
   Future<List<Birthday>> getBirthdays() async => rows.values.toList();
+
+  @override
+  Future<List<Birthday>> getAllForSync() async => rows.values.toList();
 
   @override
   Future<Birthday?> getBirthday(String id) async => rows[id];
@@ -44,28 +49,62 @@ class _FakeLocalRepo implements BirthdayRepository {
 
 class _FakeRemoteRepo implements BirthdayRemoteRepository {
   final Map<String, Birthday> rows = {};
+
+  /// Optional per-id photo payload to surface via getBirthdayRecords.
+  final Map<String, CloudPhotoFields?> photos = {};
   Object? upsertError;
   int upsertCalls = 0;
+  BirthdayCloudPhoto? lastUpsertedPhoto;
+
+  BirthdayRemoteRepository makeCopy() {
+    final copy =
+        _FakeRemoteRepo()
+          ..upsertError = upsertError
+          ..rows.addAll(rows)
+          ..photos.addAll(photos);
+    return copy;
+  }
 
   @override
-  Future<List<Birthday>> getBirthdays(String uid) async =>
-      rows.values.where((b) => b.ownerUid == uid).toList();
+  Future<List<FirestoreBirthdayRecord>> getBirthdayRecords(String uid) async {
+    return rows.values
+        .where((b) => b.ownerUid == uid)
+        .map((b) => FirestoreBirthdayRecord(birthday: b, photo: photos[b.id]))
+        .toList();
+  }
 
   @override
-  Future<void> upsertBirthday(String uid, Birthday birthday) async {
+  Future<void> upsertBirthday(
+    String uid,
+    Birthday birthday, {
+    BirthdayCloudPhoto? photo,
+    bool deletePhoto = false,
+  }) async {
     upsertCalls++;
+    lastUpsertedPhoto = photo;
     if (upsertError != null) throw upsertError!;
     rows[birthday.id] = birthday.copyWithForSync(ownerUid: uid);
   }
 
+  /// Records every soft-delete request so tests can assert the sync
+  /// path actually called [softDeleteBirthday] — never a hard delete.
+  final List<String> softDeletedIds = [];
+
   @override
-  Future<void> deleteBirthday(String uid, String birthdayId) async {
-    rows.remove(birthdayId);
+  Future<void> softDeleteBirthday(String uid, Birthday birthday) async {
+    softDeletedIds.add(birthday.id);
+    rows[birthday.id] = birthday.copyWithForSync(
+      ownerUid: uid,
+      deletedAt: birthday.deletedAt ?? DateTime.now(),
+      updatedAt: birthday.updatedAt ?? DateTime.now(),
+    );
   }
 
   @override
-  Stream<List<Birthday>> watchBirthdays(String uid) async* {
-    yield await getBirthdays(uid);
+  Stream<List<FirestoreBirthdayRecord>> watchBirthdayRecords(
+    String uid,
+  ) async* {
+    yield await getBirthdayRecords(uid);
   }
 }
 
@@ -74,6 +113,7 @@ Birthday _row({
   SyncStatus status = SyncStatus.pendingUpload,
   String? ownerUid = 'user-a',
   DateTime? updatedAt,
+  String? avatarBase64,
 }) {
   return Birthday(
     id: id,
@@ -85,12 +125,28 @@ Birthday _row({
     remindTime: const TimeOfDay(hour: 9, minute: 0),
     isRecurringNotificationEnabled: true,
     repeatAnnually: true,
-    note: null,
+    avatarBase64: avatarBase64,
     createdAt: DateTime(2024, 1, 1),
     updatedAt: updatedAt ?? DateTime(2024, 1, 1),
     syncStatus: status,
     ownerUid: ownerUid,
     schemaVersion: 1,
+  );
+}
+
+SyncManager _make(
+  _FakeLocalRepo local,
+  _FakeRemoteRepo remote,
+  StreamControllerMock auth, {
+  String? uid,
+  BirthdayPhotoService? photoService,
+}) {
+  return SyncManager(
+    local: local,
+    remote: remote,
+    authGate: auth.stream,
+    uidProvider: () => uid ?? '',
+    photoService: photoService ?? const BirthdayPhotoService(),
   );
 }
 
@@ -107,12 +163,7 @@ void main() {
     });
 
     test('syncAll is a no-op when not authenticated', () async {
-      final mgr = SyncManager(
-        local: local,
-        remote: remote,
-        authGate: auth.stream,
-        uidProvider: () => '',
-      );
+      final mgr = _make(local, remote, auth);
       await mgr.syncAll();
       expect(remote.upsertCalls, 0);
       mgr.dispose();
@@ -120,12 +171,7 @@ void main() {
 
     test('pushPending moves pending rows to synced', () async {
       local.rows['a'] = _row(id: 'a', status: SyncStatus.pendingUpload);
-      final mgr = SyncManager(
-        local: local,
-        remote: remote,
-        authGate: auth.stream,
-        uidProvider: () => 'user-a',
-      );
+      final mgr = _make(local, remote, auth, uid: 'user-a');
       await mgr.pushPending('user-a');
       expect(remote.upsertCalls, 1);
       expect(local.rows['a']!.syncStatus, SyncStatus.synced);
@@ -135,12 +181,7 @@ void main() {
     test('pushPending leaves failed uploads in pendingUpload', () async {
       local.rows['a'] = _row(id: 'a', status: SyncStatus.pendingUpload);
       remote.upsertError = Exception('boom');
-      final mgr = SyncManager(
-        local: local,
-        remote: remote,
-        authGate: auth.stream,
-        uidProvider: () => 'user-a',
-      );
+      final mgr = _make(local, remote, auth, uid: 'user-a');
       await mgr.pushPending('user-a');
       expect(local.rows['a']!.syncStatus, SyncStatus.pendingUpload);
       mgr.dispose();
@@ -152,12 +193,7 @@ void main() {
         status: SyncStatus.localOnly,
         ownerUid: null,
       );
-      final mgr = SyncManager(
-        local: local,
-        remote: remote,
-        authGate: auth.stream,
-        uidProvider: () => 'user-a',
-      );
+      final mgr = _make(local, remote, auth, uid: 'user-a');
       final count = await mgr.migrateLocalOnlyTo('user-a');
       expect(count, 1);
       expect(local.rows['a']!.ownerUid, 'user-a');
@@ -177,12 +213,7 @@ void main() {
         status: SyncStatus.synced,
         updatedAt: DateTime(2024, 2, 2),
       );
-      final mgr = SyncManager(
-        local: local,
-        remote: remote,
-        authGate: auth.stream,
-        uidProvider: () => 'user-a',
-      );
+      final mgr = _make(local, remote, auth, uid: 'user-a');
       await mgr.pullRemote('user-a');
       expect(local.rows['x']!.updatedAt, DateTime(2024, 2, 2));
       mgr.dispose();
@@ -190,16 +221,69 @@ void main() {
 
     test('user A never sees user B rows', () async {
       remote.rows['x'] = _row(id: 'x', ownerUid: 'user-b');
-      final mgr = SyncManager(
-        local: local,
-        remote: remote,
-        authGate: auth.stream,
-        uidProvider: () => 'user-a',
-      );
+      final mgr = _make(local, remote, auth, uid: 'user-a');
       await mgr.pullRemote('user-a');
       expect(local.rows.containsKey('x'), false);
       mgr.dispose();
     });
+
+    test(
+      'pushPending sends no photo when local avatarBase64 is null',
+      () async {
+        local.rows['a'] = _row(id: 'a');
+        final mgr = _make(local, remote, auth, uid: 'user-a');
+        await mgr.pushPending('user-a');
+        expect(remote.lastUpsertedPhoto, isNull);
+        mgr.dispose();
+      },
+    );
+
+    test(
+      'pullRemote does NOT erase a local avatar when the cloud has none',
+      () async {
+        final localRow = _row(
+          id: 'k',
+          status: SyncStatus.synced,
+          avatarBase64: 'LOCAL_KEEPS_THIS',
+        );
+        local.rows['k'] = localRow;
+        // Remote has a NEWER timestamp but NO photo fields.
+        remote.rows['k'] = _row(
+          id: 'k',
+          status: SyncStatus.synced,
+          updatedAt: DateTime(2099, 1, 1),
+        );
+        final mgr = _make(local, remote, auth, uid: 'user-a');
+        await mgr.pullRemote('user-a');
+        expect(local.rows['k']!.updatedAt, DateTime(2099, 1, 1));
+        expect(local.rows['k']!.avatarBase64, 'LOCAL_KEEPS_THIS');
+        mgr.dispose();
+      },
+    );
+
+    test(
+      'pullRemote restores photoBase64 when local has none and cloud has photo',
+      () async {
+        local.rows['z'] = _row(id: 'z', status: SyncStatus.synced);
+        remote.rows['z'] = _row(
+          id: 'z',
+          status: SyncStatus.synced,
+          updatedAt: DateTime(2099, 1, 1),
+        );
+        remote.photos['z'] = CloudPhotoFields(
+          base64: 'CLOUD_PHOTO_BASE64',
+          mimeType: 'image/jpeg',
+          byteSize: 42,
+          hash: 'deadbeef',
+          updatedAt: DateTime(2024, 5, 6),
+        );
+
+        final mgr = _make(local, remote, auth, uid: 'user-a');
+        await mgr.pullRemote('user-a');
+        expect(local.rows['z']!.avatarBase64, 'CLOUD_PHOTO_BASE64');
+        mgr.dispose();
+      },
+    );
   });
 }
 

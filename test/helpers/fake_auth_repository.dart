@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:birthdayreminderapp/core/auth/auth_repository.dart';
 import 'package:birthdayreminderapp/core/auth/auth_failure.dart';
+import 'package:birthdayreminderapp/core/auth/auth_repository.dart';
+import 'package:birthdayreminderapp/core/auth/firebase_auth_repository.dart';
 
 /// Minimal in-memory User double. Overrides every member of the [User]
 /// interface so the fake stays compatible with any firebase_auth bump that
@@ -105,11 +106,16 @@ class FakeUser implements User {
 
 /// Behavior-controllable AuthRepository double for Google-only tests.
 ///
+/// Implements both [AuthRepository] (the abstract contract) and
+/// [FirebaseAuthRepository] (the concrete production type) so it can
+/// be supplied wherever the production tree resolves the concrete
+/// `Provider<FirebaseAuthRepository>` entry.
+///
 /// - Tracks how many times each method was invoked.
 /// - Lets each call succeed by default or throw an [AuthFailure] set via
 ///   [signInWithGoogleFailure] / [signOutFailure].
 /// - Stream-based auth state so [AuthGate] rebuilds.
-class FakeAuthRepository implements AuthRepository {
+class FakeAuthRepository implements AuthRepository, FirebaseAuthRepository {
   FakeAuthRepository({User? initialUser}) {
     if (initialUser != null) {
       _user = initialUser;

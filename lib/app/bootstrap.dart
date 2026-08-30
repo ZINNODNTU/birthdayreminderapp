@@ -5,8 +5,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/config/app_config.dart';
 import '../core/logging/app_logger.dart';
-import '../services/notification_service.dart';
-import '../features/reminders/services/notification_timezone_bootstrap.dart';
 
 /// Resolved SharedPreferences instance. The provider tree in
 /// `dependencies.dart` reads from this static field rather than
@@ -21,21 +19,15 @@ class BootstrappedPreferences {
 ///
 /// Order matters:
 /// 1. Ensure Flutter bindings are live.
-/// 2. Initialise timezone (the plugin needs it before scheduling).
-/// 3. Initialise SharedPreferences.
-/// 4. Initialize Firebase.
-/// 5. Pre-load locale data the UI depends on.
-/// 6. Initialise the notification plugin (does not request
-///    permissions yet).
+/// 2. Initialise SharedPreferences.
+/// 3. Initialize Firebase.
+/// 4. Pre-load locale data the UI depends on.
 class AppBootstrap {
   const AppBootstrap._();
 
   static Future<SharedPreferences> run() async {
     WidgetsFlutterBinding.ensureInitialized();
     AppLogger.info('bootstrap', 'start');
-
-    await const NotificationTimezoneBootstrap().initialize();
-    AppLogger.info('bootstrap', 'tz ready');
 
     final prefs = await SharedPreferences.getInstance();
     BootstrappedPreferences.instance = prefs;
@@ -46,9 +38,6 @@ class AppBootstrap {
 
     await initializeDateFormatting(AppConfig.primaryLocale);
     AppLogger.info('bootstrap', 'locale data ready');
-
-    await NotificationService().initialize();
-    AppLogger.info('bootstrap', 'notifications ready');
 
     return prefs;
   }

@@ -11,6 +11,7 @@ import 'calendar_view.dart';
 import 'birthday_list_view.dart';
 import 'birthday_add_edit_view.dart';
 import 'contact_import.dart';
+import 'settings_view.dart';
 
 class Homepage extends StatefulWidget {
   const Homepage({super.key});
@@ -208,6 +209,14 @@ class _HomepageState extends State<Homepage> {
     );
   }
 
+  void _goToSettings() {
+    Navigator.pop(context);
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const SettingsView()),
+    );
+  }
+
   /// Rebuild the drawer each frame so it reflects the latest
   /// [AppSessionMode] / [AuthRepository.currentUser].
   @override
@@ -279,6 +288,16 @@ class _HomepageState extends State<Homepage> {
             'Chọn chế độ sử dụng',
           ),
         },
+      ),
+    );
+
+    tiles.add(
+      ListTile(
+        key: const ValueKey('drawer_settings'),
+        leading: const Icon(Icons.settings),
+        title: const Text('Cài đặt'),
+        subtitle: const Text('Kiểm tra thông báo và quyền ứng dụng'),
+        onTap: _goToSettings,
       ),
     );
 

@@ -1,0 +1,193 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag (e.g. v2.0.0)'
+        required: true
+      dry_run:
+        description: 'Build and verify without publishing'
+        required: true
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build & Release
+    if: github.event_name != 'push' || github.ref_name != 'v1.0.1'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Setup Flutter 3.47.1
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.1'
+          channel: stable
+          cache: true
+
+      - name: Flutter pub get
+        run: flutter pub get
+
+      - name: Format check
+        run: dart format --output=none --set-exit-if-changed lib test
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Tests
+        run: flutter test --no-pub --coverage
+
+      - name: Verify version consistency (tag ↔ pubspec)
+        id: version_gate
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            RELEASE_TAG="${{ github.event.inputs.release_tag }}"
+          else
+            RELEASE_TAG="${GITHUB_REF#refs/tags/}"
+          fi
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Malformed tag '$RELEASE_TAG'. Expected vX.Y.Z"
+            exit 1
+          fi
+          PUB_VERSION=$(grep '^version:' pubspec.yaml | awk '{print $2}')
+          if [[ ! "$PUB_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+\+[0-9]+$ ]]; then
+            echo "::error::Malformed pubspec version '$PUB_VERSION'. Expected X.Y.Z+N"
+            exit 1
+          fi
+          PUB_SEM="${PUB_VERSION%+*}"
+          TAG_SEM="${RELEASE_TAG#v}"
+          if [[ "$TAG_SEM" != "$PUB_SEM" ]]; then
+            echo "::error::Tag ($TAG_SEM) does not match pubspec ($PUB_SEM)"
+            exit 1
+          fi
+          echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_OUTPUT
+          echo "TAG_SEM=$TAG_SEM" >> $GITHUB_OUTPUT
+          echo "PUB_BUILD=${PUB_VERSION#*+}" >> $GITHUB_OUTPUT
+
+      - name: Verify signing secrets present
+        env:
+          KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PW: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PW: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          EXPECTED_CERT_SHA: ${{ secrets.ANDROID_RELEASE_CERT_SHA256 }}
+        run: |
+          missing=""
+          for v in KEYSTORE KEYSTORE_PW KEY_ALIAS KEY_PW EXPECTED_CERT_SHA; do
+            if [[ -z "${!v}" ]]; then missing="$missing $v"; fi
+          done
+          if [[ -n "$missing" ]]; then
+            echo "::error::Missing required signing secrets:$missing"
+            exit 1
+          fi
+          LEGACY_DEBUG_SHA="BD24C39818B6F2D4060CDCF714E28DAEF94F245D28B1721A6F0677E7B73B0DA6"
+          CONFIGURED_SHA=$(echo "$EXPECTED_CERT_SHA" | tr -d ':' | tr '[:lower:]' '[:upper:]')
+          if [[ "$CONFIGURED_SHA" == "$LEGACY_DEBUG_SHA" ]]; then
+            echo "::error::The legacy Android debug certificate is forbidden for stable production releases."
+            exit 1
+          fi
+          echo "All signing secrets present; configured signer is not the legacy debug certificate."
+
+      - name: Materialize keystore
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android/release.keystore
+          ls -l android/release.keystore
+
+      - name: Create key.properties
+        run: |
+          cat > android/key.properties <<EOF
+          storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
+          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
+          storeFile=release.keystore
+          EOF
+
+      - name: Build release APK
+        run: flutter build apk --release --android-skip-build-dependency-validation
+
+      - name: Verify signer SHA256
+        id: verify_signer
+        run: |
+          APK="build/app/outputs/flutter-apk/app-release.apk"
+          APKSIGNER=$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -1)
+          if [[ -z "$APKSIGNER" ]]; then
+            echo "::error::apksigner not found"
+            exit 1
+          fi
+          SIGNER_SHA=$($APKSIGNER verify --print-certs "$APK" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -1 | tr -d ':')
+          EXPECTED=$(echo "${{ secrets.ANDROID_RELEASE_CERT_SHA256 }}" | tr -d ':' | tr '[:lower:]' '[:upper:]')
+          ACTUAL=$(echo "$SIGNER_SHA" | tr -d ':' | tr '[:lower:]' '[:upper:]')
+          LEGACY_DEBUG_SHA="BD24C39818B6F2D4060CDCF714E28DAEF94F245D28B1721A6F0677E7B73B0DA6"
+          if [[ -z "$ACTUAL" || "$EXPECTED" != "$ACTUAL" ]]; then
+            echo "::error::Signer SHA mismatch or unavailable."
+            exit 1
+          fi
+          if [[ "$ACTUAL" == "$LEGACY_DEBUG_SHA" ]]; then
+            echo "::error::Release APK is signed with the forbidden legacy debug certificate."
+            exit 1
+          fi
+          echo "Signer verified as the configured non-debug release certificate."
+
+      - name: Rename APK
+        run: |
+          PUB_VERSION=$(grep '^version:' pubspec.yaml | awk '{print $2}')
+          PUB_SEM="${PUB_VERSION%+*}"
+          PUB_BUILD="${PUB_VERSION#*+}"
+          cp build/app/outputs/flutter-apk/app-release.apk "BirthdayReminder-v${PUB_SEM}.apk"
+          ls -la "BirthdayReminder-v${PUB_SEM}.apk"
+
+      - name: Calculate SHA256
+        run: |
+          PUB_SEM="${{ steps.version_gate.outputs.TAG_SEM }}"
+          sha256sum "BirthdayReminder-v${PUB_SEM}.apk" > "BirthdayReminder-v${PUB_SEM}.apk.sha256"
+          cat "BirthdayReminder-v${PUB_SEM}.apk.sha256"
+
+      - name: Generate release metadata
+        shell: pwsh
+        run: |
+          $version = '${{ steps.version_gate.outputs.TAG_SEM }}'
+          $build = [int]'${{ steps.version_gate.outputs.PUB_BUILD }}'
+          $apk = "BirthdayReminder-v$version.apk"
+          if ($version -eq '2.0.0') {
+            ./scripts/release/generate_release_metadata.ps1 `
+              -Version $version -BuildNumber $build -ApkPath $apk `
+              -MinimumSupportedVersion '1.0.1' -RequiresReinstall `
+              -MigrationMessage 'Phiên bản 2.0.0 sử dụng chữ ký phát hành bảo mật mới. Hãy sao lưu toàn bộ dữ liệu ở phiên bản 1.0.1, giữ file sao lưu an toàn, sau đó cài đặt lại ứng dụng và khôi phục dữ liệu.'
+          } else {
+            ./scripts/release/generate_release_metadata.ps1 `
+              -Version $version -BuildNumber $build -ApkPath $apk
+          }
+          Get-Content release-metadata.json
+
+      - name: Create GitHub Release
+        if: github.event_name != 'workflow_dispatch' || inputs.dry_run == false
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version_gate.outputs.RELEASE_TAG }}
+          name: "Birthday Reminder ${{ steps.version_gate.outputs.TAG_SEM }}"
+          generate_release_notes: true
+          files: |
+            BirthdayReminder-v${{ steps.version_gate.outputs.TAG_SEM }}.apk
+            BirthdayReminder-v${{ steps.version_gate.outputs.TAG_SEM }}.apk.sha256
+            release-metadata.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

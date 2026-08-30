@@ -61,7 +61,23 @@ service cloud.firestore {
           && request.resource.data.reminder.hour <= 23
           && request.resource.data.reminder.minute is int
           && request.resource.data.reminder.minute >= 0
-          && request.resource.data.reminder.minute <= 59;
+          && request.resource.data.reminder.minute <= 59
+          // Photo fields are optional. When present they MUST match
+          // the documented shape. Photo Base64 must not exceed the
+          // ~700 KB headroom we carved out of the 1 MB document limit.
+          && (!('photoBase64' in request.resource.data) || (
+                request.resource.data.photoBase64 is string
+                && request.resource.data.photoBase64.size() <= 700 * 1024))
+          && (!('photoMimeType' in request.resource.data)
+                || request.resource.data.photoMimeType is string)
+          && (!('photoByteSize' in request.resource.data)
+                || (request.resource.data.photoByteSize is int
+                      && request.resource.data.photoByteSize >= 0
+                      && request.resource.data.photoByteSize <= 700 * 1024))
+          && (!('photoHash' in request.resource.data)
+                || request.resource.data.photoHash is string)
+          && (!('photoUpdatedAt' in request.resource.data)
+                || request.resource.data.photoUpdatedAt is timestamp);
       }
 
       match /preferences/{document=**} {

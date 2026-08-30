@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -8,6 +7,7 @@ import '../features/birthdays/domain/birthday_engine.dart';
 import '../models/birthday.dart';
 import 'birthday_detail_view.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../services/avatar_cache.dart';
 
 class CalendarView extends StatefulWidget {
   const CalendarView({super.key});
@@ -38,21 +38,26 @@ class _CalendarViewState extends State<CalendarView> {
     final engine = context.read<BirthdayEngine>();
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final focusedYear = _focusedDay.year;
+    // Precompute event counts and lists for the focused year to avoid per-cell iteration.
+    final eventsByDay = <DateTime, List<Birthday>>{};
+    final eventCounts = <DateTime, int>{};
+    for (final b in birthdays) {
+      final date =
+          b.calendarType == CalendarType.solar
+              ? DateTime(
+                focusedYear,
+                b.solarBirthday.month,
+                b.solarBirthday.day,
+              )
+              : _occurrence(b, focusedYear, engine);
+      final key = DateTime(date.year, date.month, date.day);
+      eventsByDay.putIfAbsent(key, () => []).add(b);
+      eventCounts[key] = (eventCounts[key] ?? 0) + 1;
+    }
 
     Widget buildDayCell(DateTime day, bool isSelected, bool isToday) {
       final lunar = Lunar.fromDate(day);
-      final eventCount =
-          birthdays.where((b) {
-            final date =
-                b.calendarType == CalendarType.solar
-                    ? DateTime(
-                      focusedYear,
-                      b.solarBirthday.month,
-                      b.solarBirthday.day,
-                    )
-                    : _occurrence(b, focusedYear, engine);
-            return isSameDayAndMonth(date, day);
-          }).length;
+      final eventCount = eventCounts[day] ?? 0;
 
       return AnimatedContainer(
         duration: const Duration(milliseconds: 200),
@@ -159,19 +164,7 @@ class _CalendarViewState extends State<CalendarView> {
                   _focusedDay = focusedDay;
                 });
               },
-              eventLoader: (day) {
-                return birthdays.where((b) {
-                  final date =
-                      b.calendarType == CalendarType.solar
-                          ? DateTime(
-                            focusedYear,
-                            b.solarBirthday.month,
-                            b.solarBirthday.day,
-                          )
-                          : _occurrence(b, focusedYear, engine);
-                  return isSameDayAndMonth(date, day);
-                }).toList();
-              },
+              eventLoader: (day) => eventsByDay[day] ?? [],
               calendarStyle: CalendarStyle(
                 markersMaxCount: 0,
                 outsideDaysVisible: false,
@@ -272,9 +265,17 @@ class _CalendarViewState extends State<CalendarView> {
                                 b.avatarBase64 != null
                                     ? CircleAvatar(
                                       radius: 24,
-                                      backgroundImage: MemoryImage(
-                                        base64Decode(b.avatarBase64!),
-                                      ),
+                                      backgroundImage:
+                                          AvatarCache.decodeAndCache(
+                                                    b.avatarBase64!,
+                                                  ) !=
+                                                  null
+                                              ? MemoryImage(
+                                                AvatarCache.decodeAndCache(
+                                                  b.avatarBase64!,
+                                                )!,
+                                              )
+                                              : null,
                                     )
                                     : CircleAvatar(
                                       radius: 24,

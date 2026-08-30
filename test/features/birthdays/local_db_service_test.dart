@@ -97,6 +97,6 @@ void main() {
   });
 
   test('LocalDbService databaseVersion matches schema constant', () {
-    expect(DbSchema.databaseVersion, 2);
+    expect(DbSchema.databaseVersion, 3);
   });
 }

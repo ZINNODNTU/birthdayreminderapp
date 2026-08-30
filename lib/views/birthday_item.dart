@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/birthday.dart';
-import 'dart:convert';
+
+import '../services/avatar_cache.dart';
 import 'birthday_add_edit_view.dart';
 
 class BirthdayItem extends StatelessWidget {
@@ -38,15 +39,16 @@ class BirthdayItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final image =
-        birthday.avatarBase64 != null
-            ? Image.memory(
-              base64Decode(birthday.avatarBase64!),
-              width: 48,
-              height: 48,
-              fit: BoxFit.cover,
-            )
-            : const Icon(Icons.person, size: 48);
+    final image = () {
+      if (birthday.avatarBase64 == null || birthday.avatarBase64!.isEmpty) {
+        return const Icon(Icons.person, size: 48);
+      }
+      final bytes = AvatarCache.decodeAndCache(birthday.avatarBase64!);
+      if (bytes == null) {
+        return const Icon(Icons.person, size: 48);
+      }
+      return Image.memory(bytes, width: 48, height: 48, fit: BoxFit.cover);
+    }();
 
     final int age = calculateAge(birthday.solarBirthday);
     final int days = daysUntilNextBirthday(birthday.solarBirthday);

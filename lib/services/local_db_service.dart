@@ -25,12 +25,12 @@ class LocalDbService {
     return openDatabase(
       path,
       version: DbSchema.databaseVersion,
-      onCreate: _onCreate,
-      onUpgrade: _migrate,
+      onCreate: onCreate,
+      onUpgrade: migrate,
     );
   }
 
-  Future<void> _onCreate(Database db, int version) async {
+  Future<void> onCreate(Database db, int version) async {
     await db.execute('''
       CREATE TABLE ${DbSchema.birthdaysTable} (
         ${DbSchema.colId} TEXT PRIMARY KEY,
@@ -57,12 +57,16 @@ class LocalDbService {
         ${DbSchema.colSchemaVersion} INTEGER
       )
     ''');
+    await _createIndexes(db);
   }
 
-  Future<void> _migrate(Database db, int oldVersion, int newVersion) async {
+  Future<void> migrate(Database db, int oldVersion, int newVersion) async {
     AppLogger.info('LocalDbService', 'migrating v$oldVersion → v$newVersion');
     if (oldVersion < 2) {
       await _v1ToV2(db);
+    }
+    if (oldVersion < 3) {
+      await _v2ToV3(db);
     }
     // Future migrations chain here.
   }
@@ -142,5 +146,33 @@ class LocalDbService {
       where: '${DbSchema.colId} = ?',
       whereArgs: [id],
     );
+  }
+
+  Future<void> restoreBirthdaysTransactionally(
+    List<Birthday> birthdays, {
+    required bool replace,
+  }) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      if (replace) await txn.delete(DbSchema.birthdaysTable);
+      for (final birthday in birthdays) {
+        await txn.insert(
+          DbSchema.birthdaysTable,
+          birthday.toDbMap(),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+    });
+  }
+
+  Future<void> _createIndexes(Database db) async {
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_birthdays_deleted_updated ON ${DbSchema.birthdaysTable}(${DbSchema.colDeletedAt}, ${DbSchema.colUpdatedAt})',
+    );
+  }
+
+  Future<void> _v2ToV3(Database db) async {
+    AppLogger.info('LocalDbService', 'v2 → v3: adding indexes');
+    await _createIndexes(db);
   }
 }

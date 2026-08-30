@@ -7,13 +7,18 @@ import 'birthday_repository.dart';
 
 /// SQLite-backed [BirthdayRepository]. Used in both local and authenticated
 /// modes; ownership / cloud sync is handled by higher layers.
-class LocalBirthdayRepository implements BirthdayRepository {
+class LocalBirthdayRepository
+    implements BirthdayRepository, TransactionalBirthdayRepository {
   LocalBirthdayRepository(this._db);
 
   final LocalDbService _db;
 
   @override
   Future<List<Birthday>> getBirthdays() => _db.getBirthdays();
+
+  @override
+  Future<List<Birthday>> getAllForSync() =>
+      _db.getBirthdays(includeDeleted: true);
 
   @override
   Future<Birthday?> getBirthday(String id) => _db.getBirthday(id);
@@ -50,6 +55,12 @@ class LocalBirthdayRepository implements BirthdayRepository {
       await updateBirthday(birthday);
     }
   }
+
+  @override
+  Future<void> restoreBirthdaysTransactionally(
+    List<Birthday> birthdays, {
+    required bool replace,
+  }) => _db.restoreBirthdaysTransactionally(birthdays, replace: replace);
 
   @override
   Stream<List<Birthday>> watchBirthdays() async* {

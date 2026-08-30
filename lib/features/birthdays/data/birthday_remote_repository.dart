@@ -12,13 +12,30 @@ import 'birthday_firestore_mapper.dart';
 /// `/users/{uid}/birthdays/{id}`. Legacy `/birthdays/{id}` is denied at
 /// the rules level.
 abstract class BirthdayRemoteRepository {
-  Future<List<Birthday>> getBirthdays(String uid);
+  /// Fetch every birthday document for [uid]. The returned records
+  /// carry an optional [FirestoreBirthdayRecord.photo] so the caller
+  /// can decide whether to restore the image to local storage.
+  Future<List<FirestoreBirthdayRecord>> getBirthdayRecords(String uid);
 
-  Future<void> upsertBirthday(String uid, Birthday birthday);
+  /// Persist [birthday] to Firestore. When [photo] is non-null the
+  /// cloud fields are written; when [deletePhoto] is true the
+  /// existing cloud fields are explicitly removed via
+  /// [FieldValue.delete]. When both are null/false the photo fields
+  /// are left untouched on the server.
+  Future<void> upsertBirthday(
+    String uid,
+    Birthday birthday, {
+    BirthdayCloudPhoto? photo,
+    bool deletePhoto = false,
+  });
 
-  Future<void> deleteBirthday(String uid, String birthdayId);
+  /// Mark [birthday] as soft-deleted on the server. The original
+  /// document body — including `name`, `photoBase64`, reminder config,
+  /// etc. — is preserved verbatim. Only `isDeleted`, `deletedAt`,
+  /// `updatedAt` are flipped.
+  Future<void> softDeleteBirthday(String uid, Birthday birthday);
 
-  Stream<List<Birthday>> watchBirthdays(String uid);
+  Stream<List<FirestoreBirthdayRecord>> watchBirthdayRecords(String uid);
 }
 
 /// Production implementation backed by [FirebaseFirestore].
@@ -37,55 +54,50 @@ class FirestoreBirthdayRemoteRepository implements BirthdayRemoteRepository {
   }
 
   @override
-  Future<List<Birthday>> getBirthdays(String uid) async {
+  Future<List<FirestoreBirthdayRecord>> getBirthdayRecords(String uid) async {
     if (uid.isEmpty) return const [];
     final snap = await _collection(uid).get();
     return snap.docs
         .map(_mapper.fromFirestore)
-        .whereType<Birthday>()
+        .whereType<FirestoreBirthdayRecord>()
         .toList(growable: false);
   }
 
   @override
-  Future<void> upsertBirthday(String uid, Birthday birthday) {
-    return _collection(uid).doc(birthday.id).set(_mapper.toFirestore(birthday));
+  Future<void> upsertBirthday(
+    String uid,
+    Birthday birthday, {
+    BirthdayCloudPhoto? photo,
+    bool deletePhoto = false,
+  }) {
+    return _collection(uid)
+        .doc(birthday.id)
+        .set(
+          _mapper.toFirestore(birthday, photo: photo, deletePhoto: deletePhoto),
+        );
+  }
+
+  /// Mark [birthday] as soft-deleted on the server. The original
+  /// document body — including `name`, `photoBase64`, reminder config,
+  /// etc. — is preserved verbatim. Only `isDeleted`, `deletedAt`,
+  /// `updatedAt` are flipped.
+  @override
+  Future<void> softDeleteBirthday(String uid, Birthday birthday) async {
+    final now = FieldValue.serverTimestamp();
+    await _collection(uid).doc(birthday.id).set({
+      'isDeleted': true,
+      'deletedAt': Timestamp.fromDate(birthday.deletedAt ?? DateTime.now()),
+      'updatedAt': now,
+    }, SetOptions(merge: true));
   }
 
   @override
-  Future<void> deleteBirthday(String uid, String birthdayId) {
-    // Soft-delete mirrors the SQLite convention: the document stays,
-    // we just stamp `deletedAt`. Hard delete is reserved for the
-    // future cleanup pass once cloud sync ships.
-    final now = DateTime.now();
-    final tombstone = {
-      'id': birthdayId,
-      'name': '',
-      'calendarType': CalendarType.solar.name,
-      'solarBirthday': Timestamp.fromDate(now),
-      'lunar': null,
-      'note': null,
-      'reminder': const {
-        'enabled': false,
-        'daysBefore': 0,
-        'hour': 0,
-        'minute': 0,
-        'repeatAnnually': false,
-      },
-      'createdAt': Timestamp.fromDate(now),
-      'updatedAt': Timestamp.fromDate(now),
-      'deletedAt': Timestamp.fromDate(now),
-      'schemaVersion': BirthdayFirestoreMapper.schemaVersion,
-    };
-    return _collection(uid).doc(birthdayId).set(tombstone);
-  }
-
-  @override
-  Stream<List<Birthday>> watchBirthdays(String uid) {
+  Stream<List<FirestoreBirthdayRecord>> watchBirthdayRecords(String uid) {
     if (uid.isEmpty) return const Stream.empty();
     return _collection(uid).snapshots().map(
       (snap) => snap.docs
           .map(_mapper.fromFirestore)
-          .whereType<Birthday>()
+          .whereType<FirestoreBirthdayRecord>()
           .toList(growable: false),
     );
   }

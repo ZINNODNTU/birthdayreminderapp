@@ -4,7 +4,7 @@ class DbSchema {
   const DbSchema._();
 
   static const String databaseFileName = 'birthdays.db';
-  static const int databaseVersion = 2;
+  static const int databaseVersion = 3;
 
   static const String birthdaysTable = 'birthdays';
 

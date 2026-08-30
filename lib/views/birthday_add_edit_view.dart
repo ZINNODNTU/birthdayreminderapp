@@ -4,6 +4,7 @@ import '../models/birthday.dart';
 import '../controllers/birthday_controller.dart';
 import 'dart:convert';
 import 'package:image_picker/image_picker.dart';
+import '../services/avatar_cache.dart';
 
 class BirthdayAddEditView extends StatefulWidget {
   final Birthday? birthday;
@@ -148,7 +149,11 @@ class _BirthdayAddEditViewState extends State<BirthdayAddEditView> {
                   radius: 40,
                   backgroundImage:
                       _avatarBase64 != null
-                          ? MemoryImage(base64Decode(_avatarBase64!))
+                          ? (AvatarCache.decodeAndCache(_avatarBase64!) != null
+                              ? MemoryImage(
+                                AvatarCache.decodeAndCache(_avatarBase64!)!,
+                              )
+                              : null)
                           : null,
                   child:
                       _avatarBase64 == null
@@ -234,6 +239,7 @@ class _BirthdayAddEditViewState extends State<BirthdayAddEditView> {
                     initialDate: _solarBirthday,
                     firstDate: DateTime(1900),
                     lastDate: DateTime.now(),
+                    locale: const Locale('vi', 'VN'),
                   );
                   if (!context.mounted) return;
                   if (picked != null) {
@@ -277,6 +283,18 @@ class _BirthdayAddEditViewState extends State<BirthdayAddEditView> {
                   TimeOfDay? picked = await showTimePicker(
                     context: context,
                     initialTime: _remindTime,
+                    builder: (ctx, child) {
+                      return MediaQuery(
+                        data: MediaQuery.of(
+                          ctx,
+                        ).copyWith(alwaysUse24HourFormat: true),
+                        child: Localizations.override(
+                          context: ctx,
+                          locale: const Locale('vi', 'VN'),
+                          child: child!,
+                        ),
+                      );
+                    },
                   );
                   if (!context.mounted) return;
                   if (picked != null) {
@@ -291,7 +309,7 @@ class _BirthdayAddEditViewState extends State<BirthdayAddEditView> {
                     (val) => setState(() => _repeatAnnually = val ?? true),
               ),
               CheckboxListTile(
-                title: const Text('Bật thông báo định kỳ'),
+                title: const Text('Bật thông báo'),
                 value: _isRecurringNotificationEnabled,
                 onChanged:
                     (val) => setState(

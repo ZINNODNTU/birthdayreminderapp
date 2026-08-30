@@ -206,11 +206,18 @@ void main() {
       expect(find.byType(Homepage), findsOneWidget);
       expect(find.byType(AuthScreen), findsNothing);
 
+      // Drain any pending sqflite / BirthdayController.loadBirthdays
+      // timers so the test tear-down does not trip the "Timer is
+      // still pending" guard.
+      await tester.pump(const Duration(seconds: 12));
+
       await repo.signOut();
       await tester.pumpAndSettle();
 
       expect(find.byType(AuthScreen), findsOneWidget);
       expect(find.byType(Homepage), findsNothing);
+      // Drain timers after sign-out too.
+      await tester.pump(const Duration(seconds: 12));
     },
   );
 

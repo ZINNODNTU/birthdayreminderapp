@@ -217,12 +217,60 @@ class _BirthdayListViewState extends State<BirthdayListView> {
     });
   }
 
-  void _deleteSelected() {
+  Future<void> _deleteSelected() async {
     final controller = context.read<BirthdayController>();
+    final messenger = ScaffoldMessenger.of(context);
+    final count = _selectedBirthdays.length;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Xóa sinh nhật?'),
+            content: Text(
+              count == 1
+                  ? 'Bạn có chắc muốn xóa sinh nhật này?'
+                  : 'Bạn có chắc muốn xóa $count sinh nhật đã chọn?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Hủy'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Xóa'),
+              ),
+            ],
+          ),
+    );
+    if (confirmed != true) return;
+    var failed = 0;
     for (final birthday in _selectedBirthdays) {
-      controller.deleteBirthday(birthday.id);
+      final ok = await controller.deleteBirthday(birthday.id);
+      if (!ok) failed++;
     }
     _clearSelection();
+    if (!mounted) return;
+    if (failed == 0) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            count == 1 ? 'Đã xóa sinh nhật' : 'Đã xóa $count sinh nhật',
+          ),
+          backgroundColor: Colors.green.shade600,
+        ),
+      );
+    } else {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            'Không thể xóa $failed sinh nhật. '
+            'Dữ liệu sẽ được thử đồng bộ lại.',
+          ),
+          backgroundColor: Colors.red.shade600,
+        ),
+      );
+    }
   }
 
   void _openBirthdayDetail(BuildContext context, Birthday birthday) {
