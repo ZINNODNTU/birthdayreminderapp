@@ -245,6 +245,9 @@ void main() {
 
       expect(find.byType(Homepage), findsOneWidget);
       expect(await sessionRepo.isLocalModeEnabled(), isTrue);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(seconds: 12));
     },
   );
 }
