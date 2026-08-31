@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/app_release.dart';
 import '../models/update_status.dart';
 import '../services/app_update_service.dart';
@@ -47,6 +48,12 @@ class _UpdateScreenState extends State<UpdateScreen> {
     service.ignoreVersion();
   }
 
+  Future<void> _openDownloadInBrowser() async {
+    final url = context.read<AppUpdateService>().latestRelease?.apkDownloadUrl;
+    if (url == null || url.isEmpty) return;
+    await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -65,10 +72,19 @@ class _UpdateScreenState extends State<UpdateScreen> {
               children: [
                 _buildCurrentVersionCard(context),
                 const SizedBox(height: 16),
-                _buildStatusCard(context, status, release, error, progress),
+                _buildStatusCard(
+                  context,
+                  status,
+                  release,
+                  error,
+                  progress,
+                  service.downloadedBytes,
+                  service.totalBytes,
+                ),
                 const SizedBox(height: 16),
                 if (status == UpdateStatus.updateAvailable ||
-                    status == UpdateStatus.readyToInstall)
+                    status == UpdateStatus.readyToInstall ||
+                    (status == UpdateStatus.error && release != null))
                   _buildActionButtons(context, status),
                 if (release != null) _buildReleaseDetails(context, release),
               ],
@@ -116,6 +132,8 @@ class _UpdateScreenState extends State<UpdateScreen> {
     AppRelease? release,
     String? error,
     double progress,
+    int downloadedBytes,
+    int? totalBytes,
   ) {
     String title;
     String subtitle;
@@ -148,8 +166,11 @@ class _UpdateScreenState extends State<UpdateScreen> {
         color = Colors.orange.shade800;
         break;
       case UpdateStatus.downloading:
-        title = 'Đang tải...';
-        subtitle = '${(progress * 100).toStringAsFixed(0)}%';
+        title = 'Đang tải bản cập nhật...';
+        subtitle =
+            totalBytes != null && totalBytes > 0
+                ? '${(progress * 100).toStringAsFixed(0)}% — ${_formatBytes(downloadedBytes)} / ${_formatBytes(totalBytes)}'
+                : 'Đã tải ${_formatBytes(downloadedBytes)}';
         break;
       case UpdateStatus.verifying:
         title = 'Đang xác minh...';
@@ -192,7 +213,9 @@ class _UpdateScreenState extends State<UpdateScreen> {
             if (status == UpdateStatus.downloading)
               Padding(
                 padding: const EdgeInsets.only(top: 8),
-                child: LinearProgressIndicator(value: progress),
+                child: LinearProgressIndicator(
+                  value: totalBytes != null && totalBytes > 0 ? progress : null,
+                ),
               ),
           ],
         ),
@@ -209,8 +232,19 @@ class _UpdateScreenState extends State<UpdateScreen> {
             onPressed: _ignoreVersion,
             child: const Text('Bỏ qua'),
           ),
+        if (status == UpdateStatus.error)
+          OutlinedButton(
+            onPressed: _downloadUpdate,
+            child: const Text('Thử lại'),
+          ),
         const SizedBox(width: 8),
-        if (status == UpdateStatus.reinstallRequired)
+        if (status == UpdateStatus.error)
+          ElevatedButton.icon(
+            onPressed: _openDownloadInBrowser,
+            icon: const Icon(Icons.open_in_browser),
+            label: const Text('Mở trang tải xuống'),
+          )
+        else if (status == UpdateStatus.reinstallRequired)
           const Expanded(
             child: Text(
               '1. Sao lưu dữ liệu\n2. Giữ file backup an toàn\n3. Cài đặt bản mới theo hướng dẫn\n4. Khôi phục backup',
@@ -300,6 +334,11 @@ class _UpdateScreenState extends State<UpdateScreen> {
         ),
       ),
     );
+  }
+
+  String _formatBytes(int bytes) {
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
 
   Widget _infoRow(String label, String value) {

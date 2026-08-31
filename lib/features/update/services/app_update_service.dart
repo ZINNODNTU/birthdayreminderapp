@@ -1,35 +1,41 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import '../../../core/logging/app_logger.dart';
 import '../models/app_release.dart';
 import '../models/update_status.dart';
 import '../repositories/github_release_repository.dart';
 import '../utils/semantic_version.dart';
 import '../utils/sha256_utils.dart';
 import '../platform/apk_installer.dart';
+import 'apk_download_service.dart';
 
 /// Service that handles update checks, downloads, and installation.
 class AppUpdateService extends ChangeNotifier {
   AppUpdateService({
     required GithubReleaseRepository repository,
     required SharedPreferences prefs,
+    ApkDownloadService? downloadService,
   }) : _repository = repository,
-       _prefs = prefs {
+       _prefs = prefs,
+       _downloadService = downloadService ?? ApkDownloadService() {
     _loadCachedState();
   }
 
   final GithubReleaseRepository _repository;
   final SharedPreferences _prefs;
+  final ApkDownloadService _downloadService;
 
   // State
   UpdateStatus _status = UpdateStatus.idle;
   AppRelease? _latestRelease;
   String? _errorMessage;
   double _downloadProgress = 0.0;
+  int _downloadedBytes = 0;
+  int? _totalBytes;
   File? _downloadedApk;
 
   // Cached preferences keys
@@ -41,6 +47,8 @@ class AppUpdateService extends ChangeNotifier {
   AppRelease? get latestRelease => _latestRelease;
   String? get errorMessage => _errorMessage;
   double get downloadProgress => _downloadProgress;
+  int get downloadedBytes => _downloadedBytes;
+  int? get totalBytes => _totalBytes;
   bool get isDownloading => _status == UpdateStatus.downloading;
 
   // Auto-check interval (12 hours)
@@ -153,76 +161,66 @@ class AppUpdateService extends ChangeNotifier {
     }
   }
 
-  /// Download the latest APK.
+  /// Stream the latest APK to an atomic cache file with transient retries.
   Future<void> downloadUpdate() async {
-    if (_status != UpdateStatus.updateAvailable) return;
-    if (_latestRelease == null) return;
+    if ((_status != UpdateStatus.updateAvailable &&
+            _status != UpdateStatus.error) ||
+        _latestRelease == null) {
+      return;
+    }
 
     _setStatus(UpdateStatus.downloading);
-    _downloadProgress = 0.0;
-
+    _downloadProgress = 0;
+    _downloadedBytes = 0;
+    _totalBytes = _latestRelease!.apkSize > 0 ? _latestRelease!.apkSize : null;
     final release = _latestRelease!;
-    final url = Uri.parse(release.apkDownloadUrl);
-    final client = http.Client();
 
     try {
-      final response = await client.send(http.Request('GET', url));
-      if (response.statusCode != 200) {
-        throw Exception('Download failed: ${response.statusCode}');
-      }
-
-      final contentLength = response.contentLength ?? 0;
-      int received = 0;
+      final packageInfo = await PackageInfo.fromPlatform();
       final tempDir = await getApplicationCacheDirectory();
       final updateDir = Directory('${tempDir.path}/updates');
-      if (!await updateDir.exists()) await updateDir.create(recursive: true);
-      final apkFile = File('${updateDir.path}/${release.apkName}');
-      if (await apkFile.exists()) await apkFile.delete();
-      final sink = apkFile.openWrite();
-
-      await for (final chunk in response.stream) {
-        sink.add(chunk);
-        received += chunk.length;
-        if (contentLength > 0) {
-          _downloadProgress = received / contentLength;
+      final result = await _downloadService.download(
+        directory: updateDir,
+        fileName: release.apkName,
+        expectedSize: release.apkSize,
+        userAgent: 'BirthdayReminder/${packageInfo.version}',
+        urlProvider: (attempt) async {
+          if (attempt == 1) return Uri.parse(release.apkDownloadUrl);
+          final refreshed = await _repository.fetchLatestRelease();
+          if (refreshed == null ||
+              refreshed.tagName != release.tagName ||
+              refreshed.apkDownloadUrl.isEmpty) {
+            throw const ApkDownloadException('APK URL is unavailable');
+          }
+          return Uri.parse(refreshed.apkDownloadUrl);
+        },
+        onProgress: (downloaded, total) {
+          _downloadedBytes = downloaded;
+          _totalBytes = total;
+          _downloadProgress =
+              total != null && total > 0 ? downloaded / total : 0;
           notifyListeners();
-        }
-      }
-      await sink.close();
+        },
+      );
+      _downloadedApk = result.file;
 
-      _downloadedApk = apkFile;
-
-      // Verify advertised size when present.
-      final actualSize = await apkFile.length();
-      if (release.apkSize > 0 && actualSize != release.apkSize) {
-        await apkFile.delete();
-        _errorMessage = 'Dung lượng tệp cập nhật không khớp.';
-        _setStatus(UpdateStatus.error);
-        _downloadedApk = null;
-        return;
-      }
-
-      // Verify SHA256.
       _setStatus(UpdateStatus.verifying);
-      final hash = await Sha256Utils.hashFile(apkFile);
+      final hash = await Sha256Utils.hashFile(result.file);
       if (hash.toUpperCase() != release.sha256.toUpperCase()) {
-        await apkFile.delete();
-        _errorMessage = 'Tệp cập nhật không hợp lệ hoặc đã bị thay đổi.';
-        _setStatus(UpdateStatus.error);
+        await result.file.delete();
         _downloadedApk = null;
-        return;
+        throw const ApkDownloadException('APK checksum mismatch');
       }
-
       _setStatus(UpdateStatus.readyToInstall);
-    } catch (e) {
-      _errorMessage = 'Lỗi tải xuống: $e';
+    } catch (error, stackTrace) {
+      AppLogger.error('UpdateDownload', error, stackTrace);
+      _errorMessage =
+          'Tải bản cập nhật không thành công. Vui lòng kiểm tra kết nối mạng và thử lại.';
       _setStatus(UpdateStatus.error);
-      if (_downloadedApk != null) {
+      if (_downloadedApk != null && await _downloadedApk!.exists()) {
         await _downloadedApk!.delete();
-        _downloadedApk = null;
       }
-    } finally {
-      client.close();
+      _downloadedApk = null;
     }
   }
 

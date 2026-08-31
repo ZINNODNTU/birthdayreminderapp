@@ -16,10 +16,17 @@ class GithubReleaseRepository {
       'https://api.github.com/repos/ZINNODNTU/birthdayreminderapp';
   static const String _latestEndpoint = '$_repoUrl/releases/latest';
   static const String _releasesEndpoint = '$_repoUrl/releases';
+  static const Map<String, String> _headers = {
+    'User-Agent': 'BirthdayReminder',
+    'Accept': 'application/vnd.github+json',
+  };
 
   /// Fetch the latest release (not draft, not prerelease).
   Future<AppRelease?> fetchLatestRelease() async {
-    final response = await _client.get(Uri.parse(_latestEndpoint));
+    final response = await _client.get(
+      Uri.parse(_latestEndpoint),
+      headers: _headers,
+    );
     if (response.statusCode != 200) {
       throw Exception('GitHub API error: ${response.statusCode}');
     }
@@ -32,6 +39,7 @@ class GithubReleaseRepository {
     final safeLimit = limit.clamp(1, maxRecentReleases);
     final response = await _client.get(
       Uri.parse('$_releasesEndpoint?per_page=$safeLimit'),
+      headers: _headers,
     );
     if (response.statusCode != 200) {
       throw Exception('GitHub API error: ${response.statusCode}');
@@ -64,7 +72,7 @@ class GithubReleaseRepository {
     for (final asset in assets) {
       final name = asset['name'] as String?;
       if (name == null) continue;
-      if (name.endsWith('.apk')) apkAsset = asset;
+      if (name.toLowerCase().endsWith('.apk')) apkAsset = asset;
     }
     if (apkAsset == null) return null;
 
@@ -85,7 +93,10 @@ class GithubReleaseRepository {
       if (asset['name'] == 'release-metadata.json') {
         final metadataUrl = asset['browser_download_url'] as String?;
         if (metadataUrl != null) {
-          final response = await _client.get(Uri.parse(metadataUrl));
+          final response = await _client.get(
+            Uri.parse(metadataUrl),
+            headers: _headers,
+          );
           if (response.statusCode == 200) {
             final decoded = jsonDecode(response.body);
             if (decoded is Map<String, dynamic>) metadata = decoded;
@@ -142,7 +153,7 @@ class GithubReleaseRepository {
   Future<String?> fetchSha256(AppRelease release) async {
     // Assume the SHA asset URL is the APK URL with .sha256 appended.
     final shaUrl = '${release.apkDownloadUrl}.sha256';
-    final response = await _client.get(Uri.parse(shaUrl));
+    final response = await _client.get(Uri.parse(shaUrl), headers: _headers);
     if (response.statusCode != 200) return null;
     final content = response.body.trim();
     // Usually the SHA is the first token.
