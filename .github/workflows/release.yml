@@ -32,6 +32,18 @@ jobs:
           ref: ${{ github.event.inputs.release_tag || github.ref }}
           fetch-depth: 0
 
+      - name: Verify checked-out release source
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            EXPECTED="$(git rev-list -n 1 "${{ github.event.inputs.release_tag }}")"
+            ACTUAL="$(git rev-parse HEAD)"
+            echo "Checked out HEAD: $ACTUAL"
+            if [[ "$ACTUAL" != "$EXPECTED" ]]; then
+              echo "::error::Checked out source does not match selected release tag."
+              exit 1
+            fi
+          fi
+
       - name: Setup Java 21
         uses: actions/setup-java@v4
         with:
@@ -52,7 +64,12 @@ jobs:
         run: dart format --output=none --set-exit-if-changed lib test
 
       - name: Analyze
+        if: github.event_name != 'workflow_dispatch'
         run: flutter analyze
+
+      - name: Analyze historical release
+        if: github.event_name == 'workflow_dispatch'
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
       - name: Tests
         run: flutter test --no-pub --coverage
@@ -131,6 +148,20 @@ jobs:
       - name: Build release APK
         run: flutter build apk --release --android-skip-build-dependency-validation
 
+      - name: Verify APK version
+        run: |
+          APK="build/app/outputs/flutter-apk/app-release.apk"
+          AAPT=$(find "$ANDROID_HOME/build-tools" -name aapt -type f | sort -V | tail -1)
+          BADGING="$("$AAPT" dump badging "$APK")"
+          VERSION_NAME="$(printf '%s\n' "$BADGING" | sed -n "s/^package:.*versionName='\([^']*\)'.*/\1/p")"
+          VERSION_CODE="$(printf '%s\n' "$BADGING" | sed -n "s/^package:.*versionCode='\([^']*\)'.*/\1/p")"
+          echo "APK versionName: $VERSION_NAME"
+          echo "APK versionCode: $VERSION_CODE"
+          if [[ "$VERSION_NAME" != "${{ steps.version_gate.outputs.TAG_SEM }}" || "$VERSION_CODE" != "${{ steps.version_gate.outputs.PUB_BUILD }}" ]]; then
+            echo "::error::APK version does not match selected release."
+            exit 1
+          fi
+
       - name: Verify signer SHA256
         id: verify_signer
         env:
@@ -195,6 +226,13 @@ jobs:
           PUB_BUILD="${PUB_VERSION#*+}"
           cp build/app/outputs/flutter-apk/app-release.apk "BirthdayReminder-v${PUB_SEM}.apk"
           ls -la "BirthdayReminder-v${PUB_SEM}.apk"
+
+      - name: Upload signed APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BirthdayReminder-v${{ steps.version_gate.outputs.TAG_SEM }}
+          path: BirthdayReminder-v${{ steps.version_gate.outputs.TAG_SEM }}.apk
+          if-no-files-found: error
 
       - name: Calculate SHA256
         run: |
