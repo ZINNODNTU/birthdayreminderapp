@@ -126,7 +126,7 @@ class _State extends State<BackupRestoreScreen> {
     setState(() => busy = true);
     final controller = context.read<BirthdayController>();
     final reconciler = context.read<NotificationReconciler>();
-    final messenger = ScaffoldMessenger.of(context);
+
     try {
       final bytes = await BackupFileService().pick();
       if (bytes == null || !mounted) return;
@@ -146,7 +146,7 @@ class _State extends State<BackupRestoreScreen> {
     } on BackupException catch (e, st) {
       AppLogger.error('Restore', e, st);
       if (mounted) {
-        messenger.showSnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('File sao lưu không hợp lệ hoặc đã bị hỏng.'),
           ),
@@ -154,7 +154,7 @@ class _State extends State<BackupRestoreScreen> {
       }
     } catch (_) {
       if (mounted) {
-        messenger.showSnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('File sao lưu không hợp lệ hoặc đã bị hỏng.'),
           ),
