@@ -1,0 +1,670 @@
+{
+  "@@locale": "zh",
+  "appTitle": "生日提醒",
+  "home": "首页",
+  "birthdayList": "生日列表",
+  "todayBirthdays": "今天的生日",
+  "upcoming": "即将到来",
+  "seeMore": "查看更多",
+  "noBirthdays": "暂无生日",
+  "birthdayCalendar": "生日日历",
+  "calendarMonth": "月",
+  "calendarDay": "日",
+  "birthdayReminder": "生日提醒",
+  "settings": "设置",
+  "language": "语言",
+  "backup": "备份",
+  "restore": "恢复",
+  "userGuide": "使用指南",
+  "newVersion": "发现新版本",
+  "updateNow": "立即更新",
+  "later": "稍后",
+  "whatsNew": "更新内容：",
+  "addBirthday": "添加生日",
+  "editBirthday": "编辑生日",
+  "manualAdd": "手动添加",
+  "contactAdd": "从联系人添加",
+  "search": "搜索",
+  "selectLanguage": "选择显示语言",
+  "sessionStatus": "会话状态",
+  "mode": "模式",
+  "aiTrial": "试用 AI",
+  "monthBirthdays": "{month} 月生日 • {count}",
+  "@monthBirthdays": {
+    "placeholders": {
+      "month": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dayBirthdays": "{date} 的生日",
+  "@dayBirthdays": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "showMonth": "查看整月",
+  "noMonthBirthdays": "本月没有生日。",
+  "noDayBirthdays": "当天没有生日。",
+  "improveExperience": "改善用户体验",
+  "optimizeNotifications": "优化生日通知",
+  "fixPreviousBugs": "修复上一版本问题",
+  "increaseStability": "提高稳定性",
+  "name": "姓名",
+  "birthdayDate": "出生日期",
+  "save": "保存",
+  "cancel": "取消",
+  "chooseImage": "选择图片",
+  "delete": "删除",
+  "confirmDelete": "确认删除",
+  "deleteConfirmMessage": "您确定要删除吗？",
+  "remindBefore": "提前提醒（天）",
+  "remindTime": "提醒时间",
+  "syncing": "正在同步...",
+  "syncSuccess": "同步成功",
+  "syncError": "同步错误",
+  "backupSuccess": "备份成功",
+  "restoreSuccess": "恢复成功",
+  "cloudUnavailable": "登录以使用云同步。",
+  "signInGoogle": "使用 Google 登录",
+  "signOut": "退出登录",
+  "exitLocalMode": "退出本地模式",
+  "localMode": "本地模式",
+  "localModeSubtitle": "关闭以使用 Google 账户",
+  "deleteAllFirestore": "从 Firestore 删除全部",
+  "deleteAllFirestoreConfirm": "您确定要从 Firestore 删除所有生日吗？",
+  "deletedAllFirestore": "已从 Firestore 删除所有数据",
+  "noInternet": "无网络连接",
+  "googleConfigError": "此设备上的 Google 登录配置不正确。",
+  "googleUiUnavailable": "此设备不提供 Google 帐户选择器。",
+  "loginFailed": "登录失败",
+  "authError": "发生错误，请重试",
+  "testNotification": "测试通知",
+  "testNotificationSuccess": "测试通知已发送",
+  "testNotificationFailed": "发送测试通知失败",
+  "ageInvalid": "年龄必须在 0 到 120 之间。",
+  "nameRequired": "请输入姓名",
+  "gender": "性别",
+  "male": "男",
+  "female": "女",
+  "other": "其他",
+  "nickname": "昵称",
+  "relationship": "关系",
+  "note": "备注",
+  "calendarType": "日历类型",
+  "solar": "阳历",
+  "lunar": "农历",
+  "solarDate": "阳历日期：{date}",
+  "@solarDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "lunarDate": "农历日期：{date}",
+  "@lunarDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "repeatAnnually": "每年重复",
+  "enableNotification": "启用通知",
+  "imagePickError": "无法选择或裁剪图片。",
+  "imageProcessError": "无法处理所选图片。",
+  "permissionRequired": "需要存储权限。",
+  "imageDecodeError": "无法解码图片。",
+  "chooseLanguage": "选择语言",
+  "languageVi": "Tiếng Việt",
+  "languageEn": "English",
+  "languageZh": "中文",
+  "authSubtitle": "不要让任何一个生日在没有被记住的情况下悄然过去。",
+  "or": "或",
+  "continueOnDevice": "在设备上继续",
+  "localModeDescription": "您仍然可以在此设备上使用生日、日历和提醒功能。云同步功能需要登录。",
+  "authenticated": "已登录",
+  "syncComplete": "完成",
+  "close": "关闭",
+  "syncProgress": "{current} / {total} 个生日",
+  "@syncProgress": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "selectOption": "- 选择 -",
+  "cropTitle": "裁剪生日照片",
+  "photoPermissionTitle": "照片权限",
+  "photoPermissionMessage": "应用需要访问您的照片库以选择头像。请在设置中启用。",
+  "permissionDeniedMessage": "您拒绝了照片访问权限。您可以重试或在设置中授予权限。",
+  "permissionRestrictedMessage": "此设备上的照片访问受限。",
+  "openSettings": "打开设置",
+  "allow": "允许",
+  "selectedCount": "已选择：{count}",
+  "@selectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "selectAll": "全选",
+  "deleteSelected": "删除所选",
+  "clearSelection": "取消选择",
+  "sort": "排序",
+  "nearestBirthday": "最近的生日",
+  "farthestBirthday": "最远的生日",
+  "deleteBirthdayTitle": "Delete birthday?",
+  "deleteOneConfirm": "Are you sure you want to delete this birthday?",
+  "deleteManyConfirm": "Are you sure you want to delete {count} selected birthdays?",
+  "@deleteManyConfirm": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deletedOne": "Birthday deleted",
+  "deletedMany": "Deleted {count} birthdays",
+  "@deletedMany": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteFailed": "Could not delete {count} birthdays. Data will be synced again.",
+  "@deleteFailed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ageAndDays": "年龄：{age} • 还有 {days} 天",
+  "@ageAndDays": {
+    "placeholders": {
+      "age": {
+        "type": "int"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "age": "年龄",
+  "days": "{count} 天",
+  "@days": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "remainingDays": "还有 {count} 天",
+  "@remainingDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "yes": "是",
+  "no": "否",
+  "enabled": "开启",
+  "disabled": "关闭",
+  "notificationTime": "提醒时间",
+  "calendarList": "列表",
+  "contactPermissionDenied": "Contacts permission denied",
+  "unnamed": "Unnamed",
+  "selectFromContacts": "Select from contacts",
+  "toggleSelectAll": "Select or clear all",
+  "noContactsToAdd": "No contacts left to add",
+  "settingsSubtitle": "检查通知和应用权限",
+  "guideSubtitle": "查看 Birthday Reminder 使用方法",
+  "usingOnDevice": "正在此设备上使用",
+  "savedLocally": "仅保存在此设备",
+  "options": "选项",
+  "chooseUsageMode": "选择使用模式",
+  "backToLogin": "返回登录页面",
+  "backupToFirestore": "备份到 Firestore",
+  "syncFromFirestore": "从 Firestore 同步",
+  "backupInProgress": "Backing up...",
+  "failed": "Failed",
+  "errorWithDetails": "Error: {error}",
+  "@errorWithDetails": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationSection": "通知",
+  "notificationPermission": "通知权限",
+  "appNotifications": "应用通知",
+  "exactAlarm": "精确闹钟",
+  "deviceTimezone": "设备时区",
+  "notificationChannel": "通知频道",
+  "checking": "检查中",
+  "granted": "已授权",
+  "notGranted": "未授权",
+  "on": "已开启",
+  "off": "已关闭",
+  "sendTestNotification": "发送测试通知",
+  "testAfterTenSeconds": "Test notification after 10 seconds",
+  "openNotificationSettings": "打开通知设置",
+  "allowExactAlarm": "允许精确闹钟",
+  "testAfterOneMinute": "Test birthday reminder after 1 minute",
+  "notificationPermissionOff": "Notification permission is disabled.",
+  "exactAlarmPermissionMissing": "Exact alarm permission is not granted.",
+  "notificationsDisabledSchedule": "Notification permission is disabled — cannot schedule.",
+  "scheduleNotRetained": "The device did not retain the schedule — check alarm permission.",
+  "unknownError": "unknown error",
+  "scheduledTestAt": "Test notification scheduled at {time}.",
+  "@scheduledTestAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "scheduledMinuteTestAt": "One-minute test scheduled at {time}.",
+  "@scheduledMinuteTestAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "scheduleTestFailed": "Could not schedule test notification: {error}",
+  "@scheduleTestFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "scheduleMinuteFailed": "Could not schedule one-minute test: {error}",
+  "@scheduleMinuteFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderPendingCount": "待处理提醒：{count}",
+  "@reminderPendingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "resyncReminders": "重新同步提醒",
+  "noPendingReminders": "没有待处理提醒。",
+  "collapse": "收起",
+  "showMoreReminders": "再查看 {count} 个提醒",
+  "@showMoreReminders": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reminderSchedule": "Reminder",
+  "birthdayShortId": "Birthday {id}…",
+  "@birthdayShortId": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderResyncSuccess": "Scheduled {scheduled}, cancelled {cancelled} old reminders.",
+  "@reminderResyncSuccess": {
+    "placeholders": {
+      "scheduled": {
+        "type": "int"
+      },
+      "cancelled": {
+        "type": "int"
+      }
+    }
+  },
+  "syncFailedDetails": "Sync failed: {error}",
+  "@syncFailedDetails": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "waiting": "waiting",
+  "appInformation": "应用信息",
+  "loading": "加载中…",
+  "appVersionInfo": "{name} — version {version} (build {build})",
+  "@appVersionInfo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "version": {
+        "type": "String"
+      },
+      "build": {
+        "type": "String"
+      }
+    }
+  },
+  "testChannel": "Test channel: {id}",
+  "@testChannel": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "mainChannel": "Main channel: {id}",
+  "@mainChannel": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "testNotificationId": "Test notification ID: {id}",
+  "@testNotificationId": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "scheduledTestNotificationId": "Scheduled test notification ID: {id}",
+  "@scheduledTestNotificationId": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "updateApp": "更新应用",
+  "checkNewVersion": "检查新版本",
+  "artificialIntelligence": "人工智能",
+  "provider": "服务商",
+  "openAiCompatible": "OpenAI / compatible",
+  "apiKeyNotSaved": "No API key saved.",
+  "apiKeyCurrent": "Current: {key}",
+  "@apiKeyCurrent": {
+    "placeholders": {
+      "key": {
+        "type": "String"
+      }
+    }
+  },
+  "showApiKey": "Show API key",
+  "hideApiKey": "Hide API key",
+  "pasteClipboard": "Paste from clipboard",
+  "testConnection": "测试连接",
+  "fetchModels": "获取模型列表",
+  "saveConfiguration": "保存配置",
+  "deleteApiKey": "删除 API 密钥",
+  "modelRequired": "Please enter a model.",
+  "apiKeyRequired": "Please enter an API key.",
+  "baseUrlRequired": "Please enter a Base URL.",
+  "apiKeySaved": "Configuration and API key saved securely.",
+  "apiKeyDeleted": "API key deleted.",
+  "clipboardNoApiKey": "Clipboard has no API key.",
+  "apiKeyPasted": "API key pasted ({count} characters).",
+  "@apiKeyPasted": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "connectionSuccess": "Connected ({latency} ms) — Reply: \"{reply}\"",
+  "@connectionSuccess": {
+    "placeholders": {
+      "latency": {
+        "type": "int"
+      },
+      "reply": {
+        "type": "String"
+      }
+    }
+  },
+  "modelsUnavailable": "Could not load models — enter an ID manually.",
+  "modelsLoaded": "Loaded {count} models.",
+  "@modelsLoaded": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "aiUnavailable": "AI is unavailable.",
+  "aiAssistant": "AI 助手",
+  "personalizedFor": "为 {name} 个性化",
+  "@personalizedFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "aiReady": "AI 已就绪",
+  "notConfigured": "未配置",
+  "openAiSettings": "打开 AI 设置",
+  "aiThinking": "AI 正在思考...",
+  "giftSuggestions": "礼物建议",
+  "wishSuggestions": "祝福语建议",
+  "english": "English",
+  "chinese": "Chinese",
+  "reminderStatus": "提醒状态",
+  "scheduled": "已计划",
+  "notScheduled": "未计划",
+  "scheduleLost": "计划丢失 — 需要同步",
+  "pastTime": "已过期",
+  "nextReminder": "下次提醒：{time}",
+  "@nextReminder": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "rescheduleReminder": "重新安排提醒",
+  "notificationDisabledPerson": "Notifications are disabled for this person.",
+  "noReminderScheduled": "No reminder scheduled.",
+  "reminderScheduledAt": "Scheduled at {time}.",
+  "@reminderScheduledAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderRescheduledAt": "Reminder rescheduled{time}.",
+  "@reminderRescheduledAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationDisplayFailed": "Could not show notification: {error}",
+  "@notificationDisplayFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationDisabledHelp": "Notifications are disabled. Enable notification permission for the app.",
+  "birthdayShare": "{name} 的生日是 {date}",
+  "@birthdayShare": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "copied": "已复制 {label}。",
+  "@copied": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "copyAll": "全部复制",
+  "regenerate": "重新生成",
+  "noSuggestions": "暂无建议。",
+  "reason": "Reason: {value}",
+  "@reason": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "budget": "Budget: {value}",
+  "@budget": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "personalizing": "正在重新个性化...",
+  "personalizedProfile": "根据资料个性化",
+  "modelValidResults": "Model returned {count}/{target} valid results.",
+  "@modelValidResults": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      }
+    }
+  },
+  "suggestedByAi": "AI 推荐",
+  "aiAndQuick": "AI + 快速建议",
+  "usingQuickSuggestions": "正在使用快速建议",
+  "giftsFor": "为 {name} 提供的建议",
+  "@giftsFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "wishesFor": "给 {name} 的 10 条祝福",
+  "@wishesFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "giftUnit": "项",
+  "share": "分享",
+  "solarBirthday": "公历生日",
+  "lunarBirthday": "农历生日",
+  "atTime": "于 {time}",
+  "@atTime": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "invalidApiKey": "API 密钥无效或无权限。",
+  "modelNotFound": "找不到模型。",
+  "quotaExceeded": "已超出配额或请求限制。",
+  "aiTimeout": "AI 响应超时，请重试。",
+  "serverConnectionFailed": "无法连接服务器。",
+  "testNotificationSent": "测试通知已发送",
+  "updateTitle": "更新应用",
+  "currentVersion": "当前版本",
+  "latestVersion": "最新版本",
+  "upToDate": "已是最新版本",
+  "newVersionAvailable": "有新版本可用！",
+  "downloadUpdate": "下载更新",
+  "installUpdate": "安装更新",
+  "checkingUpdate": "正在检查更新…",
+  "updateError": "更新错误",
+  "updateReady": "准备就绪",
+  "updateCheckHint": "点击“检查更新”以查找新版本。",
+  "usingLatestVersion": "您正在使用最新版本。",
+  "versionAvailable": "版本 {version} 已可用。",
+  "@versionAvailable": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "reinstallRequired": "需要重新安装",
+  "reinstallMessage": "新版本使用新的安全签名。重新安装前请备份数据。",
+  "downloadingUpdate": "正在下载更新…",
+  "downloadedSize": "已下载 {size}",
+  "@downloadedSize": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "verifyingUpdate": "正在验证…",
+  "verifyingFile": "正在检查文件完整性…",
+  "readyToInstall": "可以安装！",
+  "updateDownloaded": "更新已下载并通过验证。",
+  "installPermissionRequired": "需要安装权限",
+  "installPermissionHint": "请允许从此来源安装应用，然后重试。",
+  "installingUpdate": "正在安装…",
+  "pleaseWait": "请稍候…",
+  "genericUpdateError": "出现错误，请重试。",
+  "skipUpdate": "跳过",
+  "retry": "重试",
+  "openDownloadPage": "打开下载页面",
+  "reinstallSteps": "1. 备份数据\n2. 妥善保管备份文件\n3. 按照说明安装新版本\n4. 恢复备份",
+  "releaseDetails": "版本详情",
+  "versionLabel": "版本",
+  "buildLabel": "构建号",
+  "releaseDate": "发布日期",
+  "fileSize": "大小",
+  "noReleaseNotes": "暂无发行说明。",
+  "viewOnGitHub": "在 GitHub 上查看",
+  "fallbackChangeExperience": "改善用户体验",
+  "fallbackChangeNotifications": "优化生日通知",
+  "fallbackChangeFixes": "修复上一版本的问题",
+  "fallbackChangeStability": "提高稳定性",
+  "birthdaySyncProgress": "{current} / {total} 个生日",
+  "@birthdaySyncProgress": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  }
+}

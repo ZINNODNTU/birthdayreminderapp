@@ -128,7 +128,7 @@ class _FakeReminderScheduler implements ReminderScheduler {
 class _StubSyncManager implements SyncManager {
   int calls = 0;
   @override
-  Future<void> syncAll() async {
+  Future<void> syncAll({void Function(int, int)? onProgress}) async {
     calls++;
   }
 

@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 
 import '../../../core/auth/auth_failure.dart';
 import '../../../core/session/session_controller.dart';
+import '../../../l10n/l10n_extensions.dart';
+import '../../../widgets/language_selector.dart';
 
 /// Google-only authentication + Local Mode entry screen.
 ///
@@ -72,8 +74,19 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final inFlight = _googleInFlight || _localInFlight;
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 16),
+            child: LanguageSelector(),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -95,7 +108,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Đừng để một sinh nhật nào trôi qua mà không được nhớ đến.',
+                  l10n.authSubtitle,
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
@@ -119,7 +132,7 @@ class _AuthScreenState extends State<AuthScreen> {
                               fontSize: 18,
                             ),
                           ),
-                  label: const Text('Tiếp tục với Google'),
+                  label: Text(l10n.signInGoogle),
                   style: FilledButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
@@ -130,7 +143,7 @@ class _AuthScreenState extends State<AuthScreen> {
                     const Expanded(child: Divider()),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: Text('hoặc', style: theme.textTheme.bodySmall),
+                      child: Text(l10n.or, style: theme.textTheme.bodySmall),
                     ),
                     const Expanded(child: Divider()),
                   ],
@@ -147,15 +160,14 @@ class _AuthScreenState extends State<AuthScreen> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                           : const Icon(Icons.devices),
-                  label: const Text('Tiếp tục trên thiết bị'),
+                  label: Text(l10n.continueOnDevice),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Bạn vẫn có thể sử dụng sinh nhật, lịch và nhắc nhở trên '
-                  'thiết bị. Các tính năng đồng bộ đám mây yêu cầu đăng nhập.',
+                  l10n.localModeDescription,
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,

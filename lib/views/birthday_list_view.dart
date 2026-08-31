@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../controllers/birthday_controller.dart';
 import '../models/birthday.dart';
+import '../l10n/l10n_extensions.dart';
 import 'birthday_detail_view.dart';
 
 import 'birthday_item.dart';
@@ -63,30 +64,30 @@ class _BirthdayListViewState extends State<BirthdayListView> {
       appBar: AppBar(
         title:
             _isSelectionMode
-                ? Text('Đã chọn: ${_selectedBirthdays.length}')
+                ? Text(context.l10n.selectedCount(_selectedBirthdays.length))
                 : null,
         actions: [
           if (_isSelectionMode) ...[
             IconButton(
               icon: const Icon(Icons.select_all),
               onPressed: () => _selectAll(filteredBirthdays),
-              tooltip: 'Chọn tất cả',
+              tooltip: context.l10n.selectAll,
             ),
             IconButton(
               icon: const Icon(Icons.delete),
               onPressed: _deleteSelected,
-              tooltip: 'Xóa đã chọn',
+              tooltip: context.l10n.deleteSelected,
             ),
             IconButton(
               icon: const Icon(Icons.clear),
               onPressed: _clearSelection,
-              tooltip: 'Hủy chọn',
+              tooltip: context.l10n.clearSelection,
             ),
           ] else ...[
             // Nút mở menu sắp xếp lọc
             PopupMenuButton<bool>(
               icon: const Icon(Icons.sort),
-              tooltip: 'Sắp xếp',
+              tooltip: context.l10n.sort,
               onSelected: (value) {
                 setState(() {
                   _sortAscending = value;
@@ -103,7 +104,7 @@ class _BirthdayListViewState extends State<BirthdayListView> {
                           else
                             const SizedBox(width: 24),
                           const SizedBox(width: 8),
-                          const Text('Sinh nhật gần đến'),
+                          Text(context.l10n.nearestBirthday),
                         ],
                       ),
                     ),
@@ -116,7 +117,7 @@ class _BirthdayListViewState extends State<BirthdayListView> {
                           else
                             const SizedBox(width: 24),
                           const SizedBox(width: 8),
-                          const Text('Sinh nhật xa'),
+                          Text(context.l10n.farthestBirthday),
                         ],
                       ),
                     ),
@@ -131,9 +132,9 @@ class _BirthdayListViewState extends State<BirthdayListView> {
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: TextField(
-              decoration: const InputDecoration(
-                labelText: 'Tìm kiếm',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: context.l10n.search,
+                border: const OutlineInputBorder(),
               ),
               onChanged: (value) {
                 setState(() {
@@ -144,9 +145,7 @@ class _BirthdayListViewState extends State<BirthdayListView> {
           ),
           // Danh sách sinh nhật
           filteredBirthdays.isEmpty
-              ? const Expanded(
-                child: Center(child: Text('Chưa có sinh nhật nào')),
-              )
+              ? Expanded(child: Center(child: Text(context.l10n.noBirthdays)))
               : Expanded(
                 child: ListView.builder(
                   itemCount: filteredBirthdays.length,
@@ -178,7 +177,7 @@ class _BirthdayListViewState extends State<BirthdayListView> {
           _isSelectionMode
               ? FloatingActionButton(
                 onPressed: _deleteSelected,
-                tooltip: 'Xóa đã chọn',
+                tooltip: context.l10n.deleteSelected,
                 child: const Icon(Icons.delete),
               )
               : null,
@@ -225,20 +224,20 @@ class _BirthdayListViewState extends State<BirthdayListView> {
       context: context,
       builder:
           (context) => AlertDialog(
-            title: const Text('Xóa sinh nhật?'),
+            title: Text(context.l10n.deleteBirthdayTitle),
             content: Text(
               count == 1
-                  ? 'Bạn có chắc muốn xóa sinh nhật này?'
-                  : 'Bạn có chắc muốn xóa $count sinh nhật đã chọn?',
+                  ? context.l10n.deleteOneConfirm
+                  : context.l10n.deleteManyConfirm(count),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text('Hủy'),
+                child: Text(context.l10n.cancel),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
-                child: const Text('Xóa'),
+                child: Text(context.l10n.delete),
               ),
             ],
           ),
@@ -255,7 +254,9 @@ class _BirthdayListViewState extends State<BirthdayListView> {
       messenger.showSnackBar(
         SnackBar(
           content: Text(
-            count == 1 ? 'Đã xóa sinh nhật' : 'Đã xóa $count sinh nhật',
+            count == 1
+                ? context.l10n.deletedOne
+                : context.l10n.deletedMany(count),
           ),
           backgroundColor: Colors.green.shade600,
         ),
@@ -263,10 +264,7 @@ class _BirthdayListViewState extends State<BirthdayListView> {
     } else {
       messenger.showSnackBar(
         SnackBar(
-          content: Text(
-            'Không thể xóa $failed sinh nhật. '
-            'Dữ liệu sẽ được thử đồng bộ lại.',
-          ),
+          content: Text(context.l10n.deleteFailed(failed)),
           backgroundColor: Colors.red.shade600,
         ),
       );

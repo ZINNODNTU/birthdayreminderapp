@@ -6,6 +6,7 @@ import '../../../core/logging/app_logger.dart';
 import '../../ai/data/ai_config_repository.dart';
 import '../../ai/domain/ai_provider.dart';
 import '../../ai/services/ai_client.dart';
+import '../../../l10n/l10n_extensions.dart';
 
 class AiSettingsCard extends StatefulWidget {
   const AiSettingsCard({super.key});
@@ -312,27 +313,27 @@ class _AiSettingsCardState extends State<AiSettingsCard> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Trí tuệ nhân tạo',
+              context.l10n.artificialIntelligence,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
             DropdownButtonFormField<AiProviderType>(
-              decoration: const InputDecoration(labelText: 'Nhà cung cấp'),
+              decoration: InputDecoration(labelText: context.l10n.provider),
               initialValue: _config.provider,
               onChanged: (v) {
                 if (v == null) return;
                 _switchProvider(v);
               },
-              items: const [
+              items: [
                 DropdownMenuItem(
                   value: AiProviderType.openAiCompatible,
-                  child: Text('OpenAI / tương thích'),
+                  child: Text(context.l10n.openAiCompatible),
                 ),
-                DropdownMenuItem(
+                const DropdownMenuItem(
                   value: AiProviderType.gemini,
                   child: Text('Google Gemini'),
                 ),
-                DropdownMenuItem(
+                const DropdownMenuItem(
                   value: AiProviderType.anthropic,
                   child: Text('Anthropic'),
                 ),
@@ -367,13 +368,16 @@ class _AiSettingsCardState extends State<AiSettingsCard> {
                   labelText: 'API Key',
                   helperText:
                       _maskedKey.isEmpty
-                          ? 'Chưa lưu API key.'
-                          : 'Hiện tại: $_maskedKey',
+                          ? context.l10n.apiKeyNotSaved
+                          : context.l10n.apiKeyCurrent(_maskedKey),
                   suffixIcon: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
-                        tooltip: _obscureApiKey ? 'Hiện API key' : 'Ẩn API key',
+                        tooltip:
+                            _obscureApiKey
+                                ? context.l10n.showApiKey
+                                : context.l10n.hideApiKey,
                         icon: Icon(
                           _obscureApiKey
                               ? Icons.visibility
@@ -386,7 +390,7 @@ class _AiSettingsCardState extends State<AiSettingsCard> {
                         },
                       ),
                       IconButton(
-                        tooltip: 'Dán từ clipboard',
+                        tooltip: context.l10n.pasteClipboard,
                         icon: const Icon(Icons.paste),
                         onPressed: _pasteApiKey,
                       ),
@@ -424,22 +428,22 @@ class _AiSettingsCardState extends State<AiSettingsCard> {
                 ElevatedButton.icon(
                   onPressed: _busy ? null : _test,
                   icon: const Icon(Icons.network_check),
-                  label: const Text('Kiểm tra kết nối'),
+                  label: Text(context.l10n.testConnection),
                 ),
                 OutlinedButton.icon(
                   onPressed: _busy ? null : _fetchModels,
                   icon: const Icon(Icons.list_alt),
-                  label: const Text('Lấy danh sách model'),
+                  label: Text(context.l10n.fetchModels),
                 ),
                 ElevatedButton.icon(
                   onPressed: _busy ? null : _save,
                   icon: const Icon(Icons.save),
-                  label: const Text('Lưu cấu hình'),
+                  label: Text(context.l10n.saveConfiguration),
                 ),
                 OutlinedButton.icon(
                   onPressed: _busy ? null : _clearKey,
                   icon: const Icon(Icons.delete_outline),
-                  label: const Text('Xoá API key'),
+                  label: Text(context.l10n.deleteApiKey),
                 ),
               ],
             ),

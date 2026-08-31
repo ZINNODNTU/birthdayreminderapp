@@ -28,6 +28,8 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import '../helpers/fake_auth_repository.dart';
 import '../helpers/fake_notification_service.dart';
+import 'package:birthdayreminderapp/l10n/app_localizations.dart';
+import 'package:birthdayreminderapp/services/locale_service.dart';
 
 Widget _wrap({
   required AuthRepository repo,
@@ -93,8 +95,15 @@ Widget _wrap({
               authStateChanges: ctx.read<AuthRepository>().authStateChanges,
             ),
       ),
+      ChangeNotifierProvider<LocaleService>(
+        create: (_) => LocaleService(sharedPrefs),
+      ),
     ],
-    child: const MaterialApp(home: AuthGate()),
+    child: MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: const [Locale('vi')],
+      home: const AuthGate(),
+    ),
   );
 }
 
@@ -147,6 +156,8 @@ void main() {
 
     // Should be back on AuthScreen with Google button.
     expect(find.byType(AuthScreen), findsOneWidget);
-    expect(find.text('Tiếp tục với Google'), findsOneWidget);
+    final authCtx = tester.element(find.byType(AuthScreen));
+    final l10n = AppLocalizations.of(authCtx)!;
+    expect(find.text(l10n.signInGoogle), findsOneWidget);
   });
 }

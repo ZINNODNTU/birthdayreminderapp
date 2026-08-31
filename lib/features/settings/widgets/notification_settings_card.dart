@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/logging/app_logger.dart';
 import '../../../services/notification_service.dart';
+import '../../../l10n/l10n_extensions.dart';
 
 class NotificationSettingsCard extends StatefulWidget {
   const NotificationSettingsCard({super.key});
@@ -38,14 +39,14 @@ class _NotificationSettingsCardState extends State<NotificationSettingsCard> {
     try {
       final result = await svc.showTestNotification(
         title: 'Birthday Reminder 🎂',
-        body: 'Thông báo thử hoạt động thành công!',
+        body: context.l10n.testNotificationSuccess,
       );
       await _refresh();
       if (!mounted) return;
       if (result.ok) {
         messenger.showSnackBar(
-          const SnackBar(
-            content: Text('Đã gửi thông báo thử'),
+          SnackBar(
+            content: Text(context.l10n.testNotificationSent),
             backgroundColor: Colors.green,
           ),
         );
@@ -53,11 +54,11 @@ class _NotificationSettingsCardState extends State<NotificationSettingsCard> {
         setState(() => _lastImmediateError = 'not_ok');
         messenger.showSnackBar(
           SnackBar(
-            content: const Text('Quyền thông báo chưa được bật.'),
+            content: Text(context.l10n.notificationPermissionOff),
             backgroundColor: Colors.orange.shade700,
             duration: const Duration(seconds: 6),
             action: SnackBarAction(
-              label: 'Mở cài đặt',
+              label: context.l10n.openSettings,
               onPressed: _openAppSettings,
             ),
           ),
@@ -78,16 +79,16 @@ class _NotificationSettingsCardState extends State<NotificationSettingsCard> {
     try {
       final result = await svc.scheduleOneMinuteDiagnostic(
         title: 'Birthday Reminder 🎂',
-        body: 'Thử hệ thống nhắc sinh nhật sau 1 phút — thành công!',
+        body: context.l10n.testAfterOneMinute,
       );
       if (!mounted) return;
       if (result.ok) {
         messenger.showSnackBar(
           SnackBar(
             content: Text(
-              'Đã đặt lịch thử 1 phút lúc '
-              '${result.scheduledAt?.hour.toString().padLeft(2, "0")}'
-              ':${result.scheduledAt?.minute.toString().padLeft(2, "0")}.',
+              context.l10n.scheduledMinuteTestAt(
+                '${result.scheduledAt?.hour.toString().padLeft(2, "0")}:${result.scheduledAt?.minute.toString().padLeft(2, "0")}',
+              ),
             ),
             backgroundColor: Colors.green.shade600,
           ),
@@ -96,8 +97,12 @@ class _NotificationSettingsCardState extends State<NotificationSettingsCard> {
         messenger.showSnackBar(
           SnackBar(
             content: Text(
-              'Không thể đặt lịch 1 phút: '
-              '${result.failureReason ?? result.error ?? "lỗi không xác định"}',
+              context.l10n.scheduleMinuteFailed(
+                (result.failureReason ??
+                        result.error ??
+                        context.l10n.unknownError)
+                    .toString(),
+              ),
             ),
             backgroundColor: Colors.red.shade600,
           ),
@@ -117,7 +122,7 @@ class _NotificationSettingsCardState extends State<NotificationSettingsCard> {
     try {
       final result = await svc.scheduleTestNotification(
         title: 'Birthday Reminder 🎂',
-        body: 'Thông báo thử sau 10 giây hoạt động thành công!',
+        body: context.l10n.testAfterTenSeconds,
       );
       await _refresh();
       if (!mounted) return;
@@ -125,9 +130,9 @@ class _NotificationSettingsCardState extends State<NotificationSettingsCard> {
         messenger.showSnackBar(
           SnackBar(
             content: Text(
-              '�ã đặt thông báo thử lúc '
-              '${result.scheduledAt?.hour.toString().padLeft(2, "0")}'
-              ':${result.scheduledAt?.minute.toString().padLeft(2, "0")}.',
+              context.l10n.scheduledTestAt(
+                '${result.scheduledAt?.hour.toString().padLeft(2, "0")}:${result.scheduledAt?.minute.toString().padLeft(2, "0")}',
+              ),
             ),
             backgroundColor: Colors.green.shade600,
           ),
@@ -136,11 +141,11 @@ class _NotificationSettingsCardState extends State<NotificationSettingsCard> {
         setState(() => _lastScheduledError = 'exact_alarm');
         messenger.showSnackBar(
           SnackBar(
-            content: const Text('Thiết bị chưa cấp quyền báo thức chính xác.'),
+            content: Text(context.l10n.exactAlarmPermissionMissing),
             backgroundColor: Colors.orange.shade700,
             duration: const Duration(seconds: 6),
             action: SnackBarAction(
-              label: 'Cho phép',
+              label: context.l10n.allow,
               onPressed: _openExactAlarm,
             ),
           ),
@@ -150,12 +155,10 @@ class _NotificationSettingsCardState extends State<NotificationSettingsCard> {
         setState(() => _lastScheduledError = 'permission');
         messenger.showSnackBar(
           SnackBar(
-            content: const Text(
-              'Quyền thông báo chưa được bật — không thể đặt lịch.',
-            ),
+            content: Text(context.l10n.notificationsDisabledSchedule),
             backgroundColor: Colors.orange.shade700,
             action: SnackBarAction(
-              label: 'Mở cài đặt',
+              label: context.l10n.openSettings,
               onPressed: _openAppSettings,
             ),
           ),
@@ -164,9 +167,7 @@ class _NotificationSettingsCardState extends State<NotificationSettingsCard> {
         setState(() => _lastScheduledError = 'no_pending');
         messenger.showSnackBar(
           SnackBar(
-            content: const Text(
-              'Thiết bị không giữ lịch — kiểm tra lại quyền báo thức.',
-            ),
+            content: Text(context.l10n.scheduleNotRetained),
             backgroundColor: Colors.red.shade600,
           ),
         );
@@ -175,8 +176,12 @@ class _NotificationSettingsCardState extends State<NotificationSettingsCard> {
         messenger.showSnackBar(
           SnackBar(
             content: Text(
-              'Không thể đặt thông báo thử: '
-              '${result.error ?? result.failureReason ?? "lỗi không xác định"}',
+              context.l10n.scheduleTestFailed(
+                (result.error ??
+                        result.failureReason ??
+                        context.l10n.unknownError)
+                    .toString(),
+              ),
             ),
             backgroundColor: Colors.red.shade600,
           ),
@@ -212,45 +217,48 @@ class _NotificationSettingsCardState extends State<NotificationSettingsCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Thông báo', style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              context.l10n.notificationSection,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 8),
             _StatusRow(
-              label: 'Quyền thông báo',
+              label: context.l10n.notificationPermission,
               value:
                   snap == null
-                      ? 'Đang kiểm tra'
+                      ? context.l10n.checking
                       : snap.permissionGranted
-                      ? 'Đã cấp'
-                      : 'Chưa cấp',
+                      ? context.l10n.granted
+                      : context.l10n.notGranted,
               ok: snap?.permissionGranted ?? false,
             ),
             _StatusRow(
-              label: 'Thông báo ứng dụng',
+              label: context.l10n.appNotifications,
               value:
                   snap == null
-                      ? 'Đang kiểm tra'
+                      ? context.l10n.checking
                       : snap.notificationsEnabled
-                      ? 'Đang bật'
-                      : 'Đang tắt',
+                      ? context.l10n.on
+                      : context.l10n.off,
               ok: snap?.notificationsEnabled ?? false,
             ),
             _StatusRow(
-              label: 'Báo thức chính xác',
+              label: context.l10n.exactAlarm,
               value:
                   snap == null
-                      ? 'Đang kiểm tra'
+                      ? context.l10n.checking
                       : snap.exactAvailable
-                      ? 'Đã cấp'
-                      : 'Chưa cấp',
+                      ? context.l10n.granted
+                      : context.l10n.notGranted,
               ok: snap?.exactAvailable ?? false,
             ),
             _StatusRow(
-              label: 'Múi giờ thiết bị',
+              label: context.l10n.deviceTimezone,
               value: snap?.tzLocalName ?? '—',
               ok: true,
             ),
             _StatusRow(
-              label: 'Kênh thông báo',
+              label: context.l10n.notificationChannel,
               value: NotificationService.testChannelName,
               ok: true,
             ),
@@ -289,31 +297,31 @@ class _NotificationSettingsCardState extends State<NotificationSettingsCard> {
                   key: const ValueKey('settings_immediate_test'),
                   onPressed: _busy ? null : _sendImmediate,
                   icon: const Icon(Icons.notifications_active),
-                  label: const Text('Gửi thông báo thử'),
+                  label: Text(context.l10n.sendTestNotification),
                 ),
                 ElevatedButton.icon(
                   key: const ValueKey('settings_scheduled_test'),
                   onPressed: _busy ? null : _scheduleTenSeconds,
                   icon: const Icon(Icons.schedule),
-                  label: const Text('Thử thông báo sau 10 giây'),
+                  label: Text(context.l10n.testAfterTenSeconds),
                 ),
                 OutlinedButton.icon(
                   key: const ValueKey('settings_open_os'),
                   onPressed: _busy ? null : _openAppSettings,
                   icon: const Icon(Icons.settings),
-                  label: const Text('Mở cài đặt thông báo'),
+                  label: Text(context.l10n.openNotificationSettings),
                 ),
                 OutlinedButton.icon(
                   key: const ValueKey('settings_open_exact'),
                   onPressed: _busy ? null : _openExactAlarm,
                   icon: const Icon(Icons.alarm),
-                  label: const Text('Cho phép báo thức chính xác'),
+                  label: Text(context.l10n.allowExactAlarm),
                 ),
                 OutlinedButton.icon(
                   key: const ValueKey('settings_one_minute_test'),
                   onPressed: _busy ? null : _scheduleOneMinuteDiagnostic,
                   icon: const Icon(Icons.timer),
-                  label: const Text('Thử hệ thống nhắc sinh nhật sau 1 phút'),
+                  label: Text(context.l10n.testAfterOneMinute),
                 ),
               ],
             ),

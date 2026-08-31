@@ -5,6 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:birthdayreminderapp/controllers/birthday_controller.dart';
 import 'package:birthdayreminderapp/core/auth/auth_gate.dart';
+import 'package:birthdayreminderapp/l10n/app_localizations.dart';
+import 'package:birthdayreminderapp/services/locale_service.dart';
 import 'package:birthdayreminderapp/core/auth/auth_repository.dart';
 import 'package:birthdayreminderapp/core/auth/user_profile_repository.dart';
 import 'package:birthdayreminderapp/core/session/session_controller.dart';
@@ -93,8 +95,15 @@ Widget _wrap({
               authStateChanges: ctx.read<AuthRepository>().authStateChanges,
             ),
       ),
+      ChangeNotifierProvider<LocaleService>(
+        create: (_) => LocaleService(sharedPrefs),
+      ),
     ],
-    child: const MaterialApp(home: AuthGate()),
+    child: MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: const [Locale('vi')],
+      home: const AuthGate(),
+    ),
   );
 }
 

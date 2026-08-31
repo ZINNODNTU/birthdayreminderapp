@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:birthdayreminderapp/l10n/app_localizations.dart';
+import 'package:birthdayreminderapp/services/locale_service.dart';
 
 import '../../helpers/fake_birthday_repository.dart';
 
@@ -24,11 +26,18 @@ Future<SharedPreferences> _pump(
     birthdays: FakeBirthdayRepository(),
   );
   await tester.pumpWidget(
-    Provider<OnboardingService>.value(
-      value: service,
+    MultiProvider(
+      providers: [
+        Provider<OnboardingService>.value(value: service),
+        ChangeNotifierProvider<LocaleService>(
+          create: (_) => LocaleService(prefs),
+        ),
+      ],
       child: MaterialApp(
         theme: ThemeData.light(),
         darkTheme: ThemeData.dark(),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: const [Locale('vi')],
         home: MediaQuery(
           data: MediaQueryData(textScaler: TextScaler.linear(textScale)),
           child: Builder(

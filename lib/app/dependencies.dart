@@ -32,6 +32,7 @@ import '../features/sync/sync_manager.dart';
 import '../features/update/repositories/github_release_repository.dart';
 import '../features/update/services/app_update_service.dart';
 import '../services/local_db_service.dart';
+import '../services/locale_service.dart';
 import '../services/notification_service.dart';
 
 /// Single composition root. Every dependency that the widget tree
@@ -59,6 +60,9 @@ class AppDependencies {
     return [
       // ---- shared infrastructure -------------------------------------
       Provider<SharedPreferences>.value(value: prefs),
+      ChangeNotifierProvider<LocaleService>(
+        create: (_) => LocaleService(prefs),
+      ),
       Provider<LocalDbService>(create: (_) => LocalDbService()),
       Provider<NotificationService>(create: (_) => NotificationService()),
 

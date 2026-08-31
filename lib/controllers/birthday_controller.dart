@@ -269,9 +269,11 @@ class BirthdayController with ChangeNotifier {
 
   /// Manually trigger a background sync. Used after Google sign-in so
   /// the user doesn't wait for the next auth stream emission.
-  Future<void> triggerSync() async {
+  Future<void> triggerSync({
+    void Function(int current, int total)? onProgress,
+  }) async {
     if (!isAuthenticated) return;
-    await _syncManager?.syncAll();
+    await _syncManager?.syncAll(onProgress: onProgress);
     _birthdays = await _repository.getBirthdays();
     _safeNotify();
   }

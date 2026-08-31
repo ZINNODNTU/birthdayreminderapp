@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/birthday.dart';
+import '../l10n/l10n_extensions.dart';
 
 import '../services/avatar_cache.dart';
 import 'birthday_add_edit_view.dart';
@@ -56,7 +57,7 @@ class BirthdayItem extends StatelessWidget {
     return ListTile(
       leading: CircleAvatar(child: image),
       title: Text(birthday.name),
-      subtitle: Text('Tuổi: $age • Còn $days ngày'),
+      subtitle: Text(context.l10n.ageAndDays(age, days)),
       trailing: IconButton(
         icon: const Icon(Icons.edit, size: 20),
         onPressed: () => _navigateToEditPage(context),

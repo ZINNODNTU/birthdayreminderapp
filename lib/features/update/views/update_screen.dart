@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../l10n/l10n_extensions.dart';
 import '../models/app_release.dart';
 import '../models/update_status.dart';
 import '../services/app_update_service.dart';
@@ -57,7 +58,7 @@ class _UpdateScreenState extends State<UpdateScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Cập nhật ứng dụng')),
+      appBar: AppBar(title: Text(context.l10n.updateTitle)),
       body: Consumer<AppUpdateService>(
         builder: (ctx, service, _) {
           final status = service.status;
@@ -103,8 +104,8 @@ class _UpdateScreenState extends State<UpdateScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Phiên bản hiện tại',
+            Text(
+              context.l10n.currentVersion,
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
@@ -116,7 +117,7 @@ class _UpdateScreenState extends State<UpdateScreen> {
                   final info = snapshot.data!;
                   return Text('${info.version} (${info.buildNumber})');
                 } else {
-                  return const Text('Đang tải...');
+                  return Text(context.l10n.loading);
                 }
               },
             ),
@@ -141,58 +142,56 @@ class _UpdateScreenState extends State<UpdateScreen> {
 
     switch (status) {
       case UpdateStatus.idle:
-        title = 'Sẵn sàng';
-        subtitle = 'Nhấn "Kiểm tra cập nhật" để tìm phiên bản mới.';
+        title = context.l10n.updateReady;
+        subtitle = context.l10n.updateCheckHint;
         break;
       case UpdateStatus.checking:
-        title = 'Đang kiểm tra...';
-        subtitle = 'Đang kiểm tra phiên bản mới...';
+        title = context.l10n.checkingUpdate;
+        subtitle = context.l10n.checkingUpdate;
         break;
       case UpdateStatus.upToDate:
-        title = 'Đã có phiên bản mới nhất';
-        subtitle = 'Bạn đang sử dụng phiên bản mới nhất.';
+        title = context.l10n.upToDate;
+        subtitle = context.l10n.usingLatestVersion;
         color = Colors.green.shade700;
         break;
       case UpdateStatus.updateAvailable:
-        title = 'Có bản cập nhật mới!';
-        subtitle = 'Phiên bản ${release?.version} đã sẵn sàng.';
+        title = context.l10n.newVersionAvailable;
+        subtitle = context.l10n.versionAvailable(release?.version ?? '');
         color = Colors.blue.shade700;
         break;
       case UpdateStatus.reinstallRequired:
-        title = 'Yêu cầu cài đặt lại';
-        subtitle =
-            release?.migrationMessage ??
-            'Phiên bản mới sử dụng chữ ký bảo mật mới. Hãy sao lưu dữ liệu trước khi cài đặt lại.';
+        title = context.l10n.reinstallRequired;
+        subtitle = release?.migrationMessage ?? context.l10n.reinstallMessage;
         color = Colors.orange.shade800;
         break;
       case UpdateStatus.downloading:
-        title = 'Đang tải bản cập nhật...';
+        title = context.l10n.downloadingUpdate;
         subtitle =
             totalBytes != null && totalBytes > 0
                 ? '${(progress * 100).toStringAsFixed(0)}% — ${_formatBytes(downloadedBytes)} / ${_formatBytes(totalBytes)}'
-                : 'Đã tải ${_formatBytes(downloadedBytes)}';
+                : context.l10n.downloadedSize(_formatBytes(downloadedBytes));
         break;
       case UpdateStatus.verifying:
-        title = 'Đang xác minh...';
-        subtitle = 'Đang kiểm tra tính toàn vẹn của tệp...';
+        title = context.l10n.verifyingUpdate;
+        subtitle = context.l10n.verifyingFile;
         break;
       case UpdateStatus.readyToInstall:
-        title = 'Sẵn sàng cài đặt!';
-        subtitle = 'Bản cập nhật đã tải về và xác minh.';
+        title = context.l10n.readyToInstall;
+        subtitle = context.l10n.updateDownloaded;
         color = Colors.green.shade700;
         break;
       case UpdateStatus.installPermissionRequired:
-        title = 'Cần quyền cài đặt';
-        subtitle = 'Cho phép cài đặt ứng dụng từ nguồn này rồi thử lại.';
+        title = context.l10n.installPermissionRequired;
+        subtitle = context.l10n.installPermissionHint;
         color = Colors.orange.shade800;
         break;
       case UpdateStatus.installing:
-        title = 'Đang cài đặt...';
-        subtitle = 'Vui lòng chờ...';
+        title = context.l10n.installingUpdate;
+        subtitle = context.l10n.pleaseWait;
         break;
       case UpdateStatus.error:
-        title = 'Lỗi';
-        subtitle = error ?? 'Đã xảy ra lỗi. Vui lòng thử lại.';
+        title = context.l10n.updateError;
+        subtitle = error ?? context.l10n.genericUpdateError;
         color = Colors.red.shade700;
         break;
     }
@@ -230,26 +229,22 @@ class _UpdateScreenState extends State<UpdateScreen> {
         if (status == UpdateStatus.updateAvailable)
           OutlinedButton(
             onPressed: _ignoreVersion,
-            child: const Text('Bỏ qua'),
+            child: Text(context.l10n.skipUpdate),
           ),
         if (status == UpdateStatus.error)
           OutlinedButton(
             onPressed: _downloadUpdate,
-            child: const Text('Thử lại'),
+            child: Text(context.l10n.retry),
           ),
         const SizedBox(width: 8),
         if (status == UpdateStatus.error)
           ElevatedButton.icon(
             onPressed: _openDownloadInBrowser,
             icon: const Icon(Icons.open_in_browser),
-            label: const Text('Mở trang tải xuống'),
+            label: Text(context.l10n.openDownloadPage),
           )
         else if (status == UpdateStatus.reinstallRequired)
-          const Expanded(
-            child: Text(
-              '1. Sao lưu dữ liệu\n2. Giữ file backup an toàn\n3. Cài đặt bản mới theo hướng dẫn\n4. Khôi phục backup',
-            ),
-          )
+          Expanded(child: Text(context.l10n.reinstallSteps))
         else
           ElevatedButton.icon(
             onPressed:
@@ -263,13 +258,13 @@ class _UpdateScreenState extends State<UpdateScreen> {
                     ? _downloadUpdate
                     : null,
             icon: const Icon(Icons.download),
-            label: const Text('Tải bản cập nhật'),
+            label: Text(context.l10n.downloadUpdate),
           ),
         if (status == UpdateStatus.readyToInstall)
           ElevatedButton.icon(
             onPressed: _installUpdate,
             icon: const Icon(Icons.install_desktop),
-            label: const Text('Cài đặt'),
+            label: Text(context.l10n.installUpdate),
           ),
       ],
     );
@@ -283,19 +278,19 @@ class _UpdateScreenState extends State<UpdateScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Chi tiết phiên bản',
+            Text(
+              context.l10n.releaseDetails,
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            _infoRow('Phiên bản', release.version),
-            _infoRow('Build', '${release.buildNumber}'),
+            _infoRow(context.l10n.latestVersion, release.version),
+            _infoRow(context.l10n.buildLabel, '${release.buildNumber}'),
             _infoRow(
-              'Ngày phát hành',
+              context.l10n.releaseDate,
               DateFormat('dd/MM/yyyy').format(release.publishedAt),
             ),
             _infoRow(
-              'Dung lượng',
+              context.l10n.fileSize,
               '${(release.apkSize / 1024 / 1024).toStringAsFixed(1)} MB',
             ),
             if (release.sha256.isNotEmpty)
@@ -304,14 +299,14 @@ class _UpdateScreenState extends State<UpdateScreen> {
                 '${release.sha256.substring(0, 8)}...${release.sha256.substring(release.sha256.length - 8)}',
               ),
             const Divider(),
-            const Text(
-              'Có gì mới',
+            Text(
+              context.l10n.whatsNew,
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
               release.releaseNotes.isEmpty
-                  ? 'Không có ghi chú phát hành.'
+                  ? context.l10n.noReleaseNotes
                   : release.releaseNotes,
             ),
             if (release.githubReleaseUrl != null)
@@ -322,7 +317,7 @@ class _UpdateScreenState extends State<UpdateScreen> {
                     // TODO: open URL in browser (use url_launcher)
                   },
                   child: Text(
-                    'Xem trên GitHub',
+                    context.l10n.viewOnGitHub,
                     style: TextStyle(
                       color: Colors.blue.shade700,
                       decoration: TextDecoration.underline,

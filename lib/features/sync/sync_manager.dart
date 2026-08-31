@@ -67,11 +67,11 @@ class SyncManager {
   /// Top-level reconciliation: push pending local mutations, then pull
   /// the remote mirror and merge. Bounded retry — failures leave rows
   /// in their pending state and the next call will retry.
-  Future<void> syncAll() {
+  Future<void> syncAll({void Function(int current, int total)? onProgress}) {
     if (!_isAuthenticated) return Future.value();
     if (_activeSync != null) return _activeSync!;
     final uid = _uid!;
-    final future = _performSync(uid);
+    final future = _performSync(uid, onProgress: onProgress);
     _activeSync = future;
     return future.whenComplete(() {
       if (identical(_activeSync, future)) {
@@ -80,10 +80,39 @@ class SyncManager {
     });
   }
 
-  Future<void> _performSync(String uid) async {
+  Future<void> _performSync(
+    String uid, {
+    void Function(int current, int total)? onProgress,
+  }) async {
     try {
-      await pushPending(uid);
-      await pullRemote(uid);
+      // Progress is a single sync transaction, not two independent
+      // counters. Capture a stable snapshot before either phase starts
+      // so the UI never jumps from the local count to the remote count.
+      final localSnapshot = await _local.getBirthdays();
+      final remoteSnapshot = await _remote.getBirthdayRecords(uid);
+      final total =
+          localSnapshot.length > remoteSnapshot.length
+              ? localSnapshot.length
+              : remoteSnapshot.length;
+      void report(int current, int phaseTotal, double start, double span) {
+        if (onProgress == null || total == 0) return;
+        final phaseRatio =
+            phaseTotal <= 0 ? 1.0 : (current / phaseTotal).clamp(0.0, 1.0);
+        final overall = ((start + phaseRatio * span) * total).round();
+        onProgress!(overall.clamp(0, total), total);
+      }
+
+      await pushPending(
+        uid,
+        onProgress:
+            (current, phaseTotal) => report(current, phaseTotal, 0, 0.5),
+      );
+      await pullRemote(
+        uid,
+        onProgress:
+            (current, phaseTotal) => report(current, phaseTotal, 0.5, 0.5),
+      );
+      onProgress?.call(total, total);
     } catch (e, st) {
       AppLogger.warn('SyncManager', 'syncAll failed: $e\n$st');
     }
@@ -92,9 +121,22 @@ class SyncManager {
   /// Push every local row that hasn't reached the cloud yet. Uses
   /// [getAllForSync] so `pendingDelete` tombstones are visible here
   /// even though the UI never shows them.
-  Future<void> pushPending(String uid) async {
+  Future<void> pushPending(
+    String uid, {
+    void Function(int current, int total)? onProgress,
+  }) async {
     final all = await _local.getAllForSync();
-    for (final b in all) {
+    final pending =
+        all
+            .where(
+              (b) =>
+                  b.syncStatus != SyncStatus.synced &&
+                  (b.ownerUid == null || b.ownerUid == uid),
+            )
+            .toList();
+    final total = pending.length;
+    var current = 0;
+    for (final b in pending) {
       if (b.syncStatus == SyncStatus.synced) continue;
       if (b.ownerUid != null && b.ownerUid != uid) continue;
       try {
@@ -114,6 +156,8 @@ class SyncManager {
             'SyncManager',
             'soft-delete local tombstone synced id=${b.id}',
           );
+          current++;
+          onProgress?.call(current, total);
           continue;
         }
         final stamped = b.copyWithForSync(
@@ -123,11 +167,16 @@ class SyncManager {
         final photo = await _buildCloudPhoto(stamped);
         await _remote.upsertBirthday(uid, stamped, photo: photo);
         await _local.upsertBirthday(stamped);
+        current++;
+        onProgress?.call(current, total);
       } catch (e) {
         AppLogger.warn(
           'SyncManager',
           'push failed for ${b.id}: $e — leaving pending',
         );
+        // still count as processed? We'll count as failed, but we increment anyway to avoid stall.
+        current++;
+        onProgress?.call(current, total);
       }
     }
   }
@@ -153,10 +202,15 @@ class SyncManager {
   /// `updatedAt` wins. When the remote carries a photo, the local
   /// `avatarBase64` is restored (only if the local side is currently
   /// empty or behind on hash — see [_mergePhoto]).
-  Future<void> pullRemote(String uid) async {
+  Future<void> pullRemote(
+    String uid, {
+    void Function(int current, int total)? onProgress,
+  }) async {
     final remote = await _remote.getBirthdayRecords(uid);
     final local = await _local.getBirthdays();
     final byId = {for (final b in local) b.id: b};
+    final total = remote.length;
+    var current = 0;
     for (final r in remote) {
       final l = byId[r.birthday.id];
       final remoteDeleted = r.birthday.deletedAt != null;
@@ -174,10 +228,14 @@ class SyncManager {
           );
           await _local.upsertBirthday(tombstone);
         }
+        current++;
+        onProgress?.call(current, total);
         continue;
       }
       if (l == null) {
         await _local.upsertBirthday(await _withRestoredPhoto(r, uid));
+        current++;
+        onProgress?.call(current, total);
         continue;
       }
       final localTs = l.updatedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
@@ -188,6 +246,8 @@ class SyncManager {
           await _withRestoredPhoto(r, uid, existing: l),
         );
       }
+      current++;
+      onProgress?.call(current, total);
     }
   }
 

@@ -3,6 +3,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../../services/notification_service.dart';
 import '../../update/views/update_screen.dart';
+import '../../../l10n/l10n_extensions.dart';
 
 class AppInfoCard extends StatefulWidget {
   const AppInfoCard({super.key});
@@ -37,26 +38,38 @@ class _AppInfoCardState extends State<AppInfoCard> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Thông tin ứng dụng',
+              context.l10n.appInformation,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
             Text(
               info == null
-                  ? 'Đang tải…'
-                  : '${info.appName} — phiên bản ${info.version} (build ${info.buildNumber})',
+                  ? context.l10n.loading
+                  : context.l10n.appVersionInfo(
+                    info.appName,
+                    info.version,
+                    info.buildNumber,
+                  ),
             ),
-            Text('Kênh test: ${NotificationService.testChannelId}'),
-            Text('Kênh chính: ${NotificationService.androidChannelId}'),
-            Text('ID thông báo thử: ${NotificationService.testNotificationId}'),
+            Text(context.l10n.testChannel(NotificationService.testChannelId)),
             Text(
-              'ID thông báo thử đặt lịch: ${NotificationService.scheduledTestNotificationId}',
+              context.l10n.mainChannel(NotificationService.androidChannelId),
+            ),
+            Text(
+              context.l10n.testNotificationId(
+                NotificationService.testNotificationId.toString(),
+              ),
+            ),
+            Text(
+              context.l10n.scheduledTestNotificationId(
+                NotificationService.scheduledTestNotificationId.toString(),
+              ),
             ),
             const Divider(),
             ListTile(
               leading: const Icon(Icons.system_update),
-              title: const Text('Cập nhật ứng dụng'),
-              subtitle: const Text('Kiểm tra phiên bản mới'),
+              title: Text(context.l10n.updateApp),
+              subtitle: Text(context.l10n.checkNewVersion),
               onTap:
                   () => Navigator.push(
                     context,

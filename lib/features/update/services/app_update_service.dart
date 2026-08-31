@@ -19,15 +19,19 @@ class AppUpdateService extends ChangeNotifier {
     required GithubReleaseRepository repository,
     required SharedPreferences prefs,
     ApkDownloadService? downloadService,
+    Future<PackageInfo?> Function()? installedVersionLoader,
   }) : _repository = repository,
        _prefs = prefs,
-       _downloadService = downloadService ?? ApkDownloadService() {
+       _downloadService = downloadService ?? ApkDownloadService(),
+       _installedVersionLoader =
+           installedVersionLoader ?? PackageInfo.fromPlatform {
     _loadCachedState();
   }
 
   final GithubReleaseRepository _repository;
   final SharedPreferences _prefs;
   final ApkDownloadService _downloadService;
+  final Future<PackageInfo?> Function() _installedVersionLoader;
 
   // State
   UpdateStatus _status = UpdateStatus.idle;
@@ -112,6 +116,7 @@ class AppUpdateService extends ChangeNotifier {
           isMandatory: release.isMandatory,
           minimumSupportedVersion: release.minimumSupportedVersion,
           githubReleaseUrl: release.githubReleaseUrl,
+          changes: release.changes,
         );
         _latestRelease = verifiedRelease;
       } else {
@@ -264,7 +269,7 @@ class AppUpdateService extends ChangeNotifier {
 
   /// Dismiss the update notification (ignore this version).
   void ignoreVersion() {
-    if (_latestRelease != null) {
+    if (_latestRelease != null && !_latestRelease!.isMandatory) {
       _prefs.setString(_ignoredVersionKey, _latestRelease!.version);
       _latestRelease = null;
       _setStatus(UpdateStatus.upToDate);
@@ -280,7 +285,7 @@ class AppUpdateService extends ChangeNotifier {
   /// Get installed version info.
   Future<PackageInfo?> _getInstalledVersion() async {
     try {
-      return await PackageInfo.fromPlatform();
+      return await _installedVersionLoader();
     } catch (_) {
       return null;
     }

@@ -26,6 +26,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import '../helpers/fake_auth_repository.dart';
+import 'package:birthdayreminderapp/l10n/app_localizations.dart';
+import 'package:birthdayreminderapp/services/locale_service.dart';
 import '../helpers/fake_notification_service.dart';
 
 late SharedPreferences sharedPrefs;
@@ -123,18 +125,28 @@ void main() {
                         ctx.read<AuthRepository>().authStateChanges,
                   ),
             ),
+            ChangeNotifierProvider<LocaleService>(
+              create: (_) => LocaleService(sharedPrefs),
+            ),
           ],
-          child: const MaterialApp(home: AuthGate()),
+          child: MaterialApp(
+            locale: const Locale('vi'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: const [Locale('vi')],
+            home: const AuthGate(),
+          ),
         ),
       );
       await _settle(tester);
 
       expect(find.byType(Homepage), findsOneWidget);
 
-      await tester.tap(find.byTooltip('Open navigation menu'));
-      await _settle(tester);
+      await tester.tap(find.byIcon(Icons.menu));
+      await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Đăng xuất'));
+      final homepageCtx = tester.element(find.byType(Homepage));
+      final l10n = AppLocalizations.of(homepageCtx)!;
+      await tester.tap(find.text(l10n.signOut));
       await _settle(tester);
 
       expect(repo.signOutCalls, 1);

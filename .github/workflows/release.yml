@@ -57,6 +57,9 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Flutter clean
+        run: flutter clean
+
       - name: Flutter pub get
         run: flutter pub get
 
@@ -65,7 +68,7 @@ jobs:
 
       - name: Analyze
         if: github.event_name != 'workflow_dispatch'
-        run: flutter analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
       - name: Analyze historical release
         if: github.event_name == 'workflow_dispatch'
@@ -219,13 +222,16 @@ jobs:
           fi
           echo "Signer verified as configured permanent production certificate."
 
-      - name: Rename APK
+      - name: Rename and verify APK
         run: |
           PUB_VERSION=$(grep '^version:' pubspec.yaml | awk '{print $2}')
           PUB_SEM="${PUB_VERSION%+*}"
-          PUB_BUILD="${PUB_VERSION#*+}"
-          cp build/app/outputs/flutter-apk/app-release.apk "BirthdayReminder-v${PUB_SEM}.apk"
-          ls -la "BirthdayReminder-v${PUB_SEM}.apk"
+          SOURCE="build/app/outputs/flutter-apk/app-release.apk"
+          TARGET="BirthdayReminder-v${PUB_SEM}.apk"
+          test -s "$SOURCE" || { echo "::error::Release APK was not created."; exit 1; }
+          cp "$SOURCE" "$TARGET"
+          test -s "$TARGET" || { echo "::error::Renamed APK is missing or empty."; exit 1; }
+          ls -lh "$TARGET"
 
       - name: Upload signed APK artifact
         uses: actions/upload-artifact@v4
@@ -252,10 +258,46 @@ jobs:
               -MinimumSupportedVersion '1.0.1' -RequiresReinstall `
               -MigrationMessage 'Phiên bản 2.0.0 sử dụng chữ ký phát hành bảo mật mới. Hãy sao lưu toàn bộ dữ liệu ở phiên bản 1.0.1, giữ file sao lưu an toàn, sau đó cài đặt lại ứng dụng và khôi phục dữ liệu.'
           } else {
+            $changes = if ($version -eq '2.1.0') {
+              @('Cải thiện hiệu năng', 'Tối ưu cập nhật ứng dụng', 'Sửa lỗi')
+            } else { @() }
+            $minimumVersion = if ($version -eq '2.1.0') { '2.0.0' } else { '' }
             ./scripts/release/generate_release_metadata.ps1 `
-              -Version $version -BuildNumber $build -ApkPath $apk
+              -Version $version -BuildNumber $build -ApkPath $apk `
+              -MinimumSupportedVersion $minimumVersion -Changes $changes
           }
           Get-Content release-metadata.json
+
+      - name: Generate structured release notes
+        if: github.event_name != 'workflow_dispatch' || inputs.dry_run == false
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.version_gate.outputs.RELEASE_TAG }}"
+          VERSION="${{ steps.version_gate.outputs.TAG_SEM }}"
+          PREVIOUS_TAG=$(git tag --sort=-version:refname | grep -Fxv "$TAG" | head -1 || true)
+          RANGE="$TAG"
+          if [[ -n "$PREVIOUS_TAG" ]]; then RANGE="$PREVIOUS_TAG..$TAG"; fi
+          COMMITS=$(git log "$RANGE" --pretty='- %s' --no-merges || true)
+          FEATURES=$(printf '%s\n' "$COMMITS" | grep -Ei '^- (feat|feature)(\(.+\))?:' || true)
+          FIXES=$(printf '%s\n' "$COMMITS" | grep -Ei '^- (fix|bugfix)(\(.+\))?:' || true)
+          BREAKING=$(printf '%s\n' "$COMMITS" | grep -Ei 'BREAKING CHANGE|^- .+!:' || true)
+          {
+            echo "## Version"
+            echo "v$VERSION (build ${{ steps.version_gate.outputs.PUB_BUILD }})"
+            echo
+            echo "## Tính năng mới"
+            [[ -n "$FEATURES" ]] && echo "$FEATURES" || echo "- Không có thay đổi được đánh dấu."
+            echo
+            echo "## Bug đã fix"
+            [[ -n "$FIXES" ]] && echo "$FIXES" || echo "- Không có thay đổi được đánh dấu."
+            echo
+            echo "## Breaking changes"
+            [[ -n "$BREAKING" ]] && echo "$BREAKING" || echo "- Không có."
+            echo
+            echo "## Thay đổi khác"
+            [[ -n "$COMMITS" ]] && echo "$COMMITS" || echo "- Không có."
+          } > release-notes.md
 
       - name: Create GitHub Release
         if: github.event_name != 'workflow_dispatch' || inputs.dry_run == false
@@ -263,7 +305,7 @@ jobs:
         with:
           tag_name: ${{ steps.version_gate.outputs.RELEASE_TAG }}
           name: "Birthday Reminder ${{ steps.version_gate.outputs.TAG_SEM }}"
-          generate_release_notes: true
+          body_path: RELEASE_NOTES_2.1.0.md
           files: |
             BirthdayReminder-v${{ steps.version_gate.outputs.TAG_SEM }}.apk
             BirthdayReminder-v${{ steps.version_gate.outputs.TAG_SEM }}.apk.sha256

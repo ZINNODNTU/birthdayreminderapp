@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:birthdayreminderapp/features/update/models/app_release.dart';
 import 'package:birthdayreminderapp/features/update/models/update_status.dart';
@@ -45,6 +46,7 @@ class _StubRepo extends GithubReleaseRepository {
       apkDownloadUrl: apk['browser_download_url'] as String,
       apkSize: apk['size'] as int? ?? 0,
       sha256: '',
+      isMandatory: j['forceUpdate'] as bool? ?? false,
     );
   }
 
@@ -55,15 +57,21 @@ class _StubRepo extends GithubReleaseRepository {
 Future<AppUpdateService> _setup({
   required GithubReleaseRepository repo,
   required SharedPreferences prefs,
+  String? installedVersion,
 }) async {
-  // Note: service is created in test. We rely on Platform.environment to fake
-  // PackageInfo? We don't - we use a fake installed version path.
-  // For service tests we need to override the version comparison. Instead we
-  // use a real PackageInfo via MethodChannel mocking? Simpler: we stub
-  // PackageInfo with a custom override.
-  // We will instead test with the real PackageInfo which returns a default
-  // version on Flutter test runner.
-  return AppUpdateService(repository: repo, prefs: prefs);
+  return AppUpdateService(
+    repository: repo,
+    prefs: prefs,
+    installedVersionLoader:
+        installedVersion == null
+            ? null
+            : () async => PackageInfo(
+              appName: 'Birthday Reminder',
+              packageName: 'x',
+              version: installedVersion,
+              buildNumber: '1',
+            ),
+  );
 }
 
 void main() {
@@ -127,8 +135,8 @@ void main() {
           .setMockMethodCallHandler(channel, (call) async {
             if (call.method == 'getAll') {
               return {
-                'version': '1.0.0',
-                'buildNumber': '1',
+                'version': '2.1.0',
+                'buildNumber': '9',
                 'packageName': 'x',
               };
             }
@@ -136,7 +144,7 @@ void main() {
           });
       final service = await _setup(
         repo: _StubRepo({
-          'tag_name': 'v1.0.0',
+          'tag_name': 'v2.1.0',
           'name': 'r',
           'body': '',
           'draft': false,
@@ -144,14 +152,15 @@ void main() {
           'published_at': '2026-01-01T00:00:00Z',
           'assets': [
             {
-              'name': 'BirthdayReminder-v1.0.0.apk',
+              'name': 'BirthdayReminder-v2.1.0.apk',
               'browser_download_url':
-                  'https://github.com/owner/repo/releases/download/v1.0.0/app.apk',
+                  'https://github.com/owner/repo/releases/download/v2.1.0/app.apk',
               'size': 1234,
             },
           ],
         }, sha: 'A' * 64),
         prefs: prefs,
+        installedVersion: '2.1.0',
       );
       await service.checkForUpdates(manual: true);
       expect(service.status, UpdateStatus.upToDate);
@@ -164,8 +173,8 @@ void main() {
           .setMockMethodCallHandler(channel, (call) async {
             if (call.method == 'getAll') {
               return {
-                'version': '1.0.0',
-                'buildNumber': '1',
+                'version': '2.0.6',
+                'buildNumber': '8',
                 'packageName': 'x',
               };
             }
@@ -173,7 +182,7 @@ void main() {
           });
       final service = await _setup(
         repo: _StubRepo({
-          'tag_name': 'v1.0.1',
+          'tag_name': 'v2.1.0',
           'name': 'r',
           'body': '',
           'draft': false,
@@ -181,14 +190,15 @@ void main() {
           'published_at': '2026-01-01T00:00:00Z',
           'assets': [
             {
-              'name': 'BirthdayReminder-v1.0.1.apk',
+              'name': 'BirthdayReminder-v2.1.0.apk',
               'browser_download_url':
-                  'https://github.com/owner/repo/releases/download/v1.0.1/app.apk',
+                  'https://github.com/owner/repo/releases/download/v2.1.0/app.apk',
               'size': 1234,
             },
           ],
         }, sha: 'A' * 64),
         prefs: prefs,
+        installedVersion: '2.0.6',
       );
       await service.checkForUpdates(manual: true);
       expect(service.status, UpdateStatus.updateAvailable);
@@ -295,6 +305,7 @@ void main() {
           ],
         }, sha: 'A' * 64),
         prefs: prefs,
+        installedVersion: '1.0.0',
       );
       await service.checkForUpdates(manual: true);
       expect(service.latestRelease, isNotNull);
@@ -302,6 +313,42 @@ void main() {
       expect(service.status, UpdateStatus.upToDate);
       expect(service.latestRelease, isNull);
       expect(prefs.getString('update_ignored_version'), '1.0.1');
+    });
+
+    test('forceUpdate cannot be ignored', () async {
+      final prefs = await SharedPreferences.getInstance();
+      const channel = MethodChannel('dev.fluttercommunity.plus/package_info');
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(
+            channel,
+            (_) async => {
+              'version': '2.0.6',
+              'buildNumber': '8',
+              'packageName': 'x',
+            },
+          );
+      final service = await _setup(
+        repo: _StubRepo({
+          'tag_name': 'v2.1.0',
+          'forceUpdate': true,
+          'draft': false,
+          'prerelease': false,
+          'assets': [
+            {
+              'name': 'BirthdayReminder-v2.1.0.apk',
+              'browser_download_url': 'https://example.com/app.apk',
+              'size': 1234,
+            },
+          ],
+        }, sha: 'A' * 64),
+        prefs: prefs,
+        installedVersion: '2.0.6',
+      );
+      await service.checkForUpdates(manual: true);
+      service.ignoreVersion();
+      expect(service.status, UpdateStatus.updateAvailable);
+      expect(service.latestRelease?.isMandatory, isTrue);
+      expect(prefs.getString('update_ignored_version'), isNull);
     });
   });
 }

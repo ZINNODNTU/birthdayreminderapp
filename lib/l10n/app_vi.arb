@@ -1,0 +1,670 @@
+{
+  "@@locale": "vi",
+  "appTitle": "Birthday Reminder",
+  "home": "Trang chủ",
+  "birthdayList": "Danh sách sinh nhật",
+  "todayBirthdays": "Sinh nhật hôm nay",
+  "upcoming": "Sắp tới",
+  "seeMore": "Xem thêm",
+  "noBirthdays": "Chưa có sinh nhật nào",
+  "birthdayCalendar": "Lịch sinh nhật",
+  "calendarMonth": "Tháng",
+  "calendarDay": "Ngày",
+  "birthdayReminder": "Nhắc sinh nhật",
+  "settings": "Cài đặt",
+  "language": "Ngôn ngữ",
+  "backup": "Sao lưu",
+  "restore": "Khôi phục",
+  "userGuide": "Hướng dẫn sử dụng",
+  "newVersion": "Có phiên bản mới",
+  "updateNow": "Cập nhật ngay",
+  "later": "Để sau",
+  "whatsNew": "Có gì mới:",
+  "addBirthday": "Thêm sinh nhật",
+  "editBirthday": "Sửa sinh nhật",
+  "manualAdd": "Thêm thủ công",
+  "contactAdd": "Thêm từ danh bạ",
+  "search": "Tìm kiếm",
+  "selectLanguage": "Chọn ngôn ngữ hiển thị",
+  "sessionStatus": "Trạng thái phiên",
+  "mode": "Chế độ",
+  "aiTrial": "Thử AI",
+  "monthBirthdays": "Sinh nhật tháng {month} • {count}",
+  "@monthBirthdays": {
+    "placeholders": {
+      "month": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dayBirthdays": "Sinh nhật ngày {date}",
+  "@dayBirthdays": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "showMonth": "Xem cả tháng",
+  "noMonthBirthdays": "Không có sinh nhật nào trong tháng này.",
+  "noDayBirthdays": "Không có sinh nhật nào trong ngày này.",
+  "improveExperience": "Cải thiện trải nghiệm người dùng",
+  "optimizeNotifications": "Tối ưu thông báo sinh nhật",
+  "fixPreviousBugs": "Sửa lỗi phiên bản trước",
+  "increaseStability": "Tăng độ ổn định",
+  "name": "Tên",
+  "birthdayDate": "Ngày sinh",
+  "save": "Lưu",
+  "cancel": "Hủy",
+  "chooseImage": "Chọn ảnh",
+  "delete": "Xóa",
+  "confirmDelete": "Xác nhận xóa",
+  "deleteConfirmMessage": "Bạn có chắc muốn xóa?",
+  "remindBefore": "Nhắc trước (ngày)",
+  "remindTime": "Giờ nhắc",
+  "syncing": "Đang đồng bộ...",
+  "syncSuccess": "Đồng bộ thành công",
+  "syncError": "Lỗi đồng bộ",
+  "backupSuccess": "Sao lưu thành công",
+  "restoreSuccess": "Khôi phục thành công",
+  "cloudUnavailable": "Đăng nhập để sử dụng tính năng đồng bộ đám mây.",
+  "signInGoogle": "Đăng nhập bằng Google",
+  "signOut": "Đăng xuất",
+  "exitLocalMode": "Thoát chế độ thiết bị",
+  "localMode": "Chế độ trên thiết bị",
+  "localModeSubtitle": "Tắt khi bạn muốn dùng tài khoản Google",
+  "deleteAllFirestore": "Xóa toàn bộ trên Firestore",
+  "deleteAllFirestoreConfirm": "Bạn có chắc muốn xóa tất cả sinh nhật trên Firestore không?",
+  "deletedAllFirestore": "Đã xóa toàn bộ dữ liệu trên Firestore",
+  "noInternet": "Không có kết nối mạng",
+  "googleConfigError": "Đăng nhập Google chưa được cấu hình đúng trên thiết bị này.",
+  "googleUiUnavailable": "Trình chọn tài khoản Google không khả dụng trên thiết bị này.",
+  "loginFailed": "Đăng nhập thất bại",
+  "authError": "Đã xảy ra lỗi, vui lòng thử lại",
+  "testNotification": "Thông báo thử",
+  "testNotificationSuccess": "Đã gửi thông báo thử",
+  "testNotificationFailed": "Không thể gửi thông báo thử",
+  "ageInvalid": "Tuổi phải nằm trong khoảng từ 0 đến 120.",
+  "nameRequired": "Vui lòng nhập tên",
+  "gender": "Giới tính",
+  "male": "Nam",
+  "female": "Nữ",
+  "other": "Khác",
+  "nickname": "Biệt danh",
+  "relationship": "Mối quan hệ",
+  "note": "Ghi chú",
+  "calendarType": "Loại lịch",
+  "solar": "Dương lịch",
+  "lunar": "Âm lịch",
+  "solarDate": "Ngày sinh dương: {date}",
+  "@solarDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "lunarDate": "Ngày sinh âm: {date}",
+  "@lunarDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "repeatAnnually": "Lặp lại hàng năm",
+  "enableNotification": "Bật thông báo",
+  "imagePickError": "Không thể chọn hoặc cắt ảnh.",
+  "imageProcessError": "Không thể xử lý ảnh đã chọn.",
+  "permissionRequired": "Cần quyền truy cập thư viện ảnh.",
+  "imageDecodeError": "Không thể giải mã ảnh.",
+  "chooseLanguage": "Chọn ngôn ngữ",
+  "languageVi": "Tiếng Việt",
+  "languageEn": "English",
+  "languageZh": "中文",
+  "authSubtitle": "Đừng để một sinh nhật nào trôi qua mà không được nhớ đến.",
+  "or": "hoặc",
+  "continueOnDevice": "Tiếp tục trên thiết bị",
+  "localModeDescription": "Bạn vẫn có thể sử dụng sinh nhật, lịch và nhắc nhở trên thiết bị. Các tính năng đồng bộ đám mây yêu cầu đăng nhập.",
+  "authenticated": "Đã đăng nhập",
+  "syncComplete": "Hoàn tất",
+  "close": "Đóng",
+  "syncProgress": "{current} / {total} sinh nhật",
+  "@syncProgress": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "selectOption": "- Chọn -",
+  "cropTitle": "Cắt ảnh sinh nhật",
+  "photoPermissionTitle": "Quyền truy cập ảnh",
+  "photoPermissionMessage": "Ứng dụng cần quyền truy cập thư viện ảnh để chọn ảnh đại diện. Vui lòng cấp quyền trong Cài đặt.",
+  "permissionDeniedMessage": "Bạn đã từ chối quyền truy cập ảnh. Bạn có thể thử lại hoặc cấp quyền trong Cài đặt.",
+  "permissionRestrictedMessage": "Quyền truy cập ảnh bị hạn chế trên thiết bị này.",
+  "openSettings": "Mở Cài đặt",
+  "allow": "Cho phép",
+  "selectedCount": "Đã chọn: {count}",
+  "@selectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "selectAll": "Chọn tất cả",
+  "deleteSelected": "Xóa đã chọn",
+  "clearSelection": "Hủy chọn",
+  "sort": "Sắp xếp",
+  "nearestBirthday": "Sinh nhật gần đến",
+  "farthestBirthday": "Sinh nhật xa",
+  "deleteBirthdayTitle": "Xóa sinh nhật?",
+  "deleteOneConfirm": "Bạn có chắc muốn xóa sinh nhật này?",
+  "deleteManyConfirm": "Bạn có chắc muốn xóa {count} sinh nhật đã chọn?",
+  "@deleteManyConfirm": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deletedOne": "Đã xóa sinh nhật",
+  "deletedMany": "Đã xóa {count} sinh nhật",
+  "@deletedMany": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteFailed": "Không thể xóa {count} sinh nhật. Dữ liệu sẽ được thử đồng bộ lại.",
+  "@deleteFailed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ageAndDays": "Tuổi: {age} • Còn {days} ngày",
+  "@ageAndDays": {
+    "placeholders": {
+      "age": {
+        "type": "int"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "age": "Tuổi",
+  "days": "{count} ngày",
+  "@days": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "remainingDays": "Còn {count} ngày",
+  "@remainingDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "yes": "Có",
+  "no": "Không",
+  "enabled": "Bật",
+  "disabled": "Tắt",
+  "notificationTime": "Thời gian nhắc",
+  "calendarList": "Danh sách",
+  "contactPermissionDenied": "Không có quyền truy cập danh bạ",
+  "unnamed": "Không tên",
+  "selectFromContacts": "Chọn từ danh bạ",
+  "toggleSelectAll": "Chọn hoặc bỏ chọn tất cả",
+  "noContactsToAdd": "Không còn danh bạ nào để thêm",
+  "settingsSubtitle": "Kiểm tra thông báo và quyền ứng dụng",
+  "guideSubtitle": "Xem cách sử dụng Birthday Reminder",
+  "usingOnDevice": "Đang dùng trên thiết bị",
+  "savedLocally": "Chỉ lưu cục bộ trên thiết bị này",
+  "options": "Tùy chọn",
+  "chooseUsageMode": "Chọn chế độ sử dụng",
+  "backToLogin": "Quay lại màn hình đăng nhập",
+  "backupToFirestore": "Sao lưu lên Firestore",
+  "syncFromFirestore": "Đồng bộ từ Firestore",
+  "backupInProgress": "Đang sao lưu...",
+  "failed": "Thất bại",
+  "errorWithDetails": "Lỗi: {error}",
+  "@errorWithDetails": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationSection": "Thông báo",
+  "notificationPermission": "Quyền thông báo",
+  "appNotifications": "Thông báo ứng dụng",
+  "exactAlarm": "Báo thức chính xác",
+  "deviceTimezone": "Múi giờ thiết bị",
+  "notificationChannel": "Kênh thông báo",
+  "checking": "Đang kiểm tra",
+  "granted": "Đã cấp",
+  "notGranted": "Chưa cấp",
+  "on": "Đang bật",
+  "off": "Đang tắt",
+  "sendTestNotification": "Gửi thông báo thử",
+  "testAfterTenSeconds": "Thử thông báo sau 10 giây",
+  "openNotificationSettings": "Mở cài đặt thông báo",
+  "allowExactAlarm": "Cho phép báo thức chính xác",
+  "testAfterOneMinute": "Thử hệ thống nhắc sinh nhật sau 1 phút",
+  "notificationPermissionOff": "Quyền thông báo chưa được bật.",
+  "exactAlarmPermissionMissing": "Thiết bị chưa cấp quyền báo thức chính xác.",
+  "notificationsDisabledSchedule": "Quyền thông báo chưa được bật — không thể đặt lịch.",
+  "scheduleNotRetained": "Thiết bị không giữ lịch — kiểm tra lại quyền báo thức.",
+  "unknownError": "lỗi không xác định",
+  "scheduledTestAt": "Đã đặt thông báo thử lúc {time}.",
+  "@scheduledTestAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "scheduledMinuteTestAt": "Đã đặt lịch thử 1 phút lúc {time}.",
+  "@scheduledMinuteTestAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "scheduleTestFailed": "Không thể đặt thông báo thử: {error}",
+  "@scheduleTestFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "scheduleMinuteFailed": "Không thể đặt lịch 1 phút: {error}",
+  "@scheduleMinuteFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderPendingCount": "Số lịch nhắc đang chờ: {count}",
+  "@reminderPendingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "resyncReminders": "Đồng bộ lại lịch nhắc",
+  "noPendingReminders": "Chưa có lịch nhắc nào đang chờ.",
+  "collapse": "Thu gọn",
+  "showMoreReminders": "Xem thêm {count} lịch",
+  "@showMoreReminders": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reminderSchedule": "Lịch nhắc",
+  "birthdayShortId": "Sinh nhật {id}…",
+  "@birthdayShortId": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderResyncSuccess": "Đã đặt {scheduled} lịch, huỷ {cancelled} lịch cũ.",
+  "@reminderResyncSuccess": {
+    "placeholders": {
+      "scheduled": {
+        "type": "int"
+      },
+      "cancelled": {
+        "type": "int"
+      }
+    }
+  },
+  "syncFailedDetails": "Đồng bộ thất bại: {error}",
+  "@syncFailedDetails": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "waiting": "chờ",
+  "appInformation": "Thông tin ứng dụng",
+  "loading": "Đang tải…",
+  "appVersionInfo": "{name} — phiên bản {version} (build {build})",
+  "@appVersionInfo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "version": {
+        "type": "String"
+      },
+      "build": {
+        "type": "String"
+      }
+    }
+  },
+  "testChannel": "Kênh test: {id}",
+  "@testChannel": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "mainChannel": "Kênh chính: {id}",
+  "@mainChannel": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "testNotificationId": "ID thông báo thử: {id}",
+  "@testNotificationId": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "scheduledTestNotificationId": "ID thông báo thử đặt lịch: {id}",
+  "@scheduledTestNotificationId": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "updateApp": "Cập nhật ứng dụng",
+  "checkNewVersion": "Kiểm tra phiên bản mới",
+  "artificialIntelligence": "Trí tuệ nhân tạo",
+  "provider": "Nhà cung cấp",
+  "openAiCompatible": "OpenAI / tương thích",
+  "apiKeyNotSaved": "Chưa lưu API key.",
+  "apiKeyCurrent": "Hiện tại: {key}",
+  "@apiKeyCurrent": {
+    "placeholders": {
+      "key": {
+        "type": "String"
+      }
+    }
+  },
+  "showApiKey": "Hiện API key",
+  "hideApiKey": "Ẩn API key",
+  "pasteClipboard": "Dán từ clipboard",
+  "testConnection": "Kiểm tra kết nối",
+  "fetchModels": "Lấy danh sách model",
+  "saveConfiguration": "Lưu cấu hình",
+  "deleteApiKey": "Xoá API key",
+  "modelRequired": "Vui lòng nhập model.",
+  "apiKeyRequired": "Vui lòng nhập API key.",
+  "baseUrlRequired": "Vui lòng nhập Base URL.",
+  "apiKeySaved": "Đã lưu cấu hình và API key an toàn.",
+  "apiKeyDeleted": "Đã xoá API key.",
+  "clipboardNoApiKey": "Clipboard không có API key.",
+  "apiKeyPasted": "Đã dán API key ({count} ký tự).",
+  "@apiKeyPasted": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "connectionSuccess": "Kết nối thành công ({latency} ms) — Phản hồi: \"{reply}\"",
+  "@connectionSuccess": {
+    "placeholders": {
+      "latency": {
+        "type": "int"
+      },
+      "reply": {
+        "type": "String"
+      }
+    }
+  },
+  "modelsUnavailable": "Không lấy được danh sách model — nhập ID thủ công.",
+  "modelsLoaded": "Đã tải {count} model.",
+  "@modelsLoaded": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "aiUnavailable": "AI không khả dụng.",
+  "aiAssistant": "Trợ lý AI",
+  "personalizedFor": "Cá nhân hóa cho {name}",
+  "@personalizedFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "aiReady": "AI sẵn sàng",
+  "notConfigured": "Chưa cấu hình",
+  "openAiSettings": "Mở cài đặt AI",
+  "aiThinking": "AI đang suy nghĩ...",
+  "giftSuggestions": "Gợi ý quà tặng",
+  "wishSuggestions": "Gợi ý câu chúc",
+  "english": "Tiếng Anh",
+  "chinese": "Tiếng Trung",
+  "reminderStatus": "Trạng thái nhắc",
+  "scheduled": "Đã lên lịch",
+  "notScheduled": "Chưa lên lịch",
+  "scheduleLost": "Mất lịch — cần đồng bộ",
+  "pastTime": "Đã quá thời gian",
+  "nextReminder": "Lần nhắc kế tiếp: {time}",
+  "@nextReminder": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "rescheduleReminder": "Đặt lại lịch nhắc",
+  "notificationDisabledPerson": "Thông báo đã tắt cho người này.",
+  "noReminderScheduled": "Chưa có lịch nhắc nào.",
+  "reminderScheduledAt": "Đã lên lịch lúc {time}.",
+  "@reminderScheduledAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderRescheduledAt": "Đã đặt lại lịch{time}.",
+  "@reminderRescheduledAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationDisplayFailed": "Không thể hiển thị thông báo: {error}",
+  "@notificationDisplayFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationDisabledHelp": "Thông báo đang bị tắt. Hãy bật quyền thông báo cho ứng dụng.",
+  "birthdayShare": "Sinh nhật của {name} vào ngày {date}",
+  "@birthdayShare": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "copied": "Đã sao chép {label}.",
+  "@copied": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "copyAll": "Sao chép tất cả",
+  "regenerate": "Tạo lại",
+  "noSuggestions": "Chưa có gợi ý nào.",
+  "reason": "Lý do: {value}",
+  "@reason": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "budget": "Ngân sách: {value}",
+  "@budget": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "personalizing": "Đang cá nhân hoá lại...",
+  "personalizedProfile": "Cá nhân hoá theo hồ sơ",
+  "modelValidResults": "Mô hình trả về {count}/{target} kết quả hợp lệ.",
+  "@modelValidResults": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      }
+    }
+  },
+  "suggestedByAi": "Đề xuất bởi AI",
+  "aiAndQuick": "AI + gợi ý nhanh",
+  "usingQuickSuggestions": "Đang dùng gợi ý nhanh",
+  "giftsFor": "Gợi ý riêng cho {name}",
+  "@giftsFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "wishesFor": "10 câu chúc cho {name}",
+  "@wishesFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "giftUnit": "món",
+  "share": "Chia sẻ",
+  "solarBirthday": "Ngày sinh dương",
+  "lunarBirthday": "Ngày sinh âm",
+  "atTime": "lúc {time}",
+  "@atTime": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "invalidApiKey": "API key không hợp lệ hoặc không có quyền.",
+  "modelNotFound": "Không tìm thấy model.",
+  "quotaExceeded": "Đã hết quota hoặc vượt giới hạn yêu cầu.",
+  "aiTimeout": "AI phản hồi quá lâu. Hãy thử lại.",
+  "serverConnectionFailed": "Không thể kết nối máy chủ.",
+  "testNotificationSent": "Đã gửi thông báo thử",
+  "updateTitle": "Cập nhật ứng dụng",
+  "currentVersion": "Phiên bản hiện tại",
+  "latestVersion": "Phiên bản mới nhất",
+  "upToDate": "Đã có phiên bản mới nhất",
+  "newVersionAvailable": "Có bản cập nhật mới!",
+  "downloadUpdate": "Tải bản cập nhật",
+  "installUpdate": "Cài đặt",
+  "checkingUpdate": "Đang kiểm tra cập nhật…",
+  "updateError": "Lỗi cập nhật",
+  "updateReady": "Sẵn sàng",
+  "updateCheckHint": "Nhấn “Kiểm tra cập nhật” để tìm phiên bản mới.",
+  "usingLatestVersion": "Bạn đang sử dụng phiên bản mới nhất.",
+  "versionAvailable": "Phiên bản {version} đã sẵn sàng.",
+  "@versionAvailable": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "reinstallRequired": "Yêu cầu cài đặt lại",
+  "reinstallMessage": "Phiên bản mới sử dụng chữ ký bảo mật mới. Hãy sao lưu dữ liệu trước khi cài đặt lại.",
+  "downloadingUpdate": "Đang tải bản cập nhật…",
+  "downloadedSize": "Đã tải {size}",
+  "@downloadedSize": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "verifyingUpdate": "Đang xác minh…",
+  "verifyingFile": "Đang kiểm tra tính toàn vẹn của tệp…",
+  "readyToInstall": "Sẵn sàng cài đặt!",
+  "updateDownloaded": "Bản cập nhật đã tải về và xác minh.",
+  "installPermissionRequired": "Cần quyền cài đặt",
+  "installPermissionHint": "Cho phép cài đặt ứng dụng từ nguồn này rồi thử lại.",
+  "installingUpdate": "Đang cài đặt…",
+  "pleaseWait": "Vui lòng chờ…",
+  "genericUpdateError": "Đã xảy ra lỗi. Vui lòng thử lại.",
+  "skipUpdate": "Bỏ qua",
+  "retry": "Thử lại",
+  "openDownloadPage": "Mở trang tải xuống",
+  "reinstallSteps": "1. Sao lưu dữ liệu\n2. Giữ file backup an toàn\n3. Cài đặt bản mới theo hướng dẫn\n4. Khôi phục backup",
+  "releaseDetails": "Chi tiết phiên bản",
+  "versionLabel": "Phiên bản",
+  "buildLabel": "Build",
+  "releaseDate": "Ngày phát hành",
+  "fileSize": "Dung lượng",
+  "noReleaseNotes": "Không có ghi chú phát hành.",
+  "viewOnGitHub": "Xem trên GitHub",
+  "fallbackChangeExperience": "Cải thiện trải nghiệm người dùng",
+  "fallbackChangeNotifications": "Tối ưu thông báo sinh nhật",
+  "fallbackChangeFixes": "Sửa lỗi phiên bản trước",
+  "fallbackChangeStability": "Tăng độ ổn định",
+  "birthdaySyncProgress": "{current} / {total} sinh nhật",
+  "@birthdaySyncProgress": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  }
+}

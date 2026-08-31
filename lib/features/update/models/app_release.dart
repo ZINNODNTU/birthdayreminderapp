@@ -16,6 +16,7 @@ class AppRelease {
     this.githubReleaseUrl,
     this.requiresReinstall = false,
     this.migrationMessage,
+    this.changes = const [],
   });
 
   /// Semantic version (e.g. "1.0.1").
@@ -62,6 +63,9 @@ class AppRelease {
 
   /// Human-readable migration instructions supplied by release metadata.
   final String? migrationMessage;
+
+  /// User-facing changes supplied by release metadata.
+  final List<String> changes;
 
   @override
   String toString() => 'AppRelease(version=$version, build=$buildNumber)';

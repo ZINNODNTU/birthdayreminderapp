@@ -7,6 +7,7 @@ import 'package:uuid/uuid.dart';
 
 import '../controllers/birthday_controller.dart';
 import '../models/birthday.dart';
+import '../l10n/l10n_extensions.dart';
 
 class ContactImport extends StatefulWidget {
   const ContactImport({super.key});
@@ -37,7 +38,7 @@ class _ContactImportState extends State<ContactImport> {
     if (!allowed) {
       setState(() => _loading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Không có quyền truy cập danh bạ')),
+        SnackBar(content: Text(context.l10n.contactPermissionDenied)),
       );
       return;
     }
@@ -77,7 +78,7 @@ class _ContactImportState extends State<ContactImport> {
       await controller.addBirthday(
         Birthday(
           id: const Uuid().v4(),
-          name: contact.displayName ?? 'Không tên',
+          name: contact.displayName ?? context.l10n.unnamed,
           avatarBase64:
               contact.photo?.thumbnail == null
                   ? null
@@ -113,8 +114,8 @@ class _ContactImportState extends State<ContactImport> {
       appBar: AppBar(
         title: Text(
           _selectedIds.isEmpty
-              ? 'Chọn từ danh bạ'
-              : 'Đã chọn: ${_selectedIds.length}',
+              ? context.l10n.selectFromContacts
+              : context.l10n.selectedCount(_selectedIds.length),
         ),
         actions: [
           if (_contacts.isNotEmpty)
@@ -124,13 +125,13 @@ class _ContactImportState extends State<ContactImport> {
                     ? Icons.clear_all
                     : Icons.select_all,
               ),
-              tooltip: 'Chọn hoặc bỏ chọn tất cả',
+              tooltip: context.l10n.toggleSelectAll,
               onPressed: _toggleAll,
             ),
           if (_selectedIds.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.check),
-              tooltip: 'Lưu',
+              tooltip: context.l10n.save,
               onPressed: _saveSelectedContacts,
             ),
         ],
@@ -139,7 +140,7 @@ class _ContactImportState extends State<ContactImport> {
           _loading
               ? const Center(child: CircularProgressIndicator())
               : _contacts.isEmpty
-              ? const Center(child: Text('Không còn danh bạ nào để thêm'))
+              ? Center(child: Text(context.l10n.noContactsToAdd))
               : ListView.builder(
                 itemCount: _contacts.length,
                 itemBuilder: (context, index) {
@@ -155,7 +156,7 @@ class _ContactImportState extends State<ContactImport> {
                         }
                       });
                     },
-                    title: Text(contact.displayName ?? 'Không tên'),
+                    title: Text(contact.displayName ?? context.l10n.unnamed),
                     secondary:
                         contact.photo?.thumbnail == null
                             ? const CircleAvatar(child: Icon(Icons.person))

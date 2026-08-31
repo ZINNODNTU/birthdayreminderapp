@@ -12,6 +12,8 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../helpers/fake_auth_repository.dart';
+import 'package:birthdayreminderapp/l10n/app_localizations.dart';
+import 'package:birthdayreminderapp/services/locale_service.dart';
 
 class _DelayedAuthRepository extends FakeAuthRepository {
   _DelayedAuthRepository();
@@ -29,6 +31,8 @@ class _NoopProfileRepository implements UserProfileRepository {
   Future<void> ensureProfile(User user) async {}
 }
 
+late SharedPreferences sharedPrefs;
+
 Widget _wrap(AuthRepository repo) {
   return MultiProvider(
     providers: [
@@ -43,14 +47,22 @@ Widget _wrap(AuthRepository repo) {
               authStateChanges: repo.authStateChanges,
             ),
       ),
+      ChangeNotifierProvider<LocaleService>(
+        create: (_) => LocaleService(sharedPrefs),
+      ),
     ],
-    child: const MaterialApp(home: AuthScreen()),
+    child: MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: const [Locale('vi')],
+      home: const AuthScreen(),
+    ),
   );
 }
 
 void main() {
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
+    sharedPrefs = await SharedPreferences.getInstance();
   });
 
   group('AuthScreen Google-only UI', () {
@@ -59,8 +71,10 @@ void main() {
       await tester.pumpWidget(_wrap(repo));
       await tester.pumpAndSettle();
 
-      expect(find.text('Tiếp tục với Google'), findsOneWidget);
-      expect(find.text('Tiếp tục trên thiết bị'), findsOneWidget);
+      final l10n =
+          AppLocalizations.of(tester.element(find.byType(AuthScreen)))!;
+      expect(find.text(l10n.signInGoogle), findsOneWidget);
+      expect(find.text(l10n.continueOnDevice), findsOneWidget);
     });
 
     testWidgets('does NOT show email / password / register / forgot', (
@@ -84,7 +98,9 @@ void main() {
       await tester.pumpWidget(_wrap(repo));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Tiếp tục với Google'));
+      final l10n =
+          AppLocalizations.of(tester.element(find.byType(AuthScreen)))!;
+      await tester.tap(find.text(l10n.signInGoogle));
       await tester.pumpAndSettle();
 
       expect(repo.signInWithGoogleCalls, 1);
@@ -100,7 +116,9 @@ void main() {
       await tester.pumpWidget(_wrap(repo));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Tiếp tục với Google'));
+      final l10n =
+          AppLocalizations.of(tester.element(find.byType(AuthScreen)))!;
+      await tester.tap(find.text(l10n.signInGoogle));
       await tester.pumpAndSettle();
 
       expect(repo.signInWithGoogleCalls, 1);
@@ -114,10 +132,12 @@ void main() {
       await tester.pumpWidget(_wrap(repo));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Tiếp tục với Google'));
+      final l10n =
+          AppLocalizations.of(tester.element(find.byType(AuthScreen)))!;
+      await tester.tap(find.text(l10n.signInGoogle));
       await tester.pumpAndSettle();
 
-      expect(find.text('Không có kết nối mạng'), findsOneWidget);
+      expect(find.text(l10n.noInternet), findsOneWidget);
     });
 
     testWidgets('loading indicator blocks duplicate taps', (tester) async {
@@ -125,13 +145,15 @@ void main() {
       await tester.pumpWidget(_wrap(repo));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Tiếp tục với Google'));
+      final l10n =
+          AppLocalizations.of(tester.element(find.byType(AuthScreen)))!;
+      await tester.tap(find.text(l10n.signInGoogle));
       await tester.pump();
 
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
       // Double-tap is a no-op because the button is disabled.
-      await tester.tap(find.text('Tiếp tục với Google'), warnIfMissed: false);
+      await tester.tap(find.text(l10n.signInGoogle), warnIfMissed: false);
       await tester.pumpAndSettle();
 
       expect(repo.signInWithGoogleCalls, 1);
@@ -162,13 +184,22 @@ void main() {
                     authStateChanges: repo.authStateChanges,
                   ),
             ),
+            ChangeNotifierProvider<LocaleService>(
+              create: (_) => LocaleService(sharedPrefs),
+            ),
           ],
-          child: const MaterialApp(home: AuthScreen()),
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: const [Locale('vi')],
+            home: const AuthScreen(),
+          ),
         ),
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Tiếp tục trên thiết bị'));
+      final l10n =
+          AppLocalizations.of(tester.element(find.byType(AuthScreen)))!;
+      await tester.tap(find.text(l10n.continueOnDevice));
       await tester.pumpAndSettle();
 
       final ctx = tester.element(find.byType(AuthScreen));

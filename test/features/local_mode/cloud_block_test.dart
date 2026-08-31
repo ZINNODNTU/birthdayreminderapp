@@ -27,6 +27,8 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import '../../helpers/fake_auth_repository.dart';
 import '../../helpers/fake_notification_service.dart';
+import 'package:birthdayreminderapp/l10n/app_localizations.dart';
+import 'package:birthdayreminderapp/services/locale_service.dart';
 
 Widget _tree({
   required AuthRepository repo,
@@ -90,8 +92,15 @@ Widget _tree({
               authStateChanges: ctx.read<AuthRepository>().authStateChanges,
             ),
       ),
+      ChangeNotifierProvider<LocaleService>(
+        create: (_) => LocaleService(sharedPrefs),
+      ),
     ],
-    child: const MaterialApp(home: AuthGate()),
+    child: MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: const [Locale('vi')],
+      home: const AuthGate(),
+    ),
   );
 }
 
@@ -137,7 +146,7 @@ void main() {
       expect(mode, AppSessionMode.local);
 
       // Open drawer
-      await tester.tap(find.byTooltip('Open navigation menu'));
+      await tester.tap(find.byIcon(Icons.menu));
       await tester.pumpAndSettle();
       await tester.pumpAndSettle();
 
@@ -169,7 +178,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Open drawer
-      await tester.tap(find.byTooltip('Open navigation menu'));
+      await tester.tap(find.byIcon(Icons.menu));
       await tester.pumpAndSettle();
       await tester.pumpAndSettle();
 

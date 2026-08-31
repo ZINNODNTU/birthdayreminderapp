@@ -12,6 +12,10 @@ import 'birthday_add_edit_view.dart';
 import 'contact_import.dart';
 import 'settings_view.dart';
 import '../features/onboarding/presentation/onboarding_screen.dart';
+import '../theme/mid_autumn_theme.dart';
+import '../widgets/sync_progress_dialog.dart';
+import '../models/sync_progress.dart';
+import '../l10n/l10n_extensions.dart';
 
 class Homepage extends StatefulWidget {
   const Homepage({super.key});
@@ -20,8 +24,21 @@ class Homepage extends StatefulWidget {
   State<Homepage> createState() => _HomepageState();
 }
 
+enum _DrawerItem {
+  home,
+  settings,
+  guide,
+  login,
+  exit,
+  backup,
+  sync,
+  delete,
+  signOut,
+}
+
 class _HomepageState extends State<Homepage> {
   int _selectedIndex = 0;
+  _DrawerItem _selectedDrawerItem = _DrawerItem.home;
 
   final List<Widget> _pages = const [CalendarView(), BirthdayListView()];
 
@@ -38,11 +55,50 @@ class _HomepageState extends State<Homepage> {
       return;
     }
     final controller = Provider.of<BirthdayController>(context, listen: false);
-    await controller.triggerSync();
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Đã sao lưu lên Firestore')));
+    final birthdays = controller.birthdays;
+    final total = birthdays.length;
+    final progress = ValueNotifier<SyncProgress>(
+      SyncProgress(
+        current: 0,
+        total: total,
+        status: context.l10n.backupInProgress,
+      ),
+    );
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder:
+          (_) => SyncProgressDialog(
+            notifier: progress,
+            onComplete: () {
+              // dialog will auto-close on completion
+            },
+          ),
+    );
+    try {
+      await controller.triggerSync(
+        onProgress: (current, total) {
+          progress.value = progress.value.copyWith(
+            current: current,
+            total: total,
+            status: context.l10n.backupInProgress,
+          );
+        },
+      );
+      if (!context.mounted) return;
+      progress.value = progress.value.copyWith(
+        completed: true,
+        status: context.l10n.backupSuccess,
+        current: total,
+        total: total,
+      );
+    } catch (e) {
+      progress.value = progress.value.copyWith(
+        completed: true,
+        error: context.l10n.errorWithDetails(e.toString()),
+        status: context.l10n.failed,
+      );
+    }
   }
 
   Future<void> _syncFromFirestore(BuildContext context) async {
@@ -52,18 +108,49 @@ class _HomepageState extends State<Homepage> {
       return;
     }
     final controller = Provider.of<BirthdayController>(context, listen: false);
-    await controller.triggerSync();
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Đã đồng bộ từ Firestore')));
+    final total = controller.birthdays.length;
+    final progress = ValueNotifier<SyncProgress>(
+      SyncProgress(current: 0, total: total, status: context.l10n.syncing),
+    );
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => SyncProgressDialog(notifier: progress, onComplete: () {}),
+    );
+    try {
+      await controller.triggerSync(
+        onProgress: (current, total) {
+          progress.value = progress.value.copyWith(
+            current: current,
+            // Keep the transaction total stable. SyncManager already
+            // calculates it from the pre-sync local/remote snapshot.
+            total: progress.value.total,
+            status: context.l10n.syncing,
+          );
+        },
+      );
+      if (!context.mounted) return;
+      final stableTotal = progress.value.total;
+      progress.value = progress.value.copyWith(
+        completed: true,
+        status: context.l10n.syncSuccess,
+        current: stableTotal,
+        total: stableTotal,
+      );
+    } catch (e) {
+      progress.value = progress.value.copyWith(
+        completed: true,
+        error: context.l10n.errorWithDetails(e.toString()),
+        status: context.l10n.failed,
+      );
+    }
   }
 
   void _showCloudUnavailable(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Đăng nhập để sử dụng tính năng đồng bộ đám mây.'),
-        duration: Duration(seconds: 3),
+      SnackBar(
+        content: Text(context.l10n.cloudUnavailable),
+        duration: const Duration(seconds: 3),
       ),
     );
   }
@@ -78,18 +165,16 @@ class _HomepageState extends State<Homepage> {
       context: context,
       builder:
           (context) => AlertDialog(
-            title: const Text('Xác nhận xóa'),
-            content: const Text(
-              'Bạn có chắc muốn xóa tất cả sinh nhật trên Firestore không?',
-            ),
+            title: Text(context.l10n.confirmDelete),
+            content: Text(context.l10n.deleteAllFirestoreConfirm),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text('Hủy'),
+                child: Text(context.l10n.cancel),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
-                child: const Text('Xóa'),
+                child: Text(context.l10n.delete),
               ),
             ],
           ),
@@ -98,9 +183,9 @@ class _HomepageState extends State<Homepage> {
       final firestoreService = FirestoreService();
       await firestoreService.deleteAllBirthdays();
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Đã xóa toàn bộ dữ liệu trên Firestore')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.deletedAllFirestore)));
     }
   }
 
@@ -123,7 +208,7 @@ class _HomepageState extends State<Homepage> {
       if (!context.mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Đăng nhập thất bại')));
+      ).showSnackBar(SnackBar(content: Text(context.l10n.loginFailed)));
     }
   }
 
@@ -136,12 +221,10 @@ class _HomepageState extends State<Homepage> {
 
   String _mapFailureMessage(AuthFailure failure) {
     return switch (failure) {
-      AuthFailureNetwork() => 'Không có kết nối mạng',
-      AuthFailureConfiguration() =>
-        'Đăng nhập Google chưa được cấu hình đúng trên thiết bị này.',
-      AuthFailureUiUnavailable() =>
-        'Trình chọn tài khoản Google không khả dụng trên thiết bị này.',
-      _ => 'Đã xảy ra lỗi, vui lòng thử lại',
+      AuthFailureNetwork() => context.l10n.noInternet,
+      AuthFailureConfiguration() => context.l10n.googleConfigError,
+      AuthFailureUiUnavailable() => context.l10n.googleUiUnavailable,
+      _ => context.l10n.authError,
     };
   }
 
@@ -158,7 +241,7 @@ class _HomepageState extends State<Homepage> {
             children: [
               ListTile(
                 leading: const Icon(Icons.edit),
-                title: const Text('Thêm thủ công'),
+                title: Text(context.l10n.manualAdd),
                 onTap: () {
                   Navigator.pop(context);
                   _goToAddManualBirthday();
@@ -166,7 +249,7 @@ class _HomepageState extends State<Homepage> {
               ),
               ListTile(
                 leading: const Icon(Icons.contacts),
-                title: const Text('Thêm từ danh bạ'),
+                title: Text(context.l10n.contactAdd),
                 onTap: () {
                   Navigator.pop(context);
                   _goToImportFromContacts();
@@ -225,27 +308,30 @@ class _HomepageState extends State<Homepage> {
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddBirthdayOptions,
-        tooltip: 'Thêm sinh nhật',
+        tooltip: context.l10n.addBirthday,
         child: const Icon(Icons.cake),
       ),
       bottomNavigationBar: BottomAppBar(
         shape: const CircularNotchedRectangle(),
         notchMargin: 8.0,
+        color: MidAutumnColors.night,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             IconButton(
               icon: const Icon(Icons.home),
               onPressed: () => _onItemTapped(0),
-              tooltip: 'Trang chủ',
-              color: _selectedIndex == 0 ? Colors.teal : Colors.grey,
+              tooltip: context.l10n.home,
+              color:
+                  _selectedIndex == 0 ? MidAutumnColors.moon : Colors.white54,
             ),
             const SizedBox(width: 48),
             IconButton(
               icon: const Icon(Icons.list),
               onPressed: () => _onItemTapped(1),
-              tooltip: 'Danh sách',
-              color: _selectedIndex == 1 ? Colors.teal : Colors.grey,
+              tooltip: context.l10n.calendarList,
+              color:
+                  _selectedIndex == 1 ? MidAutumnColors.moon : Colors.white54,
             ),
           ],
         ),
@@ -265,40 +351,54 @@ class _HomepageState extends State<Homepage> {
     final tiles = <Widget>[];
     tiles.add(
       DrawerHeader(
-        decoration: const BoxDecoration(color: Colors.blue),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [MidAutumnColors.night, const Color(0xFF243B73)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
         child: switch (mode) {
           AppSessionMode.authenticated => _buildAuthedHeader(
             user?.displayName,
             user?.email,
           ),
-          AppSessionMode.local => const _HeaderText(
-            'Đang dùng trên thiết bị',
-            'Chỉ lưu cục bộ trên thiết bị này',
+          AppSessionMode.local => _HeaderText(
+            context.l10n.usingOnDevice,
+            context.l10n.savedLocally,
           ),
-          AppSessionMode.unauthenticated => const _HeaderText(
-            'Tùy chọn',
-            'Chọn chế độ sử dụng',
+          AppSessionMode.unauthenticated => _HeaderText(
+            context.l10n.options,
+            context.l10n.chooseUsageMode,
           ),
         },
       ),
     );
 
     tiles.add(
-      ListTile(
-        key: const ValueKey('drawer_settings'),
-        leading: const Icon(Icons.settings),
-        title: const Text('Cài đặt'),
-        subtitle: const Text('Kiểm tra thông báo và quyền ứng dụng'),
-        onTap: _goToSettings,
+      _buildDrawerTile(
+        key: 'drawer_settings',
+        icon: Icons.settings,
+        title: context.l10n.settings,
+        subtitle: context.l10n.settingsSubtitle,
+        item: _DrawerItem.settings,
+        onTap: () {
+          setState(() => _selectedDrawerItem = _DrawerItem.settings);
+          _goToSettings();
+        },
       ),
     );
     tiles.add(
-      ListTile(
-        key: const ValueKey('drawer_guide'),
-        leading: const Icon(Icons.menu_book_outlined),
-        title: const Text('Hướng dẫn sử dụng'),
-        subtitle: const Text('Xem cách sử dụng Birthday Reminder'),
-        onTap: _goToGuide,
+      _buildDrawerTile(
+        key: 'drawer_guide',
+        icon: Icons.menu_book_outlined,
+        title: context.l10n.userGuide,
+        subtitle: context.l10n.guideSubtitle,
+        item: _DrawerItem.guide,
+        onTap: () {
+          setState(() => _selectedDrawerItem = _DrawerItem.guide);
+          _goToGuide();
+        },
       ),
     );
 
@@ -317,17 +417,25 @@ class _HomepageState extends State<Homepage> {
                     await session.exitLocalMode();
                   }
                 },
-        title: const Text('Chế độ trên thiết bị'),
-        subtitle: const Text('Tắt khi bạn muốn dùng tài khoản Google'),
+        title: Text(
+          context.l10n.localMode,
+          style: TextStyle(color: MidAutumnColors.textPrimary),
+        ),
+        subtitle: Text(
+          context.l10n.localModeSubtitle,
+          style: TextStyle(color: MidAutumnColors.textSecondary),
+        ),
+        activeColor: MidAutumnColors.moon,
       ),
     );
 
     if (mode == AppSessionMode.local) {
       tiles.add(
-        ListTile(
-          key: const ValueKey('drawer_local_sign_in_google'),
-          leading: const Icon(Icons.login),
-          title: const Text('Đăng nhập bằng Google'),
+        _buildDrawerTile(
+          key: 'drawer_local_sign_in_google',
+          icon: Icons.login,
+          title: context.l10n.signInGoogle,
+          item: _DrawerItem.login,
           onTap: () async {
             Navigator.pop(context);
             await _signInWithGoogle(context);
@@ -335,11 +443,12 @@ class _HomepageState extends State<Homepage> {
         ),
       );
       tiles.add(
-        ListTile(
-          key: const ValueKey('drawer_exit_local'),
-          leading: const Icon(Icons.logout),
-          title: const Text('Thoát chế độ thiết bị'),
-          subtitle: const Text('Quay lại màn hình đăng nhập'),
+        _buildDrawerTile(
+          key: 'drawer_exit_local',
+          icon: Icons.logout,
+          title: context.l10n.exitLocalMode,
+          subtitle: context.l10n.backToLogin,
+          item: _DrawerItem.exit,
           onTap: () async {
             Navigator.pop(context);
             await _exitLocalMode(context);
@@ -347,10 +456,11 @@ class _HomepageState extends State<Homepage> {
         ),
       );
       tiles.add(
-        ListTile(
-          key: const ValueKey('drawer_backup_local'),
-          leading: const Icon(Icons.backup),
-          title: const Text('Sao lưu lên Firestore'),
+        _buildDrawerTile(
+          key: 'drawer_backup_local',
+          icon: Icons.backup,
+          title: context.l10n.backupToFirestore,
+          item: _DrawerItem.backup,
           onTap: () async {
             Navigator.pop(context);
             await _backupToFirestore(context);
@@ -358,10 +468,11 @@ class _HomepageState extends State<Homepage> {
         ),
       );
       tiles.add(
-        ListTile(
-          key: const ValueKey('drawer_delete_all_local'),
-          leading: const Icon(Icons.delete_forever),
-          title: const Text('Xóa toàn bộ trên Firestore'),
+        _buildDrawerTile(
+          key: 'drawer_delete_all_local',
+          icon: Icons.delete_forever,
+          title: context.l10n.deleteAllFirestore,
+          item: _DrawerItem.delete,
           onTap: () async {
             Navigator.pop(context);
             await _confirmAndDeleteAllFirestore(context);
@@ -370,10 +481,11 @@ class _HomepageState extends State<Homepage> {
       );
     } else if (mode == AppSessionMode.authenticated) {
       tiles.add(
-        ListTile(
-          key: const ValueKey('drawer_backup'),
-          leading: const Icon(Icons.backup),
-          title: const Text('Sao lưu lên Firestore'),
+        _buildDrawerTile(
+          key: 'drawer_backup',
+          icon: Icons.backup,
+          title: context.l10n.backupToFirestore,
+          item: _DrawerItem.backup,
           onTap: () async {
             Navigator.pop(context);
             await _backupToFirestore(context);
@@ -381,10 +493,11 @@ class _HomepageState extends State<Homepage> {
         ),
       );
       tiles.add(
-        ListTile(
-          key: const ValueKey('drawer_sync'),
-          leading: const Icon(Icons.sync),
-          title: const Text('Đồng bộ từ Firestore'),
+        _buildDrawerTile(
+          key: 'drawer_sync',
+          icon: Icons.sync,
+          title: context.l10n.syncFromFirestore,
+          item: _DrawerItem.sync,
           onTap: () async {
             Navigator.pop(context);
             await _syncFromFirestore(context);
@@ -392,28 +505,27 @@ class _HomepageState extends State<Homepage> {
         ),
       );
       tiles.add(
-        ListTile(
-          key: const ValueKey('drawer_delete_all'),
-          leading: const Icon(Icons.delete_forever),
-          title: const Text('Xóa toàn bộ trên Firestore'),
+        _buildDrawerTile(
+          key: 'drawer_delete_all',
+          icon: Icons.delete_forever,
+          title: context.l10n.deleteAllFirestore,
+          item: _DrawerItem.delete,
           onTap: () async {
             Navigator.pop(context);
             final confirm = await showDialog<bool>(
               context: context,
               builder:
                   (context) => AlertDialog(
-                    title: const Text('Xác nhận xóa'),
-                    content: const Text(
-                      'Bạn có chắc muốn xóa tất cả sinh nhật trên Firestore không?',
-                    ),
+                    title: Text(context.l10n.confirmDelete),
+                    content: Text(context.l10n.deleteAllFirestoreConfirm),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(context, false),
-                        child: const Text('Hủy'),
+                        child: Text(context.l10n.cancel),
                       ),
                       TextButton(
                         onPressed: () => Navigator.pop(context, true),
-                        child: const Text('Xóa'),
+                        child: Text(context.l10n.delete),
                       ),
                     ],
                   ),
@@ -423,9 +535,7 @@ class _HomepageState extends State<Homepage> {
               await firestoreService.deleteAllBirthdays();
               if (!context.mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Đã xóa toàn bộ dữ liệu trên Firestore'),
-                ),
+                SnackBar(content: Text(context.l10n.deletedAllFirestore)),
               );
             }
           },
@@ -435,11 +545,12 @@ class _HomepageState extends State<Homepage> {
 
     if (mode == AppSessionMode.authenticated) {
       tiles.add(
-        ListTile(
-          key: const ValueKey('drawer_sign_out'),
-          leading: const Icon(Icons.logout),
-          title: const Text('Đăng xuất'),
-          subtitle: Text(user?.email ?? ''),
+        _buildDrawerTile(
+          key: 'drawer_sign_out',
+          icon: Icons.logout,
+          title: context.l10n.signOut,
+          subtitle: user?.email ?? '',
+          item: _DrawerItem.signOut,
           onTap: () async {
             Navigator.pop(context);
             await _signOutGoogle(context);
@@ -451,14 +562,59 @@ class _HomepageState extends State<Homepage> {
     return tiles;
   }
 
+  Widget _buildDrawerTile({
+    required String key,
+    required IconData icon,
+    required String title,
+    String? subtitle,
+    required _DrawerItem item,
+    required VoidCallback onTap,
+  }) {
+    final isSelected = _selectedDrawerItem == item;
+    return ListTile(
+      key: ValueKey(key),
+      selected: isSelected,
+      selectedTileColor: MidAutumnColors.moon.withOpacity(0.15),
+      leading: Icon(
+        icon,
+        color:
+            isSelected ? MidAutumnColors.moon : MidAutumnColors.textSecondary,
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          color:
+              isSelected
+                  ? MidAutumnColors.textPrimary
+                  : MidAutumnColors.textSecondary,
+        ),
+      ),
+      subtitle:
+          subtitle != null
+              ? Text(
+                subtitle,
+                style: TextStyle(
+                  color:
+                      isSelected
+                          ? MidAutumnColors.textSecondary
+                          : MidAutumnColors.textSecondary.withOpacity(0.7),
+                  fontSize: 12,
+                ),
+              )
+              : null,
+      onTap: onTap,
+    );
+  }
+
   Widget _buildAuthedHeader(String? name, String? email) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Text(
-          'Đã đăng nhập',
-          style: TextStyle(color: Colors.white, fontSize: 16),
+        Text(
+          context.l10n.authenticated,
+          style: const TextStyle(color: Colors.white, fontSize: 16),
         ),
         const SizedBox(height: 4),
         Text(

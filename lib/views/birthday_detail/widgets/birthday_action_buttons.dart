@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/l10n_extensions.dart';
 
 /// Action buttons for gift and wish suggestions.
 class BirthdayActionButtons extends StatelessWidget {
@@ -24,7 +25,10 @@ class BirthdayActionButtons extends StatelessWidget {
     final isNarrow = MediaQuery.of(context).size.width < 380;
     final giftButton = _GradientActionButton(
       icon: Icons.card_giftcard,
-      label: isGiftLoading ? 'AI đang suy nghĩ...' : 'Gợi ý quà tặng',
+      label:
+          isGiftLoading
+              ? context.l10n.aiThinking
+              : context.l10n.giftSuggestions,
       loading: isGiftLoading,
       gradient: const LinearGradient(
         colors: [Color(0xFF7C4DFF), Color(0xFFEC407A)],
@@ -58,23 +62,35 @@ class BirthdayActionButtons extends StatelessWidget {
         final picker = DropdownButtonFormField<String>(
           initialValue: wishLanguage,
           isExpanded: true,
-          decoration: const InputDecoration(
-            labelText: 'Ngôn ngữ',
-            border: OutlineInputBorder(),
-            contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: InputDecoration(
+            labelText: context.l10n.language,
+            border: const OutlineInputBorder(),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 10,
+              vertical: 8,
+            ),
           ),
-          items: const [
+          items: [
             DropdownMenuItem(
               value: 'vi',
-              child: Text('Tiếng Việt', overflow: TextOverflow.ellipsis),
+              child: Text(
+                context.l10n.languageVi,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
             DropdownMenuItem(
               value: 'en',
-              child: Text('Tiếng Anh', overflow: TextOverflow.ellipsis),
+              child: Text(
+                context.l10n.english,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
             DropdownMenuItem(
               value: 'zh',
-              child: Text('Tiếng Trung', overflow: TextOverflow.ellipsis),
+              child: Text(
+                context.l10n.chinese,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ],
           onChanged: (v) {
@@ -83,7 +99,10 @@ class BirthdayActionButtons extends StatelessWidget {
         );
         final btn = _GradientActionButton(
           icon: Icons.message,
-          label: isWishLoading ? 'AI đang suy nghĩ...' : 'Gợi ý câu chúc',
+          label:
+              isWishLoading
+                  ? context.l10n.aiThinking
+                  : context.l10n.wishSuggestions,
           loading: isWishLoading,
           gradient: const LinearGradient(
             colors: [Color(0xFFFF6F00), Color(0xFFD32F2F)],

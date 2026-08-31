@@ -109,6 +109,7 @@ class GithubReleaseRepository {
     var sha256 = '';
     var mandatory = false;
     var requiresReinstall = false;
+    var changes = <String>[];
     String? migrationMessage;
     String? minimumSupportedVersion;
     if (metadata != null) {
@@ -123,10 +124,19 @@ class GithubReleaseRepository {
       }
       buildNumber = metadata['buildNumber'] as int? ?? 0;
       sha256 = apkMeta['sha256'] as String? ?? '';
-      mandatory = metadata['mandatory'] as bool? ?? false;
+      mandatory =
+          metadata['forceUpdate'] as bool? ??
+          metadata['mandatory'] as bool? ??
+          false;
       requiresReinstall = metadata['requiresReinstall'] as bool? ?? false;
       migrationMessage = metadata['migrationMessage'] as String?;
-      minimumSupportedVersion = metadata['minimumSupportedVersion'] as String?;
+      minimumSupportedVersion =
+          metadata['minimumVersion'] as String? ??
+          metadata['minimumSupportedVersion'] as String?;
+      final rawChanges = metadata['changes'];
+      if (rawChanges is List) {
+        changes = rawChanges.whereType<String>().toList(growable: false);
+      }
       if (!RegExp(r'^[0-9a-fA-F]{64}$').hasMatch(sha256)) return null;
     }
 
@@ -146,6 +156,7 @@ class GithubReleaseRepository {
       githubReleaseUrl: githubUrl,
       requiresReinstall: requiresReinstall,
       migrationMessage: migrationMessage,
+      changes: changes,
     );
   }
 

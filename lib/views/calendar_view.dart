@@ -8,6 +8,8 @@ import '../models/birthday.dart';
 import 'birthday_detail_view.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/avatar_cache.dart';
+import '../services/locale_service.dart';
+import '../l10n/l10n_extensions.dart';
 
 class CalendarView extends StatefulWidget {
   const CalendarView({super.key});
@@ -39,6 +41,12 @@ class _CalendarViewState extends State<CalendarView> {
   Widget build(BuildContext context) {
     final birthdays = Provider.of<BirthdayController>(context).birthdays;
     final engine = context.read<BirthdayEngine>();
+    final locale = context.watch<LocaleService>().locale;
+    final tableCalendarLocale = switch (locale.languageCode) {
+      'zh' => 'zh_CN',
+      'en' => 'en_US',
+      _ => 'vi_VN',
+    };
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final focusedYear = _focusedDay.year;
     // Precompute event counts and lists for the focused year to avoid per-cell iteration.
@@ -183,7 +191,7 @@ class _CalendarViewState extends State<CalendarView> {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: TableCalendar(
-                  locale: 'vi_VN',
+                  locale: tableCalendarLocale,
                   firstDay: DateTime.utc(2000, 1, 1),
                   lastDay: DateTime.utc(2100, 12, 31),
                   focusedDay: _focusedDay,
@@ -253,8 +261,13 @@ class _CalendarViewState extends State<CalendarView> {
                     Expanded(
                       child: Text(
                         _selectedDay == null
-                            ? 'Sinh nhật tháng ${_focusedDay.month} • $monthBirthdayCount'
-                            : 'Sinh nhật ngày ${_selectedDay!.day.toString().padLeft(2, '0')}/${_selectedDay!.month.toString().padLeft(2, '0')}',
+                            ? context.l10n.monthBirthdays(
+                              _focusedDay.month,
+                              monthBirthdayCount,
+                            )
+                            : context.l10n.dayBirthdays(
+                              '${_selectedDay!.day.toString().padLeft(2, '0')}/${_selectedDay!.month.toString().padLeft(2, '0')}',
+                            ),
                         key: const ValueKey('calendar-list-title'),
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
@@ -263,25 +276,21 @@ class _CalendarViewState extends State<CalendarView> {
                       ActionChip(
                         key: const ValueKey('calendar-show-month'),
                         avatar: const Icon(Icons.calendar_month, size: 18),
-                        label: const Text('Xem cả tháng'),
+                        label: Text(context.l10n.showMonth),
                         onPressed: () => setState(() => _selectedDay = null),
                       ),
                   ],
                 ),
               ),
               if (_selectedDay == null && monthEntries.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 24),
-                  child: Center(
-                    child: Text('Không có sinh nhật nào trong tháng này.'),
-                  ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  child: Center(child: Text(context.l10n.noMonthBirthdays)),
                 )
               else if (_selectedDay != null && selectedBirthdays.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 24),
-                  child: Center(
-                    child: Text('Không có sinh nhật nào trong ngày này.'),
-                  ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  child: Center(child: Text(context.l10n.noDayBirthdays)),
                 )
               else
                 Padding(
@@ -366,8 +375,8 @@ class _BirthdayCalendarTile extends StatelessWidget {
         ),
         subtitle: Text(
           birthday.calendarType == CalendarType.solar
-              ? 'Dương lịch'
-              : 'Âm lịch',
+              ? context.l10n.solar
+              : context.l10n.lunar,
         ),
         trailing: const Icon(Icons.arrow_forward_ios, size: 16),
         onTap:

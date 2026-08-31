@@ -25,6 +25,7 @@ import '../features/reminders/domain/reminder_failure.dart';
 import '../features/reminders/services/reminder_scheduler.dart';
 import '../models/birthday.dart';
 import '../services/notification_service.dart';
+import '../l10n/l10n_extensions.dart';
 
 class BirthdayDetailView extends StatefulWidget {
   final Birthday birthday;
@@ -69,7 +70,6 @@ class _BirthdayDetailViewState extends State<BirthdayDetailView>
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _entry, curve: Curves.easeOut));
     _entry.forward();
-    _refreshReminderStatus();
   }
 
   @override
@@ -101,7 +101,7 @@ class _BirthdayDetailViewState extends State<BirthdayDetailView>
       if (!mounted) return;
       setState(() {
         _reminderStatus = ReminderStatus.disabled;
-        _reminderMessage = 'Thông báo đã tắt cho người này.';
+        _reminderMessage = context.l10n.notificationDisabledPerson;
         _nextFireAt = null;
       });
       return;
@@ -110,7 +110,7 @@ class _BirthdayDetailViewState extends State<BirthdayDetailView>
       if (!mounted) return;
       setState(() {
         _reminderStatus = ReminderStatus.notScheduled;
-        _reminderMessage = 'Chưa có lịch nhắc nào.';
+        _reminderMessage = context.l10n.noReminderScheduled;
         _nextFireAt = null;
       });
       return;
@@ -128,8 +128,9 @@ class _BirthdayDetailViewState extends State<BirthdayDetailView>
         return;
       }
       _reminderStatus = ReminderStatus.scheduled;
-      _reminderMessage =
-          'Đã lên lịch lúc ${DateFormat('dd/MM/yyyy HH:mm').format(next.scheduledAt!)}.';
+      _reminderMessage = context.l10n.reminderScheduledAt(
+        DateFormat('dd/MM/yyyy HH:mm').format(next.scheduledAt!),
+      );
     });
   }
 
@@ -147,7 +148,11 @@ class _BirthdayDetailViewState extends State<BirthdayDetailView>
         messenger.showSnackBar(
           SnackBar(
             content: Text(
-              'Đã đặt lại lịch${result.scheduledAt != null ? ' lúc ${DateFormat('dd/MM/yyyy HH:mm').format(result.scheduledAt!)}' : ''}.',
+              context.l10n.reminderRescheduledAt(
+                result.scheduledAt != null
+                    ? ' ${context.l10n.atTime(DateFormat('dd/MM/yyyy HH:mm').format(result.scheduledAt!))}'
+                    : '',
+              ),
             ),
             backgroundColor: Colors.green.shade600,
           ),
@@ -203,7 +208,7 @@ class _BirthdayDetailViewState extends State<BirthdayDetailView>
     } catch (e, st) {
       AppLogger.error('BirthdayAiGift', e, st);
       if (!mounted) return;
-      setState(() => _giftError = 'AI không khả dụng.');
+      setState(() => _giftError = context.l10n.aiUnavailable);
     } finally {
       if (mounted) setState(() => _isGiftLoading = false);
     }
@@ -242,7 +247,7 @@ class _BirthdayDetailViewState extends State<BirthdayDetailView>
     } catch (e, st) {
       AppLogger.error('BirthdayAiWish', e, st);
       if (!mounted) return;
-      setState(() => _wishError = 'AI không khả dụng.');
+      setState(() => _wishError = context.l10n.aiUnavailable);
     } finally {
       if (mounted) setState(() => _isWishLoading = false);
     }
@@ -251,22 +256,22 @@ class _BirthdayDetailViewState extends State<BirthdayDetailView>
   String _localizeError(AiConnectionResult r) {
     switch (r.errorCode) {
       case 'missing_api_key':
-        return 'Chưa cấu hình API key.';
+        return context.l10n.apiKeyNotSaved;
       case 'unauthorized':
       case 'http_401':
       case 'http_403':
-        return 'API key không hợp lệ hoặc không có quyền.';
+        return context.l10n.invalidApiKey;
       case 'model_not_found':
       case 'http_404':
-        return 'Không tìm thấy model.';
+        return context.l10n.modelNotFound;
       case 'http_429':
-        return 'Đã hết quota hoặc vượt giới hạn yêu cầu.';
+        return context.l10n.quotaExceeded;
       case 'timeout':
-        return 'AI phản hồi quá lâu. Hãy thử lại.';
+        return context.l10n.aiTimeout;
       case 'network':
-        return 'Không thể kết nối máy chủ.';
+        return context.l10n.serverConnectionFailed;
       default:
-        return r.errorMessage ?? 'AI không khả dụng.';
+        return r.errorMessage ?? context.l10n.aiUnavailable;
     }
   }
 
@@ -297,7 +302,7 @@ class _BirthdayDetailViewState extends State<BirthdayDetailView>
       backgroundColor: Colors.transparent,
       builder:
           (ctx) => _GiftSheet(
-            title: 'Gợi ý riêng cho $displayName',
+            title: context.l10n.giftsFor(displayName),
             targetCount: kGiftTargetCount,
             items: _giftSuggestions,
             error: _giftError,
@@ -323,7 +328,7 @@ class _BirthdayDetailViewState extends State<BirthdayDetailView>
       backgroundColor: Colors.transparent,
       builder:
           (ctx) => _WishSheet(
-            title: '10 câu chúc cho $displayName',
+            title: context.l10n.wishesFor(displayName),
             targetCount: kWishTargetCount,
             wishes: _wishSuggestions,
             error: _wishError,
@@ -414,8 +419,10 @@ class _BirthdayDetailViewState extends State<BirthdayDetailView>
             onPressed: () {
               SharePlus.instance.share(
                 ShareParams(
-                  text:
-                      'Sinh nhật của ${birthday.name} vào ngày ${dateFormat.format(birthday.solarBirthday)}',
+                  text: context.l10n.birthdayShare(
+                    birthday.name,
+                    dateFormat.format(birthday.solarBirthday),
+                  ),
                 ),
               );
             },
@@ -471,7 +478,7 @@ class _BirthdayDetailViewState extends State<BirthdayDetailView>
   Widget _buildTestNotification(BuildContext context, Birthday birthday) {
     return ElevatedButton.icon(
       icon: const Icon(Icons.notifications_active),
-      label: const Text('Thông báo thử'),
+      label: Text(context.l10n.testNotification),
       onPressed: () async {
         NotificationTestResult result;
         try {
@@ -484,7 +491,9 @@ class _BirthdayDetailViewState extends State<BirthdayDetailView>
           if (!context.mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Không thể hiển thị thông báo: $e'),
+              content: Text(
+                context.l10n.notificationDisplayFailed(e.toString()),
+              ),
               backgroundColor: Colors.red.shade600,
             ),
           );
@@ -494,17 +503,15 @@ class _BirthdayDetailViewState extends State<BirthdayDetailView>
         final messenger = ScaffoldMessenger.of(context);
         if (result.ok) {
           messenger.showSnackBar(
-            const SnackBar(
-              content: Text('Đã gửi thông báo thử'),
+            SnackBar(
+              content: Text(context.l10n.testNotificationSent),
               backgroundColor: Colors.green,
             ),
           );
         } else if (!result.permissionGranted || !result.notificationsEnabled) {
           messenger.showSnackBar(
             SnackBar(
-              content: const Text(
-                'Thông báo đang bị tắt. Hãy bật quyền thông báo cho ứng dụng.',
-              ),
+              content: Text(context.l10n.notificationDisabledHelp),
               backgroundColor: Colors.orange.shade700,
               duration: const Duration(seconds: 6),
             ),
@@ -512,7 +519,9 @@ class _BirthdayDetailViewState extends State<BirthdayDetailView>
         } else if (result.error != null) {
           messenger.showSnackBar(
             SnackBar(
-              content: Text('Không thể hiển thị thông báo: ${result.error}'),
+              content: Text(
+                context.l10n.notificationDisplayFailed(result.error.toString()),
+              ),
               backgroundColor: Colors.red.shade600,
             ),
           );

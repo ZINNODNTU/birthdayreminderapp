@@ -383,10 +383,13 @@ void main() {
       isFalse,
       reason: 'add/edit view must not contain "Bật thông báo định kỳ" label',
     );
+    // Localization refactor: label moved to l10n key 'enableNotification'
+    // (vi: "Bật thông báo"). Verify the l10n key is referenced in source.
     expect(
-      src.contains('Bật thông báo'),
+      src.contains('l10n.enableNotification'),
       isTrue,
-      reason: 'add/edit view must contain new "Bật thông báo" label',
+      reason:
+          'add/edit view must reference the new l10n.enableNotification key',
     );
   });
 }

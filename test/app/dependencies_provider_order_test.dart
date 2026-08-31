@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+import 'package:birthdayreminderapp/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
@@ -37,7 +38,11 @@ void main() {
       await tester.pumpWidget(
         MultiProvider(
           providers: providers,
-          child: const MaterialApp(home: AuthGate()),
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: const [Locale('vi')],
+            home: const AuthGate(),
+          ),
         ),
       );
       for (var i = 0; i < 10; i++) {
@@ -73,7 +78,11 @@ void main() {
       await tester.pumpWidget(
         MultiProvider(
           providers: providers,
-          child: const MaterialApp(home: AuthGate()),
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: const [Locale('vi')],
+            home: const AuthGate(),
+          ),
         ),
       );
       for (var i = 0; i < 10; i++) {
@@ -115,7 +124,11 @@ void main() {
     await tester.pumpWidget(
       MultiProvider(
         providers: providers,
-        child: const MaterialApp(home: AuthGate()),
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: const [Locale('vi')],
+          home: const AuthGate(),
+        ),
       ),
     );
     for (var i = 0; i < 10; i++) {

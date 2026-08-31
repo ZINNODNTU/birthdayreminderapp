@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/reminder_status.dart';
+import '../../../l10n/l10n_extensions.dart';
 
 class ReminderStatusCard extends StatelessWidget {
   const ReminderStatusCard({
@@ -27,31 +28,31 @@ class ReminderStatusCard extends StatelessWidget {
     switch (status) {
       case ReminderStatus.scheduled:
         color = Colors.green.shade600;
-        label = 'Đã lên lịch';
+        label = context.l10n.scheduled;
         break;
       case ReminderStatus.notScheduled:
         color = Colors.orange.shade700;
-        label = 'Chưa lên lịch';
+        label = context.l10n.notScheduled;
         break;
       case ReminderStatus.phantom:
         color = Colors.red.shade700;
-        label = 'Mất lịch — cần đồng bộ';
+        label = context.l10n.scheduleLost;
         break;
       case ReminderStatus.past:
         color = Colors.orange.shade700;
-        label = 'Đã quá thời gian';
+        label = context.l10n.pastTime;
         break;
       case ReminderStatus.permissionDenied:
         color = Colors.red.shade700;
-        label = 'Chưa cấp quyền';
+        label = context.l10n.notGranted;
         break;
       case ReminderStatus.unknown:
         color = Colors.grey.shade600;
-        label = 'Đang kiểm tra';
+        label = context.l10n.checking;
         break;
       case ReminderStatus.disabled:
         color = Colors.grey.shade600;
-        label = 'Đã tắt';
+        label = context.l10n.disabled;
         break;
     }
     final bool rescheduleEnabled = status != ReminderStatus.disabled;
@@ -69,7 +70,7 @@ class ReminderStatusCard extends StatelessWidget {
                 Icon(Icons.notifications_active, color: color),
                 const SizedBox(width: 8),
                 Text(
-                  'Trạng thái nhắc',
+                  context.l10n.reminderStatus,
                   style: Theme.of(context).textTheme.titleSmall,
                 ),
                 const Spacer(),
@@ -92,7 +93,9 @@ class ReminderStatusCard extends StatelessWidget {
             const SizedBox(height: 8),
             if (nextFireAt != null)
               Text(
-                'Lần nhắc kế tiếp: ${DateFormat('dd/MM/yyyy HH:mm').format(nextFireAt!)}',
+                context.l10n.nextReminder(
+                  DateFormat('dd/MM/yyyy HH:mm').format(nextFireAt!),
+                ),
               ),
             if (message != null)
               Padding(
@@ -107,9 +110,9 @@ class ReminderStatusCard extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 4),
                 child: Row(
                   children: [
-                    const Text('Lặp lại hằng năm: '),
+                    Text('${context.l10n.repeatAnnually}: '),
                     Text(
-                      repeatAnnually ? 'Có' : 'Không',
+                      repeatAnnually ? context.l10n.yes : context.l10n.no,
                       style: const TextStyle(fontWeight: FontWeight.w500),
                     ),
                   ],
@@ -122,7 +125,7 @@ class ReminderStatusCard extends StatelessWidget {
                 onPressed:
                     rescheduleEnabled && !rescheduling ? onReschedule : null,
                 icon: const Icon(Icons.refresh),
-                label: const Text('Đặt lại lịch nhắc'),
+                label: Text(context.l10n.rescheduleReminder),
               ),
             ),
           ],

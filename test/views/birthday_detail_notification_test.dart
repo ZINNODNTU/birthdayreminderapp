@@ -23,6 +23,8 @@ import 'package:birthdayreminderapp/services/notification_service.dart';
 import 'package:birthdayreminderapp/views/birthday_detail_view.dart';
 
 import '../helpers/fake_notification_service.dart';
+import 'package:birthdayreminderapp/l10n/app_localizations.dart';
+import 'package:birthdayreminderapp/services/locale_service.dart';
 
 class _FakeRepo implements BirthdayRepository {
   @override
@@ -120,8 +122,15 @@ Widget _wrap(BirthdayController controller, FakeNotificationService notif) {
             ),
       ),
       ChangeNotifierProvider<BirthdayController>.value(value: controller),
+      ChangeNotifierProvider<LocaleService>(
+        create: (_) => LocaleService(sharedPrefs),
+      ),
     ],
-    child: MaterialApp(home: BirthdayDetailView(birthday: _sampleBirthday())),
+    child: MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: const [Locale('vi')],
+      home: BirthdayDetailView(birthday: _sampleBirthday()),
+    ),
   );
 }
 
@@ -173,8 +182,12 @@ class _StubAiClient implements AiClient {
   }) async => AiConnectionResult.failure(code: 'test_stub');
 }
 
+late SharedPreferences sharedPrefs;
+
 void main() {
   setUpAll(() async {
+    SharedPreferences.setMockInitialValues({});
+    sharedPrefs = await SharedPreferences.getInstance();
     await initializeDateFormatting('vi_VN');
   });
 

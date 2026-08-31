@@ -1,0 +1,670 @@
+{
+  "@@locale": "en",
+  "appTitle": "Birthday Reminder",
+  "home": "Home",
+  "birthdayList": "Birthday list",
+  "todayBirthdays": "Birthdays today",
+  "upcoming": "Upcoming",
+  "seeMore": "See more",
+  "noBirthdays": "No birthdays yet",
+  "birthdayCalendar": "Birthday calendar",
+  "calendarMonth": "Month",
+  "calendarDay": "Day",
+  "birthdayReminder": "Birthday reminder",
+  "settings": "Settings",
+  "language": "Language",
+  "backup": "Backup",
+  "restore": "Restore",
+  "userGuide": "User guide",
+  "newVersion": "A new version is available",
+  "updateNow": "Update now",
+  "later": "Later",
+  "whatsNew": "What's new:",
+  "addBirthday": "Add birthday",
+  "editBirthday": "Edit birthday",
+  "manualAdd": "Add manually",
+  "contactAdd": "Add from contacts",
+  "search": "Search",
+  "selectLanguage": "Choose display language",
+  "sessionStatus": "Session status",
+  "mode": "Mode",
+  "aiTrial": "Try AI",
+  "monthBirthdays": "Birthdays in month {month} • {count}",
+  "@monthBirthdays": {
+    "placeholders": {
+      "month": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dayBirthdays": "Birthdays on {date}",
+  "@dayBirthdays": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "showMonth": "Show whole month",
+  "noMonthBirthdays": "No birthdays this month.",
+  "noDayBirthdays": "No birthdays on this day.",
+  "improveExperience": "Improved user experience",
+  "optimizeNotifications": "Optimized birthday notifications",
+  "fixPreviousBugs": "Fixed issues from the previous version",
+  "increaseStability": "Improved stability",
+  "name": "Name",
+  "birthdayDate": "Birthday date",
+  "save": "Save",
+  "cancel": "Cancel",
+  "chooseImage": "Choose image",
+  "delete": "Delete",
+  "confirmDelete": "Confirm delete",
+  "deleteConfirmMessage": "Are you sure you want to delete?",
+  "remindBefore": "Remind before (days)",
+  "remindTime": "Remind time",
+  "syncing": "Syncing...",
+  "syncSuccess": "Sync successful",
+  "syncError": "Sync error",
+  "backupSuccess": "Backup successful",
+  "restoreSuccess": "Restore successful",
+  "cloudUnavailable": "Sign in to use cloud sync.",
+  "signInGoogle": "Sign in with Google",
+  "signOut": "Sign out",
+  "exitLocalMode": "Exit local mode",
+  "localMode": "Local mode",
+  "localModeSubtitle": "Turn off to use Google account",
+  "deleteAllFirestore": "Delete all from Firestore",
+  "deleteAllFirestoreConfirm": "Are you sure you want to delete all birthdays from Firestore?",
+  "deletedAllFirestore": "Deleted all data from Firestore",
+  "noInternet": "No internet connection",
+  "googleConfigError": "Google sign-in not configured correctly on this device.",
+  "googleUiUnavailable": "Google account picker not available on this device.",
+  "loginFailed": "Login failed",
+  "authError": "An error occurred, please try again",
+  "testNotification": "Test notification",
+  "testNotificationSuccess": "Test notification sent",
+  "testNotificationFailed": "Failed to send test notification",
+  "ageInvalid": "Age must be between 0 and 120.",
+  "nameRequired": "Please enter a name",
+  "gender": "Gender",
+  "male": "Male",
+  "female": "Female",
+  "other": "Other",
+  "nickname": "Nickname",
+  "relationship": "Relationship",
+  "note": "Note",
+  "calendarType": "Calendar type",
+  "solar": "Solar",
+  "lunar": "Lunar",
+  "solarDate": "Solar date: {date}",
+  "@solarDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "lunarDate": "Lunar date: {date}",
+  "@lunarDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "repeatAnnually": "Repeat annually",
+  "enableNotification": "Enable notification",
+  "imagePickError": "Unable to pick or crop image.",
+  "imageProcessError": "Unable to process selected image.",
+  "permissionRequired": "Storage permission is required.",
+  "imageDecodeError": "Unable to decode image.",
+  "chooseLanguage": "Choose language",
+  "languageVi": "Tiếng Việt",
+  "languageEn": "English",
+  "languageZh": "中文",
+  "authSubtitle": "Never let a birthday go by without being remembered.",
+  "or": "or",
+  "continueOnDevice": "Continue on device",
+  "localModeDescription": "You can still use birthdays, calendar, and reminders on this device. Cloud sync features require sign-in.",
+  "authenticated": "Authenticated",
+  "syncComplete": "Complete",
+  "close": "Close",
+  "syncProgress": "{current} / {total} birthdays",
+  "@syncProgress": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "selectOption": "- Select -",
+  "cropTitle": "Crop birthday photo",
+  "photoPermissionTitle": "Photo Permission",
+  "photoPermissionMessage": "The app needs access to your photo library to choose an avatar. Please enable it in Settings.",
+  "permissionDeniedMessage": "You denied photo access. You can try again or grant permission in Settings.",
+  "permissionRestrictedMessage": "Photo access is restricted on this device.",
+  "openSettings": "Open Settings",
+  "allow": "Allow",
+  "selectedCount": "Selected: {count}",
+  "@selectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "selectAll": "Select all",
+  "deleteSelected": "Delete selected",
+  "clearSelection": "Clear selection",
+  "sort": "Sort",
+  "nearestBirthday": "Nearest birthday",
+  "farthestBirthday": "Farthest birthday",
+  "deleteBirthdayTitle": "Delete birthday?",
+  "deleteOneConfirm": "Are you sure you want to delete this birthday?",
+  "deleteManyConfirm": "Are you sure you want to delete {count} selected birthdays?",
+  "@deleteManyConfirm": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deletedOne": "Birthday deleted",
+  "deletedMany": "Deleted {count} birthdays",
+  "@deletedMany": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteFailed": "Could not delete {count} birthdays. Data will be synced again.",
+  "@deleteFailed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ageAndDays": "Age: {age} • {days} days remaining",
+  "@ageAndDays": {
+    "placeholders": {
+      "age": {
+        "type": "int"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "age": "Age",
+  "days": "{count} days",
+  "@days": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "remainingDays": "{count} days remaining",
+  "@remainingDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "yes": "Yes",
+  "no": "No",
+  "enabled": "On",
+  "disabled": "Off",
+  "notificationTime": "Reminder time",
+  "calendarList": "List",
+  "contactPermissionDenied": "Contacts permission denied",
+  "unnamed": "Unnamed",
+  "selectFromContacts": "Select from contacts",
+  "toggleSelectAll": "Select or clear all",
+  "noContactsToAdd": "No contacts left to add",
+  "settingsSubtitle": "Check notifications and app permissions",
+  "guideSubtitle": "Learn how to use Birthday Reminder",
+  "usingOnDevice": "Using on this device",
+  "savedLocally": "Saved only on this device",
+  "options": "Options",
+  "chooseUsageMode": "Choose usage mode",
+  "backToLogin": "Return to sign-in screen",
+  "backupToFirestore": "Back up to Firestore",
+  "syncFromFirestore": "Sync from Firestore",
+  "backupInProgress": "Backing up...",
+  "failed": "Failed",
+  "errorWithDetails": "Error: {error}",
+  "@errorWithDetails": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationSection": "Notifications",
+  "notificationPermission": "Notification permission",
+  "appNotifications": "App notifications",
+  "exactAlarm": "Exact alarms",
+  "deviceTimezone": "Device time zone",
+  "notificationChannel": "Notification channel",
+  "checking": "Checking",
+  "granted": "Granted",
+  "notGranted": "Not granted",
+  "on": "On",
+  "off": "Off",
+  "sendTestNotification": "Send test notification",
+  "testAfterTenSeconds": "Test notification after 10 seconds",
+  "openNotificationSettings": "Open notification settings",
+  "allowExactAlarm": "Allow exact alarms",
+  "testAfterOneMinute": "Test birthday reminder after 1 minute",
+  "notificationPermissionOff": "Notification permission is disabled.",
+  "exactAlarmPermissionMissing": "Exact alarm permission is not granted.",
+  "notificationsDisabledSchedule": "Notification permission is disabled — cannot schedule.",
+  "scheduleNotRetained": "The device did not retain the schedule — check alarm permission.",
+  "unknownError": "unknown error",
+  "scheduledTestAt": "Test notification scheduled at {time}.",
+  "@scheduledTestAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "scheduledMinuteTestAt": "One-minute test scheduled at {time}.",
+  "@scheduledMinuteTestAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "scheduleTestFailed": "Could not schedule test notification: {error}",
+  "@scheduleTestFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "scheduleMinuteFailed": "Could not schedule one-minute test: {error}",
+  "@scheduleMinuteFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderPendingCount": "Pending reminders: {count}",
+  "@reminderPendingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "resyncReminders": "Resync reminders",
+  "noPendingReminders": "No pending reminders.",
+  "collapse": "Collapse",
+  "showMoreReminders": "Show {count} more reminders",
+  "@showMoreReminders": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reminderSchedule": "Reminder",
+  "birthdayShortId": "Birthday {id}…",
+  "@birthdayShortId": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderResyncSuccess": "Scheduled {scheduled}, cancelled {cancelled} old reminders.",
+  "@reminderResyncSuccess": {
+    "placeholders": {
+      "scheduled": {
+        "type": "int"
+      },
+      "cancelled": {
+        "type": "int"
+      }
+    }
+  },
+  "syncFailedDetails": "Sync failed: {error}",
+  "@syncFailedDetails": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "waiting": "waiting",
+  "appInformation": "App information",
+  "loading": "Loading…",
+  "appVersionInfo": "{name} — version {version} (build {build})",
+  "@appVersionInfo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "version": {
+        "type": "String"
+      },
+      "build": {
+        "type": "String"
+      }
+    }
+  },
+  "testChannel": "Test channel: {id}",
+  "@testChannel": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "mainChannel": "Main channel: {id}",
+  "@mainChannel": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "testNotificationId": "Test notification ID: {id}",
+  "@testNotificationId": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "scheduledTestNotificationId": "Scheduled test notification ID: {id}",
+  "@scheduledTestNotificationId": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "updateApp": "Update app",
+  "checkNewVersion": "Check for a new version",
+  "artificialIntelligence": "Artificial intelligence",
+  "provider": "Provider",
+  "openAiCompatible": "OpenAI / compatible",
+  "apiKeyNotSaved": "No API key saved.",
+  "apiKeyCurrent": "Current: {key}",
+  "@apiKeyCurrent": {
+    "placeholders": {
+      "key": {
+        "type": "String"
+      }
+    }
+  },
+  "showApiKey": "Show API key",
+  "hideApiKey": "Hide API key",
+  "pasteClipboard": "Paste from clipboard",
+  "testConnection": "Test connection",
+  "fetchModels": "Fetch models",
+  "saveConfiguration": "Save configuration",
+  "deleteApiKey": "Delete API key",
+  "modelRequired": "Please enter a model.",
+  "apiKeyRequired": "Please enter an API key.",
+  "baseUrlRequired": "Please enter a Base URL.",
+  "apiKeySaved": "Configuration and API key saved securely.",
+  "apiKeyDeleted": "API key deleted.",
+  "clipboardNoApiKey": "Clipboard has no API key.",
+  "apiKeyPasted": "API key pasted ({count} characters).",
+  "@apiKeyPasted": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "connectionSuccess": "Connected ({latency} ms) — Reply: \"{reply}\"",
+  "@connectionSuccess": {
+    "placeholders": {
+      "latency": {
+        "type": "int"
+      },
+      "reply": {
+        "type": "String"
+      }
+    }
+  },
+  "modelsUnavailable": "Could not load models — enter an ID manually.",
+  "modelsLoaded": "Loaded {count} models.",
+  "@modelsLoaded": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "aiUnavailable": "AI is unavailable.",
+  "aiAssistant": "AI Assistant",
+  "personalizedFor": "Personalized for {name}",
+  "@personalizedFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "aiReady": "AI ready",
+  "notConfigured": "Not configured",
+  "openAiSettings": "Open AI settings",
+  "aiThinking": "AI is thinking...",
+  "giftSuggestions": "Gift suggestions",
+  "wishSuggestions": "Wish suggestions",
+  "english": "English",
+  "chinese": "Chinese",
+  "reminderStatus": "Reminder status",
+  "scheduled": "Scheduled",
+  "notScheduled": "Not scheduled",
+  "scheduleLost": "Schedule missing — resync needed",
+  "pastTime": "Past due",
+  "nextReminder": "Next reminder: {time}",
+  "@nextReminder": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "rescheduleReminder": "Reschedule reminder",
+  "notificationDisabledPerson": "Notifications are disabled for this person.",
+  "noReminderScheduled": "No reminder scheduled.",
+  "reminderScheduledAt": "Scheduled at {time}.",
+  "@reminderScheduledAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderRescheduledAt": "Reminder rescheduled{time}.",
+  "@reminderRescheduledAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationDisplayFailed": "Could not show notification: {error}",
+  "@notificationDisplayFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationDisabledHelp": "Notifications are disabled. Enable notification permission for the app.",
+  "birthdayShare": "{name}'s birthday is on {date}",
+  "@birthdayShare": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "copied": "Copied {label}.",
+  "@copied": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "copyAll": "Copy all",
+  "regenerate": "Regenerate",
+  "noSuggestions": "No suggestions yet.",
+  "reason": "Reason: {value}",
+  "@reason": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "budget": "Budget: {value}",
+  "@budget": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "personalizing": "Personalizing again...",
+  "personalizedProfile": "Personalized from profile",
+  "modelValidResults": "Model returned {count}/{target} valid results.",
+  "@modelValidResults": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      }
+    }
+  },
+  "suggestedByAi": "Suggested by AI",
+  "aiAndQuick": "AI + quick suggestions",
+  "usingQuickSuggestions": "Using quick suggestions",
+  "giftsFor": "Suggestions for {name}",
+  "@giftsFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "wishesFor": "10 wishes for {name}",
+  "@wishesFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "giftUnit": "items",
+  "share": "Share",
+  "solarBirthday": "Solar birthday",
+  "lunarBirthday": "Lunar birthday",
+  "atTime": "at {time}",
+  "@atTime": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "invalidApiKey": "The API key is invalid or unauthorized.",
+  "modelNotFound": "Model not found.",
+  "quotaExceeded": "Quota or request limit exceeded.",
+  "aiTimeout": "AI response timed out. Try again.",
+  "serverConnectionFailed": "Could not connect to the server.",
+  "testNotificationSent": "Test notification sent",
+  "updateTitle": "Update App",
+  "currentVersion": "Current version",
+  "latestVersion": "Latest version",
+  "upToDate": "Up to date",
+  "newVersionAvailable": "New version available!",
+  "downloadUpdate": "Download update",
+  "installUpdate": "Install update",
+  "checkingUpdate": "Checking for updates…",
+  "updateError": "Update error",
+  "updateReady": "Ready",
+  "updateCheckHint": "Tap “Check for updates” to look for a new version.",
+  "usingLatestVersion": "You are using the latest version.",
+  "versionAvailable": "Version {version} is available.",
+  "@versionAvailable": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "reinstallRequired": "Reinstallation required",
+  "reinstallMessage": "The new version uses a new security signature. Back up your data before reinstalling.",
+  "downloadingUpdate": "Downloading update…",
+  "downloadedSize": "Downloaded {size}",
+  "@downloadedSize": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "verifyingUpdate": "Verifying…",
+  "verifyingFile": "Checking file integrity…",
+  "readyToInstall": "Ready to install!",
+  "updateDownloaded": "The update has been downloaded and verified.",
+  "installPermissionRequired": "Installation permission required",
+  "installPermissionHint": "Allow app installation from this source, then try again.",
+  "installingUpdate": "Installing…",
+  "pleaseWait": "Please wait…",
+  "genericUpdateError": "Something went wrong. Please try again.",
+  "skipUpdate": "Skip",
+  "retry": "Retry",
+  "openDownloadPage": "Open download page",
+  "reinstallSteps": "1. Back up your data\n2. Keep the backup file safe\n3. Install the new version as instructed\n4. Restore the backup",
+  "releaseDetails": "Release details",
+  "versionLabel": "Version",
+  "buildLabel": "Build",
+  "releaseDate": "Release date",
+  "fileSize": "Size",
+  "noReleaseNotes": "No release notes.",
+  "viewOnGitHub": "View on GitHub",
+  "fallbackChangeExperience": "Improved user experience",
+  "fallbackChangeNotifications": "Optimized birthday notifications",
+  "fallbackChangeFixes": "Fixed issues from the previous version",
+  "fallbackChangeStability": "Improved stability",
+  "birthdaySyncProgress": "{current} / {total} birthdays",
+  "@birthdaySyncProgress": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  }
+}

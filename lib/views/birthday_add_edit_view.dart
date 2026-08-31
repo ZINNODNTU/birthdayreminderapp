@@ -1,14 +1,18 @@
 import 'dart:typed_data';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:image/image.dart' as img;
 
 import '../controllers/birthday_controller.dart';
 import '../features/birthdays/services/birthday_photo_service.dart';
 import '../models/birthday.dart';
 import '../services/avatar_cache.dart';
+import '../services/photo_permission_service.dart';
+import '../l10n/l10n_extensions.dart';
 
 class BirthdayAddEditView extends StatefulWidget {
   final Birthday? birthday;
@@ -84,58 +88,178 @@ class _BirthdayAddEditViewState extends State<BirthdayAddEditView> {
   Future<void> _pickImage() async {
     if (_processingImage) return;
     final photoService = context.read<BirthdayPhotoService>();
+    final permService = PhotoPermissionService();
+    Directory? tempDir;
     setState(() => _processingImage = true);
+
     try {
-      final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
-      if (picked == null) return;
-      final cropped = await ImageCropper().cropImage(
-        sourcePath: picked.path,
-        aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
-        compressFormat: ImageCompressFormat.jpg,
-        compressQuality: 95,
-        uiSettings: [
-          AndroidUiSettings(
-            toolbarTitle: 'Cắt ảnh sinh nhật',
-            lockAspectRatio: true,
-            hideBottomControls: false,
-          ),
-          IOSUiSettings(
-            title: 'Cắt ảnh sinh nhật',
-            aspectRatioLockEnabled: true,
-            resetAspectRatioEnabled: false,
-          ),
-        ],
+      final status = await permService.checkAndRequest();
+      switch (status) {
+        case PhotoPermissionStatus.granted:
+          break;
+        case PhotoPermissionStatus.denied:
+          if (mounted) await _showPermissionDeniedDialog();
+          return;
+        case PhotoPermissionStatus.permanentlyDenied:
+          if (mounted) await _showPermanentlyDeniedDialog();
+          return;
+        case PhotoPermissionStatus.restricted:
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(context.l10n.permissionRestrictedMessage)),
+            );
+          }
+          return;
+      }
+
+      final XFile? picked = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
       );
+      if (picked == null) return;
+
+      final sourceFile = File(picked.path);
+      if (!await sourceFile.exists()) {
+        throw const FileSystemException('Selected image no longer exists');
+      }
+
+      final bytes = await sourceFile.readAsBytes();
+      final decoded = img.decodeImage(bytes);
+      if (decoded == null) throw const FormatException('Invalid image');
+
+      final longestSide =
+          decoded.width >= decoded.height ? decoded.width : decoded.height;
+      final resized =
+          longestSide > 1024
+              ? (decoded.width >= decoded.height
+                  ? img.copyResize(decoded, width: 1024)
+                  : img.copyResize(decoded, height: 1024))
+              : decoded;
+      final compressedBytes = img.encodeJpg(resized, quality: 80);
+      tempDir = await Directory.systemTemp.createTemp('avatar_');
+      final tempFile = File('${tempDir.path}${Platform.pathSeparator}temp.jpg');
+      await tempFile.writeAsBytes(compressedBytes, flush: true);
+      if (!mounted) return;
+
+      CroppedFile? cropped;
+      try {
+        cropped = await ImageCropper().cropImage(
+          sourcePath: tempFile.path,
+          aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
+          compressFormat: ImageCompressFormat.jpg,
+          compressQuality: 95,
+          uiSettings: [
+            AndroidUiSettings(
+              toolbarTitle: context.l10n.cropTitle,
+              lockAspectRatio: true,
+              hideBottomControls: false,
+            ),
+            IOSUiSettings(
+              title: context.l10n.cropTitle,
+              aspectRatioLockEnabled: true,
+              resetAspectRatioEnabled: false,
+            ),
+          ],
+        );
+      } catch (_) {
+        if (mounted) _showImageError();
+        return;
+      }
       if (cropped == null) return;
-      final raw = Uint8List.fromList(await cropped.readAsBytes());
+
+      final croppedFile = File(cropped.path);
+      if (!await croppedFile.exists()) {
+        throw const FileSystemException('Cropped image no longer exists');
+      }
+      final raw = Uint8List.fromList(await croppedFile.readAsBytes());
       final result = photoService.encodeBytes(raw);
       if (!mounted) return;
       if (!result.ok) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Không thể xử lý ảnh đã chọn.')),
-        );
+        _showImageError();
         return;
       }
       setState(() => _avatarBase64 = result.photo!.base64);
     } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Không thể chọn hoặc cắt ảnh.')),
-        );
-      }
+      if (mounted) _showImageError();
     } finally {
+      if (tempDir != null) {
+        try {
+          if (await tempDir.exists()) await tempDir.delete(recursive: true);
+        } catch (_) {
+          // Temporary cleanup failure must not break the image flow.
+        }
+      }
       if (mounted) setState(() => _processingImage = false);
     }
+  }
+
+  void _showImageError() {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(context.l10n.imageProcessError)));
+  }
+
+  Future<void> _showPermissionDeniedDialog() async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder:
+          (BuildContext context) => AlertDialog(
+            title: Text(context.l10n.photoPermissionTitle),
+            content: Text(context.l10n.permissionDeniedMessage),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text(context.l10n.cancel),
+              ),
+              TextButton(
+                onPressed: () async {
+                  Navigator.of(context).pop();
+                  final permService = PhotoPermissionService();
+                  final status = await permService.checkAndRequest();
+                  if (status == PhotoPermissionStatus.granted) {
+                    // retry picking
+                    _pickImage();
+                  }
+                },
+                child: Text(context.l10n.allow),
+              ),
+            ],
+          ),
+    );
+  }
+
+  Future<void> _showPermanentlyDeniedDialog() async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder:
+          (BuildContext context) => AlertDialog(
+            title: Text(context.l10n.photoPermissionTitle),
+            content: Text(context.l10n.photoPermissionMessage),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text(context.l10n.cancel),
+              ),
+              TextButton(
+                onPressed: () async {
+                  Navigator.of(context).pop();
+                  final permService = PhotoPermissionService();
+                  await permService.openSettings();
+                },
+                child: Text(context.l10n.openSettings),
+              ),
+            ],
+          ),
+    );
   }
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
       if (!isValidAge(_solarBirthday)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Tuổi phải nằm trong khoảng từ 0 đến 120.'),
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.ageInvalid)));
         return;
       }
 
@@ -174,7 +298,9 @@ class _BirthdayAddEditViewState extends State<BirthdayAddEditView> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          widget.birthday == null ? 'Thêm sinh nhật' : 'Sửa sinh nhật',
+          widget.birthday == null
+              ? context.l10n.addBirthday
+              : context.l10n.editBirthday,
         ),
       ),
       body: SingleChildScrollView(
@@ -204,43 +330,59 @@ class _BirthdayAddEditViewState extends State<BirthdayAddEditView> {
               const SizedBox(height: 16),
               TextFormField(
                 initialValue: _name,
-                decoration: const InputDecoration(labelText: 'Tên *'),
+                decoration: InputDecoration(
+                  labelText: '${context.l10n.name} *',
+                ),
                 validator:
                     (value) =>
                         value == null || value.isEmpty
-                            ? 'Vui lòng nhập tên'
+                            ? context.l10n.nameRequired
                             : null,
                 onSaved: (value) => _name = value!,
               ),
               TextFormField(
                 initialValue: _nickname,
-                decoration: const InputDecoration(labelText: 'Biệt danh'),
+                decoration: InputDecoration(labelText: context.l10n.nickname),
                 onSaved: (value) => _nickname = value,
               ),
               DropdownButtonFormField<String>(
                 initialValue: _gender?.isNotEmpty == true ? _gender : '',
-                decoration: const InputDecoration(labelText: 'Giới tính'),
+                decoration: InputDecoration(labelText: context.l10n.gender),
                 isExpanded: true,
                 onChanged: (value) {
                   setState(() => _gender = value != '' ? value : null);
                 },
-                items: const [
-                  DropdownMenuItem(value: '', child: Text('- Chọn -')),
-                  DropdownMenuItem(value: 'Nam', child: Text('Nam')),
-                  DropdownMenuItem(value: 'Nữ', child: Text('Nữ')),
-                  DropdownMenuItem(value: 'Khác', child: Text('Khác')),
+                items: [
+                  DropdownMenuItem(
+                    value: '',
+                    child: Text(context.l10n.selectOption),
+                  ),
+                  DropdownMenuItem(
+                    value: 'Nam',
+                    child: Text(context.l10n.male),
+                  ),
+                  DropdownMenuItem(
+                    value: 'Nữ',
+                    child: Text(context.l10n.female),
+                  ),
+                  DropdownMenuItem(
+                    value: 'Khác',
+                    child: Text(context.l10n.other),
+                  ),
                 ],
                 onSaved: (value) => _gender = value != '' ? value : null,
               ),
 
               TextFormField(
                 initialValue: _relationship,
-                decoration: const InputDecoration(labelText: 'Mối quan hệ'),
+                decoration: InputDecoration(
+                  labelText: context.l10n.relationship,
+                ),
                 onSaved: (value) => _relationship = value,
               ),
               TextFormField(
                 initialValue: _note,
-                decoration: const InputDecoration(labelText: 'Ghi chú'),
+                decoration: InputDecoration(labelText: context.l10n.note),
                 onSaved: (value) => _note = value,
               ),
               const SizedBox(height: 16),
@@ -249,28 +391,28 @@ class _BirthdayAddEditViewState extends State<BirthdayAddEditView> {
                 onChanged: (value) {
                   if (value != null) setState(() => _calendarType = value);
                 },
-                child: Row(
-                  children: const [
-                    Text('Loại lịch:'),
-                    SizedBox(width: 10),
-                    Expanded(
-                      child: RadioListTile<CalendarType>(
-                        title: Text('Dương lịch'),
-                        value: CalendarType.solar,
-                      ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('${context.l10n.calendarType}:'),
+                    RadioListTile<CalendarType>(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(context.l10n.solar),
+                      value: CalendarType.solar,
                     ),
-                    Expanded(
-                      child: RadioListTile<CalendarType>(
-                        title: Text('Âm lịch'),
-                        value: CalendarType.lunar,
-                      ),
+                    RadioListTile<CalendarType>(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(context.l10n.lunar),
+                      value: CalendarType.lunar,
                     ),
                   ],
                 ),
               ),
               ListTile(
                 title: Text(
-                  'Ngày sinh dương: ${_solarBirthday.day}/${_solarBirthday.month}/${_solarBirthday.year}',
+                  context.l10n.solarDate(
+                    '${_solarBirthday.day}/${_solarBirthday.month}/${_solarBirthday.year}',
+                  ),
                 ),
                 trailing: const Icon(Icons.calendar_today),
                 onTap: () async {
@@ -279,17 +421,13 @@ class _BirthdayAddEditViewState extends State<BirthdayAddEditView> {
                     initialDate: _solarBirthday,
                     firstDate: DateTime(1900),
                     lastDate: DateTime.now(),
-                    locale: const Locale('vi', 'VN'),
+                    locale: Localizations.localeOf(context),
                   );
                   if (!context.mounted) return;
                   if (picked != null) {
                     if (!isValidAge(picked)) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Tuổi không hợp lệ. Tuổi phải từ 0 đến 120.',
-                          ),
-                        ),
+                        SnackBar(content: Text(context.l10n.ageInvalid)),
                       );
                       return;
                     }
@@ -302,12 +440,14 @@ class _BirthdayAddEditViewState extends State<BirthdayAddEditView> {
               ),
               ListTile(
                 title: Text(
-                  'Ngày sinh âm: ${_lunarBirthday.day}/${_lunarBirthday.month}',
+                  context.l10n.lunarDate(
+                    '${_lunarBirthday.day}/${_lunarBirthday.month}',
+                  ),
                 ),
               ),
               DropdownButtonFormField<int>(
-                decoration: const InputDecoration(
-                  labelText: 'Nhắc trước (ngày)',
+                decoration: InputDecoration(
+                  labelText: context.l10n.remindBefore,
                 ),
                 initialValue: _remindBeforeDays,
                 onChanged:
@@ -317,7 +457,9 @@ class _BirthdayAddEditViewState extends State<BirthdayAddEditView> {
                 }),
               ),
               ListTile(
-                title: Text('Giờ nhắc: ${_remindTime.format(context)}'),
+                title: Text(
+                  '${context.l10n.remindTime}: ${_remindTime.format(context)}',
+                ),
                 trailing: const Icon(Icons.access_time),
                 onTap: () async {
                   TimeOfDay? picked = await showTimePicker(
@@ -330,7 +472,7 @@ class _BirthdayAddEditViewState extends State<BirthdayAddEditView> {
                         ).copyWith(alwaysUse24HourFormat: true),
                         child: Localizations.override(
                           context: ctx,
-                          locale: const Locale('vi', 'VN'),
+                          locale: Localizations.localeOf(context),
                           child: child!,
                         ),
                       );
@@ -343,13 +485,13 @@ class _BirthdayAddEditViewState extends State<BirthdayAddEditView> {
                 },
               ),
               CheckboxListTile(
-                title: const Text('Lặp lại hàng năm'),
+                title: Text(context.l10n.repeatAnnually),
                 value: _repeatAnnually,
                 onChanged:
                     (val) => setState(() => _repeatAnnually = val ?? true),
               ),
               CheckboxListTile(
-                title: const Text('Bật thông báo'),
+                title: Text(context.l10n.enableNotification),
                 value: _isRecurringNotificationEnabled,
                 onChanged:
                     (val) => setState(
@@ -357,7 +499,10 @@ class _BirthdayAddEditViewState extends State<BirthdayAddEditView> {
                     ),
               ),
               const SizedBox(height: 20),
-              ElevatedButton(onPressed: _submitForm, child: const Text('Lưu')),
+              ElevatedButton(
+                onPressed: _submitForm,
+                child: Text(context.l10n.save),
+              ),
             ],
           ),
         ),

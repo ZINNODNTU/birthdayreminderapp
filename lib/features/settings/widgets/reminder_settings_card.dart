@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../reminders/data/reminder_schedule_store.dart';
+import '../../../l10n/l10n_extensions.dart';
 import '../../reminders/services/notification_reconciler.dart';
 
 class ReminderSettingsCard extends StatefulWidget {
@@ -47,16 +48,24 @@ class _ReminderSettingsCardState extends State<ReminderSettingsCard> {
     try {
       final reconciler = context.read<NotificationReconciler>();
       final result = await reconciler.reconcile();
+      if (!mounted) return;
       setState(
         () =>
-            _statusMessage =
-                'Đã đặt ${result.scheduled} lịch, huỷ ${result.cancelled} lịch cũ.',
+            _statusMessage = context.l10n.reminderResyncSuccess(
+              result.scheduled,
+              result.cancelled,
+            ),
       );
     } catch (e) {
-      setState(() => _statusMessage = 'Đồng bộ thất bại: $e');
+      if (!mounted) return;
+      setState(
+        () => _statusMessage = context.l10n.syncFailedDetails(e.toString()),
+      );
     } finally {
-      if (mounted) setState(() => _busy = false);
-      _load();
+      if (mounted) {
+        setState(() => _busy = false);
+        _load();
+      }
     }
   }
 
@@ -74,11 +83,11 @@ class _ReminderSettingsCardState extends State<ReminderSettingsCard> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Nhắc sinh nhật',
+              context.l10n.birthdayReminder,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
-            Text('Số lịch nhắc đang chờ: ${entries.length}'),
+            Text(context.l10n.reminderPendingCount(entries.length)),
             if (_statusMessage != null)
               Padding(
                 padding: const EdgeInsets.only(top: 8),
@@ -88,11 +97,11 @@ class _ReminderSettingsCardState extends State<ReminderSettingsCard> {
             ElevatedButton.icon(
               onPressed: _busy ? null : _resync,
               icon: const Icon(Icons.sync),
-              label: const Text('Đồng bộ lại lịch nhắc'),
+              label: Text(context.l10n.resyncReminders),
             ),
             const SizedBox(height: 12),
             if (entries.isEmpty)
-              const Text('Chưa có lịch nhắc nào đang chờ.')
+              Text(context.l10n.noPendingReminders)
             else
               AnimatedSize(
                 duration: const Duration(milliseconds: 250),
@@ -108,7 +117,7 @@ class _ReminderSettingsCardState extends State<ReminderSettingsCard> {
                         title: Text(_safeName(e.scheduleKey)),
                         subtitle: Text(
                           e.scheduledAt == null
-                              ? 'ID: ${e.notificationId} • chờ'
+                              ? 'ID: ${e.notificationId} • ${context.l10n.waiting}'
                               : '${DateFormat('dd/MM/yyyy HH:mm').format(e.scheduledAt!)} • '
                                   'ID: ${e.notificationId}',
                         ),
@@ -127,8 +136,8 @@ class _ReminderSettingsCardState extends State<ReminderSettingsCard> {
                           ),
                           label: Text(
                             _expanded
-                                ? 'Thu gọn'
-                                : 'Xem thêm $hiddenCount lịch',
+                                ? context.l10n.collapse
+                                : context.l10n.showMoreReminders(hiddenCount),
                           ),
                         ),
                       ),
@@ -146,8 +155,10 @@ class _ReminderSettingsCardState extends State<ReminderSettingsCard> {
     // safe portion of the schedule key.
     final parts = key.split(':');
     if (parts.length >= 2) {
-      return 'Sinh nhật ${parts[1].substring(0, parts[1].length.clamp(0, 6))}…';
+      return context.l10n.birthdayShortId(
+        parts[1].substring(0, parts[1].length.clamp(0, 6)),
+      );
     }
-    return 'Lịch nhắc';
+    return context.l10n.reminderSchedule;
   }
 }

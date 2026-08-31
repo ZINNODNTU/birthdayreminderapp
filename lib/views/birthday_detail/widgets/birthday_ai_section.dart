@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../features/ai/services/birthday_ai_service.dart';
+import '../../../l10n/l10n_extensions.dart';
 
 /// Displays AI availability and a settings link.
 class BirthdayAiSection extends StatelessWidget {
@@ -46,15 +47,15 @@ class BirthdayAiSection extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
-                                'Trợ lý AI',
-                                style: TextStyle(
+                              Text(
+                                context.l10n.aiAssistant,
+                                style: const TextStyle(
                                   fontWeight: FontWeight.w600,
                                   fontSize: 16,
                                 ),
                               ),
                               Text(
-                                'Cá nhân hóa cho $birthdayName',
+                                context.l10n.personalizedFor(birthdayName),
                                 style: TextStyle(
                                   color: Colors.grey.shade600,
                                   fontSize: 12,
@@ -76,7 +77,9 @@ class BirthdayAiSection extends StatelessWidget {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            available ? 'AI sẵn sàng' : 'Chưa cấu hình',
+                            available
+                                ? context.l10n.aiReady
+                                : context.l10n.notConfigured,
                             style: TextStyle(
                               color:
                                   available
@@ -95,7 +98,7 @@ class BirthdayAiSection extends StatelessWidget {
                         alignment: Alignment.centerLeft,
                         child: TextButton.icon(
                           icon: const Icon(Icons.settings, size: 18),
-                          label: const Text('Mở cài đặt AI'),
+                          label: Text(context.l10n.openAiSettings),
                           onPressed:
                               () => Navigator.pushNamed(ctx, '/settings'),
                         ),

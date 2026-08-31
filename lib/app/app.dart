@@ -1,17 +1,18 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
+// import removed
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../core/auth/auth_gate.dart';
 import '../core/logging/app_logger.dart';
 import '../core/theme/app_theme.dart';
 import '../features/reminders/services/legacy_schedule_migrator.dart';
 import '../features/reminders/services/legacy_v3_migrator.dart';
 import '../features/reminders/services/notification_reconciler.dart';
 import '../features/reminders/services/notification_timezone_bootstrap.dart';
-import '../features/update/services/app_update_service.dart';
+import '../features/update/update_prompt_gate.dart';
+import '../l10n/app_localizations.dart';
+import '../services/locale_service.dart';
 import '../services/notification_service.dart';
 import 'dependencies.dart';
 
@@ -133,38 +134,25 @@ class _BirthdayReminderAppState extends State<BirthdayReminderApp>
     } finally {
       stopwatch.stop();
     }
-
-    // Non-critical update check (don't block startup)
-    try {
-      if (!mounted) return;
-      final updateService = context.read<AppUpdateService>();
-      // Schedule check with delay to not interfere with first frame
-      Future.delayed(const Duration(seconds: 2), () {
-        if (mounted) {
-          updateService.checkForUpdates(manual: false);
-        }
-      });
-    } catch (e) {
-      AppLogger.warn('startup', 'update check init failed: $e');
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: AppDependencies.providers(widget.prefs),
-      child: MaterialApp(
-        title: 'Nhắc Sinh Nhật',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.light(),
-        locale: const Locale('vi', 'VN'),
-        supportedLocales: const [Locale('vi', 'VN'), Locale('vi')],
-        localizationsDelegates: [
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        home: const AuthGate(),
+      child: Builder(
+        builder: (context) {
+          final locale = context.watch<LocaleService>().locale;
+          return MaterialApp(
+            onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.light(),
+            locale: locale,
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            home: const UpdatePromptGate(),
+          );
+        },
       ),
     );
   }

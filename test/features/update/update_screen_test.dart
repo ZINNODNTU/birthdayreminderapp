@@ -8,6 +8,8 @@ import 'package:birthdayreminderapp/features/update/repositories/github_release_
 import 'package:birthdayreminderapp/features/update/services/app_update_service.dart';
 import 'package:birthdayreminderapp/features/update/views/update_screen.dart';
 import 'package:http/http.dart' as http;
+import 'package:birthdayreminderapp/l10n/app_localizations.dart';
+import 'package:birthdayreminderapp/services/locale_service.dart';
 
 class _StubRepo extends GithubReleaseRepository {
   _StubRepo(this._release) : super(client: http.Client());
@@ -32,11 +34,18 @@ Future<AppUpdateService> _buildService(
   return service;
 }
 
-Widget _wrap(AppUpdateService service) {
-  return MaterialApp(
-    home: ChangeNotifierProvider<AppUpdateService>.value(
-      value: service,
-      child: const UpdateScreen(),
+Widget _wrap(AppUpdateService service, SharedPreferences prefs) {
+  return MultiProvider(
+    providers: [
+      ChangeNotifierProvider<AppUpdateService>.value(value: service),
+      ChangeNotifierProvider<LocaleService>(
+        create: (_) => LocaleService(prefs),
+      ),
+    ],
+    child: MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: const [Locale('vi')],
+      home: const UpdateScreen(),
     ),
   );
 }
@@ -59,7 +68,8 @@ void main() {
 
   testWidgets('UpdateScreen renders idle state', (tester) async {
     final svc = await _buildService(tester, repo: _StubRepo(null));
-    await tester.pumpWidget(_wrap(svc));
+    final prefs = await SharedPreferences.getInstance();
+    await tester.pumpWidget(_wrap(svc, prefs));
     await tester.pumpAndSettle();
     expect(find.text('Phiên bản hiện tại'), findsOneWidget);
     expect(find.text('Cập nhật ứng dụng'), findsOneWidget); // AppBar
@@ -67,9 +77,10 @@ void main() {
 
   testWidgets('UpdateScreen renders upToDate state', (tester) async {
     final svc = await _buildService(tester, repo: _StubRepo(null));
+    final prefs = await SharedPreferences.getInstance();
     // Manually push status.
     svc.checkForUpdates(manual: true);
-    await tester.pumpWidget(_wrap(svc));
+    await tester.pumpWidget(_wrap(svc, prefs));
     await tester.pumpAndSettle(const Duration(seconds: 1));
     expect(find.text('Đã có phiên bản mới nhất'), findsOneWidget);
   });
@@ -81,6 +92,7 @@ void main() {
       tester,
       repo: _StubRepo(_newRelease(sha: 'A' * 64)),
     );
+    final prefs = await SharedPreferences.getInstance();
     // Mock installed version to 1.0.0
     const channel = MethodChannel('dev.fluttercommunity.plus/package_info');
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -91,7 +103,7 @@ void main() {
           return null;
         });
     svc.checkForUpdates(manual: true);
-    await tester.pumpWidget(_wrap(svc));
+    await tester.pumpWidget(_wrap(svc, prefs));
     await tester.pumpAndSettle(const Duration(seconds: 1));
     expect(find.text('Có bản cập nhật mới!'), findsOneWidget);
     expect(find.text('Tải bản cập nhật'), findsOneWidget);
@@ -104,11 +116,12 @@ void main() {
       tester,
       repo: _StubRepo(_newRelease(sha: '')),
     );
+    final prefs = await SharedPreferences.getInstance();
     // Stub fetchSha256 to return null (will be overridden in _StubRepo actually)
     // Instead use a different repo that returns null.
     // Replace with new repo.
     svc.checkForUpdates(manual: true);
-    await tester.pumpWidget(_wrap(svc));
+    await tester.pumpWidget(_wrap(svc, prefs));
     await tester.pumpAndSettle(const Duration(seconds: 1));
     // When sha is present in release, sha256 is used directly; here sha is empty
     // but stub returns 'A'*64, so we should reach updateAvailable.

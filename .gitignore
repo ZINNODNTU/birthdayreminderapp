@@ -89,3 +89,6 @@ inst_user_settings.tmp
 # 🔒 Local release/audit outputs and temporary Firebase copy
 artifacts/
 /new_google-services.json
+
+# Local generated release metadata
+/release-metadata.json
