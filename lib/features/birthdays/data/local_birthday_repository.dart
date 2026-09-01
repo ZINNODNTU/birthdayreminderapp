@@ -29,9 +29,10 @@ class LocalBirthdayRepository
     final stamped = birthday.copyWith(
       createdAt: birthday.createdAt ?? now,
       updatedAt: now,
-      syncStatus: birthday.ownerUid == null
-          ? SyncStatus.localOnly
-          : SyncStatus.pendingUpload,
+      syncStatus:
+          birthday.ownerUid == null
+              ? SyncStatus.localOnly
+              : SyncStatus.pendingUpload,
     );
     await _db.insertBirthday(stamped);
   }

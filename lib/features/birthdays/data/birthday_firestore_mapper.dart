@@ -100,9 +100,10 @@ class BirthdayFirestoreMapper {
           '${b.remindTime.hour.toString().padLeft(2, '0')}:'
           '${b.remindTime.minute.toString().padLeft(2, '0')}',
       'repeatYearly': b.repeatAnnually,
-      'createdAt': b.createdAt == null
-          ? FieldValue.serverTimestamp()
-          : Timestamp.fromDate(b.createdAt!),
+      'createdAt':
+          b.createdAt == null
+              ? FieldValue.serverTimestamp()
+              : Timestamp.fromDate(b.createdAt!),
       'updatedAt': Timestamp.fromDate(b.updatedAt ?? DateTime.now()),
       'schemaVersion': schemaVersion,
     };

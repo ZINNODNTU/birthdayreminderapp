@@ -67,12 +67,13 @@ class _HomepageState extends State<Homepage> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => SyncProgressDialog(
-        notifier: progress,
-        onComplete: () {
-          // dialog will auto-close on completion
-        },
-      ),
+      builder:
+          (_) => SyncProgressDialog(
+            notifier: progress,
+            onComplete: () {
+              // dialog will auto-close on completion
+            },
+          ),
     );
     try {
       await controller.triggerSync(
@@ -162,20 +163,21 @@ class _HomepageState extends State<Homepage> {
     }
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(context.l10n.confirmDelete),
-        content: Text(context.l10n.deleteAllFirestoreConfirm),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(context.l10n.cancel),
+      builder:
+          (context) => AlertDialog(
+            title: Text(context.l10n.confirmDelete),
+            content: Text(context.l10n.deleteAllFirestoreConfirm),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(context.l10n.cancel),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: Text(context.l10n.delete),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(context.l10n.delete),
-          ),
-        ],
-      ),
     );
     if (confirm == true) {
       final firestoreService = FirestoreService();
@@ -199,12 +201,14 @@ class _HomepageState extends State<Homepage> {
     } on AuthFailure catch (e) {
       if (!context.mounted) return;
       if (e is AuthFailureCancelled) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(_mapFailureMessage(e))));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_mapFailureMessage(e))));
     } catch (_) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(context.l10n.loginFailed)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.loginFailed)));
     }
   }
 
@@ -318,18 +322,16 @@ class _HomepageState extends State<Homepage> {
               icon: const Icon(Icons.home),
               onPressed: () => _onItemTapped(0),
               tooltip: context.l10n.home,
-              color: _selectedIndex == 0
-                  ? MidAutumnColors.moon
-                  : Colors.white54,
+              color:
+                  _selectedIndex == 0 ? MidAutumnColors.moon : Colors.white54,
             ),
             const SizedBox(width: 48),
             IconButton(
               icon: const Icon(Icons.list),
               onPressed: () => _onItemTapped(1),
               tooltip: context.l10n.calendarList,
-              color: _selectedIndex == 1
-                  ? MidAutumnColors.moon
-                  : Colors.white54,
+              color:
+                  _selectedIndex == 1 ? MidAutumnColors.moon : Colors.white54,
             ),
           ],
         ),
@@ -404,16 +406,17 @@ class _HomepageState extends State<Homepage> {
       SwitchListTile(
         key: const ValueKey('drawer_session_mode'),
         value: mode == AppSessionMode.local,
-        onChanged: mode == AppSessionMode.authenticated
-            ? null
-            : (value) async {
-                Navigator.pop(context);
-                if (value) {
-                  await session.enterLocalMode();
-                } else {
-                  await session.exitLocalMode();
-                }
-              },
+        onChanged:
+            mode == AppSessionMode.authenticated
+                ? null
+                : (value) async {
+                  Navigator.pop(context);
+                  if (value) {
+                    await session.enterLocalMode();
+                  } else {
+                    await session.exitLocalMode();
+                  }
+                },
         title: Text(
           context.l10n.localMode,
           style: TextStyle(color: MidAutumnColors.textPrimary),
@@ -511,20 +514,21 @@ class _HomepageState extends State<Homepage> {
             Navigator.pop(context);
             final confirm = await showDialog<bool>(
               context: context,
-              builder: (context) => AlertDialog(
-                title: Text(context.l10n.confirmDelete),
-                content: Text(context.l10n.deleteAllFirestoreConfirm),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context, false),
-                    child: Text(context.l10n.cancel),
+              builder:
+                  (context) => AlertDialog(
+                    title: Text(context.l10n.confirmDelete),
+                    content: Text(context.l10n.deleteAllFirestoreConfirm),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: Text(context.l10n.cancel),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        child: Text(context.l10n.delete),
+                      ),
+                    ],
                   ),
-                  TextButton(
-                    onPressed: () => Navigator.pop(context, true),
-                    child: Text(context.l10n.delete),
-                  ),
-                ],
-              ),
             );
             if (confirm == true) {
               final firestoreService = FirestoreService();
@@ -573,30 +577,34 @@ class _HomepageState extends State<Homepage> {
       selectedTileColor: MidAutumnColors.moon.withValues(alpha: 0.15),
       leading: Icon(
         icon,
-        color: isSelected
-            ? MidAutumnColors.moon
-            : MidAutumnColors.textSecondary,
+        color:
+            isSelected ? MidAutumnColors.moon : MidAutumnColors.textSecondary,
       ),
       title: Text(
         title,
         style: TextStyle(
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          color: isSelected
-              ? MidAutumnColors.textPrimary
-              : MidAutumnColors.textSecondary,
+          color:
+              isSelected
+                  ? MidAutumnColors.textPrimary
+                  : MidAutumnColors.textSecondary,
         ),
       ),
-      subtitle: subtitle != null
-          ? Text(
-              subtitle,
-              style: TextStyle(
-                color: isSelected
-                    ? MidAutumnColors.textSecondary
-                    : MidAutumnColors.textSecondary.withValues(alpha: 0.7),
-                fontSize: 12,
-              ),
-            )
-          : null,
+      subtitle:
+          subtitle != null
+              ? Text(
+                subtitle,
+                style: TextStyle(
+                  color:
+                      isSelected
+                          ? MidAutumnColors.textSecondary
+                          : MidAutumnColors.textSecondary.withValues(
+                            alpha: 0.7,
+                          ),
+                  fontSize: 12,
+                ),
+              )
+              : null,
       onTap: onTap,
     );
   }

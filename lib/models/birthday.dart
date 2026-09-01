@@ -104,9 +104,8 @@ class Birthday {
       DbSchema.colCalendarType: calendarType.toString(),
       DbSchema.colRemindBeforeDays: remindBeforeDays,
       DbSchema.colRemindTime: '${remindTime.hour}:${remindTime.minute}',
-      DbSchema.colIsRecurringNotificationEnabled: isRecurringNotificationEnabled
-          ? 1
-          : 0,
+      DbSchema.colIsRecurringNotificationEnabled:
+          isRecurringNotificationEnabled ? 1 : 0,
       DbSchema.colRepeatAnnually: repeatAnnually ? 1 : 0,
       DbSchema.colNote: note,
       DbSchema.colCreatedAt: createdAt?.toIso8601String(),

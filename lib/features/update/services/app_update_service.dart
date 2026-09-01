@@ -204,9 +204,8 @@ class AppUpdateService extends ChangeNotifier {
         onProgress: (downloaded, total) {
           _downloadedBytes = downloaded;
           _totalBytes = total;
-          _downloadProgress = total != null && total > 0
-              ? downloaded / total
-              : 0;
+          _downloadProgress =
+              total != null && total > 0 ? downloaded / total : 0;
           notifyListeners();
         },
       );
@@ -222,7 +221,8 @@ class AppUpdateService extends ChangeNotifier {
       _setStatus(UpdateStatus.readyToInstall);
     } catch (error, stackTrace) {
       AppLogger.error('UpdateDownload', error, stackTrace);
-      _errorMessage = 'Tải bản cập nhật không thành công. Vui lòng kiểm tra kết nối mạng và thử lại.';
+      _errorMessage =
+          'Tải bản cập nhật không thành công. Vui lòng kiểm tra kết nối mạng và thử lại.';
       _setStatus(UpdateStatus.error);
       if (_downloadedApk != null && await _downloadedApk!.exists()) {
         await _downloadedApk!.delete();

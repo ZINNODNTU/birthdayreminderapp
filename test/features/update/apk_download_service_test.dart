@@ -25,16 +25,18 @@ void main() {
       (request) async => http.StreamedResponse(chunks, 200, contentLength: 5),
     );
     final progress = <int>[];
-    final result = await ApkDownloadService(clientFactory: () => client)
-        .download(
-          urlProvider: (_) async =>
+    final result = await ApkDownloadService(
+      clientFactory: () => client,
+    ).download(
+      urlProvider:
+          (_) async =>
               Uri.parse('https://github.com/o/r/releases/download/v/app.apk'),
-          directory: temp,
-          fileName: 'app.apk',
-          userAgent: 'BirthdayReminder/2.0.1',
-          expectedSize: 5,
-          onProgress: (received, _) => progress.add(received),
-        );
+      directory: temp,
+      fileName: 'app.apk',
+      userAgent: 'BirthdayReminder/2.0.1',
+      expectedSize: 5,
+      onProgress: (received, _) => progress.add(received),
+    );
     expect(await result.file.readAsBytes(), [1, 2, 3, 4, 5]);
     expect(progress, [2, 5]);
     expect(File('${result.file.path}.part').existsSync(), isFalse);
@@ -91,10 +93,11 @@ void main() {
     var attempts = 0;
     final service = ApkDownloadService(
       delay: (_) async {},
-      clientFactory: () => _RecordingClient((request) async {
-        attempts++;
-        throw http.ClientException('Connection closed');
-      }),
+      clientFactory:
+          () => _RecordingClient((request) async {
+            attempts++;
+            throw http.ClientException('Connection closed');
+          }),
     );
     await expectLater(
       service.download(
@@ -114,12 +117,17 @@ void main() {
     var calls = 0;
     final service = ApkDownloadService(
       delay: (_) async {},
-      clientFactory: () => _RecordingClient((request) async {
-        calls++;
-        return calls == 1
-            ? http.StreamedResponse(Stream.value([1, 2]), 200, contentLength: 2)
-            : http.StreamedResponse(Stream.value(Uint8List(0)), 500);
-      }),
+      clientFactory:
+          () => _RecordingClient((request) async {
+            calls++;
+            return calls == 1
+                ? http.StreamedResponse(
+                  Stream.value([1, 2]),
+                  200,
+                  contentLength: 2,
+                )
+                : http.StreamedResponse(Stream.value(Uint8List(0)), 500);
+          }),
     );
     await expectLater(
       service.download(
@@ -136,9 +144,8 @@ void main() {
   });
 }
 
-typedef _Handler = Future<http.StreamedResponse> Function(
-  http.BaseRequest request,
-);
+typedef _Handler =
+    Future<http.StreamedResponse> Function(http.BaseRequest request);
 
 class _RecordingClient extends http.BaseClient {
   _RecordingClient(this.handler);

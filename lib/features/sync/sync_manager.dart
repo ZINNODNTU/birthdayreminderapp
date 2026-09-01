@@ -90,27 +90,27 @@ class SyncManager {
       // so the UI never jumps from the local count to the remote count.
       final localSnapshot = await _local.getBirthdays();
       final remoteSnapshot = await _remote.getBirthdayRecords(uid);
-      final total = localSnapshot.length > remoteSnapshot.length
-          ? localSnapshot.length
-          : remoteSnapshot.length;
+      final total =
+          localSnapshot.length > remoteSnapshot.length
+              ? localSnapshot.length
+              : remoteSnapshot.length;
       void report(int current, int phaseTotal, double start, double span) {
         if (onProgress == null || total == 0) return;
-        final phaseRatio = phaseTotal <= 0
-            ? 1.0
-            : (current / phaseTotal).clamp(0.0, 1.0);
+        final phaseRatio =
+            phaseTotal <= 0 ? 1.0 : (current / phaseTotal).clamp(0.0, 1.0);
         final overall = ((start + phaseRatio * span) * total).round();
         onProgress(overall.clamp(0, total), total);
       }
 
       await pushPending(
         uid,
-        onProgress: (current, phaseTotal) =>
-            report(current, phaseTotal, 0, 0.5),
+        onProgress:
+            (current, phaseTotal) => report(current, phaseTotal, 0, 0.5),
       );
       await pullRemote(
         uid,
-        onProgress: (current, phaseTotal) =>
-            report(current, phaseTotal, 0.5, 0.5),
+        onProgress:
+            (current, phaseTotal) => report(current, phaseTotal, 0.5, 0.5),
       );
       onProgress?.call(total, total);
     } catch (e, st) {
@@ -126,13 +126,14 @@ class SyncManager {
     void Function(int current, int total)? onProgress,
   }) async {
     final all = await _local.getAllForSync();
-    final pending = all
-        .where(
-          (b) =>
-              b.syncStatus != SyncStatus.synced &&
-              (b.ownerUid == null || b.ownerUid == uid),
-        )
-        .toList();
+    final pending =
+        all
+            .where(
+              (b) =>
+                  b.syncStatus != SyncStatus.synced &&
+                  (b.ownerUid == null || b.ownerUid == uid),
+            )
+            .toList();
     final total = pending.length;
     var current = 0;
     for (final b in pending) {
@@ -265,8 +266,8 @@ class SyncManager {
     final photo = r.photo;
     final localAvatar =
         existing?.avatarBase64 != null && existing!.avatarBase64!.isNotEmpty
-        ? existing.avatarBase64
-        : null;
+            ? existing.avatarBase64
+            : null;
     if (photo == null) {
       // Cloud missing photo — never erase local. Keep the local
       // avatar untouched so a legacy cloud record cannot blank a

@@ -26,10 +26,11 @@ class SettingsView extends StatelessWidget {
           IconButton(
             tooltip: context.l10n.aiTrial,
             icon: const Icon(Icons.smart_toy),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const AiTrialView()),
-            ),
+            onPressed:
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AiTrialView()),
+                ),
           ),
         ],
       ),

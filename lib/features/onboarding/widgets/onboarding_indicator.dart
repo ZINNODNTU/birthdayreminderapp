@@ -23,9 +23,10 @@ class OnboardingIndicator extends StatelessWidget {
           width: index == current ? 22 : 8,
           height: 8,
           decoration: BoxDecoration(
-            color: index == current
-                ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).colorScheme.outlineVariant,
+            color:
+                index == current
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.outlineVariant,
             borderRadius: BorderRadius.circular(99),
           ),
         ),

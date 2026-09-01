@@ -69,9 +69,10 @@ class AppDependencies {
       // ---- auth foundations (consumed by every auth-aware provider) --
       Provider<GoogleAuthClient>(create: (_) => GoogleSignInClient()),
       Provider<FirebaseAuthRepository>(
-        create: (ctx) => FirebaseAuthRepository(
-          googleAuthClient: ctx.read<GoogleAuthClient>(),
-        ),
+        create:
+            (ctx) => FirebaseAuthRepository(
+              googleAuthClient: ctx.read<GoogleAuthClient>(),
+            ),
       ),
 
       // ---- profile / session repos -----------------------------------
@@ -86,15 +87,17 @@ class AppDependencies {
         create: (ctx) => LocalBirthdayRepository(ctx.read<LocalDbService>()),
       ),
       Provider<BirthdayRemoteRepository>(
-        create: (ctx) => FirestoreBirthdayRemoteRepository(
-          mapper: ctx.read<BirthdayFirestoreMapper>(),
-        ),
+        create:
+            (ctx) => FirestoreBirthdayRemoteRepository(
+              mapper: ctx.read<BirthdayFirestoreMapper>(),
+            ),
       ),
       Provider<OnboardingService>(
-        create: (ctx) => OnboardingService(
-          preferences: ctx.read<SharedPreferences>(),
-          birthdays: ctx.read<BirthdayRepository>(),
-        ),
+        create:
+            (ctx) => OnboardingService(
+              preferences: ctx.read<SharedPreferences>(),
+              birthdays: ctx.read<BirthdayRepository>(),
+            ),
       ),
 
       // ---- domain services -------------------------------------------
@@ -105,25 +108,26 @@ class AppDependencies {
         create: (_) => const LunarCalendarService(),
       ),
       Provider<BirthdayEngine>(
-        create: (ctx) =>
-            DefaultBirthdayEngine(ctx.read<LunarCalendarService>()),
+        create:
+            (ctx) => DefaultBirthdayEngine(ctx.read<LunarCalendarService>()),
       ),
 
       // ---- AI configuration (non-secret in prefs, keys in secure storage) ----
       Provider<AiConfigRepository>(
-        create: (ctx) =>
-            AiConfigRepository(prefs: ctx.read<SharedPreferences>()),
+        create:
+            (ctx) => AiConfigRepository(prefs: ctx.read<SharedPreferences>()),
       ),
       Provider<AiClient>(create: (_) => AiClient()),
       Provider<AiCacheStorage>(
         create: (ctx) => AiCacheStorage(ctx.read<SharedPreferences>()),
       ),
       Provider<BirthdayAiService>(
-        create: (ctx) => BirthdayAiService(
-          configRepository: ctx.read<AiConfigRepository>(),
-          client: ctx.read<AiClient>(),
-          cacheStorage: ctx.read<AiCacheStorage>(),
-        ),
+        create:
+            (ctx) => BirthdayAiService(
+              configRepository: ctx.read<AiConfigRepository>(),
+              client: ctx.read<AiClient>(),
+              cacheStorage: ctx.read<AiCacheStorage>(),
+            ),
       ),
 
       // ---- reminder services -----------------------------------------
@@ -131,53 +135,60 @@ class AppDependencies {
         create: (_) => const NotificationIdFactory(),
       ),
       Provider<NotificationPermissionService>(
-        create: (ctx) => NotificationPermissionService(
-          notificationService: ctx.read<NotificationService>(),
-        ),
+        create:
+            (ctx) => NotificationPermissionService(
+              notificationService: ctx.read<NotificationService>(),
+            ),
       ),
       Provider<ReminderScheduleStore>(
         create: (ctx) => ReminderScheduleStore(ctx.read<SharedPreferences>()),
       ),
       Provider<LegacyScheduleMigrator>(
-        create: (ctx) => LegacyScheduleMigrator(
-          store: ctx.read<ReminderScheduleStore>(),
-          notificationService: ctx.read<NotificationService>(),
-        ),
+        create:
+            (ctx) => LegacyScheduleMigrator(
+              store: ctx.read<ReminderScheduleStore>(),
+              notificationService: ctx.read<NotificationService>(),
+            ),
       ),
       Provider<LegacyToV3Migrator>(
-        create: (ctx) => LegacyToV3Migrator(
-          store: ctx.read<ReminderScheduleStore>(),
-          notificationService: ctx.read<NotificationService>(),
-        ),
+        create:
+            (ctx) => LegacyToV3Migrator(
+              store: ctx.read<ReminderScheduleStore>(),
+              notificationService: ctx.read<NotificationService>(),
+            ),
       ),
       Provider<ReminderScheduler>(
-        create: (ctx) => ReminderScheduler(
-          engine: ctx.read<BirthdayEngine>(),
-          idFactory: ctx.read<NotificationIdFactory>(),
-          notificationService: ctx.read<NotificationService>(),
-          permissionService: ctx.read<NotificationPermissionService>(),
-          store: ctx.read<ReminderScheduleStore>(),
-        ),
+        create:
+            (ctx) => ReminderScheduler(
+              engine: ctx.read<BirthdayEngine>(),
+              idFactory: ctx.read<NotificationIdFactory>(),
+              notificationService: ctx.read<NotificationService>(),
+              permissionService: ctx.read<NotificationPermissionService>(),
+              store: ctx.read<ReminderScheduleStore>(),
+            ),
       ),
       Provider<NotificationReconciler>(
-        create: (ctx) => NotificationReconciler(
-          repository: ctx.read<BirthdayRepository>(),
-          scheduler: ctx.read<ReminderScheduler>(),
-          permissionService: ctx.read<NotificationPermissionService>(),
-          store: ctx.read<ReminderScheduleStore>(),
-        ),
+        create:
+            (ctx) => NotificationReconciler(
+              repository: ctx.read<BirthdayRepository>(),
+              scheduler: ctx.read<ReminderScheduler>(),
+              permissionService: ctx.read<NotificationPermissionService>(),
+              store: ctx.read<ReminderScheduleStore>(),
+            ),
       ),
 
       // ---- sync manager (after auth + local + remote repos) -----------
       Provider<SyncManager>(
-        create: (ctx) => SyncManager(
-          local: ctx.read<BirthdayRepository>(),
-          remote: ctx.read<BirthdayRemoteRepository>(),
-          authGate: ctx.read<FirebaseAuthRepository>().authStateChanges,
-          uidProvider: () =>
-              ctx.read<FirebaseAuthRepository>().currentUser?.uid ?? '',
-          photoService: ctx.read<BirthdayPhotoService>(),
-        ),
+        create:
+            (ctx) => SyncManager(
+              local: ctx.read<BirthdayRepository>(),
+              remote: ctx.read<BirthdayRemoteRepository>(),
+              authGate: ctx.read<FirebaseAuthRepository>().authStateChanges,
+              uidProvider:
+                  () =>
+                      ctx.read<FirebaseAuthRepository>().currentUser?.uid ?? '',
+              photoService: ctx.read<BirthdayPhotoService>(),
+            ),
         dispose: (_, mgr) => mgr.dispose(),
       ),
 
@@ -186,29 +197,33 @@ class AppDependencies {
         create: (_) => GithubReleaseRepository(),
       ),
       ChangeNotifierProvider<AppUpdateService>(
-        create: (ctx) => AppUpdateService(
-          repository: ctx.read<GithubReleaseRepository>(),
-          prefs: ctx.read<SharedPreferences>(),
-        ),
+        create:
+            (ctx) => AppUpdateService(
+              repository: ctx.read<GithubReleaseRepository>(),
+              prefs: ctx.read<SharedPreferences>(),
+            ),
       ),
       // ---- controllers (last, depend on everything above) ------------
       ChangeNotifierProvider<BirthdayController>(
-        create: (ctx) => BirthdayController(
-          repository: ctx.read<BirthdayRepository>(),
-          reminderScheduler: ctx.read<ReminderScheduler>(),
-          notificationService: ctx.read<NotificationService>(),
-          engine: ctx.read<BirthdayEngine>(),
-          authRepository: ctx.read<FirebaseAuthRepository>(),
-          syncManager: ctx.read<SyncManager>(),
-        ),
+        create:
+            (ctx) => BirthdayController(
+              repository: ctx.read<BirthdayRepository>(),
+              reminderScheduler: ctx.read<ReminderScheduler>(),
+              notificationService: ctx.read<NotificationService>(),
+              engine: ctx.read<BirthdayEngine>(),
+              authRepository: ctx.read<FirebaseAuthRepository>(),
+              syncManager: ctx.read<SyncManager>(),
+            ),
       ),
       ChangeNotifierProvider<SessionController>(
-        create: (ctx) => SessionController(
-          repository: ctx.read<SessionRepository>(),
-          authRepository: ctx.read<FirebaseAuthRepository>(),
-          profileRepository: ctx.read<UserProfileRepository>(),
-          authStateChanges: ctx.read<FirebaseAuthRepository>().authStateChanges,
-        ),
+        create:
+            (ctx) => SessionController(
+              repository: ctx.read<SessionRepository>(),
+              authRepository: ctx.read<FirebaseAuthRepository>(),
+              profileRepository: ctx.read<UserProfileRepository>(),
+              authStateChanges:
+                  ctx.read<FirebaseAuthRepository>().authStateChanges,
+            ),
       ),
     ];
   }

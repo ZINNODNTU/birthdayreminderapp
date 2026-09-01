@@ -43,25 +43,28 @@ class _ContactImportState extends State<ContactImport> {
       return;
     }
 
-    final existingNames = context
-        .read<BirthdayController>()
-        .birthdays
-        .map((birthday) => birthday.name.trim().toLowerCase())
-        .toSet();
+    final existingNames =
+        context
+            .read<BirthdayController>()
+            .birthdays
+            .map((birthday) => birthday.name.trim().toLowerCase())
+            .toSet();
     final contacts = await FlutterContacts.getAll(
       properties: const {ContactProperty.name, ContactProperty.photoThumbnail},
     );
     if (!mounted) return;
     setState(() {
-      _contacts = contacts
-          .where((contact) => (contact.displayName ?? '').trim().isNotEmpty)
-          .where(
-            (contact) => !existingNames.contains(
-              (contact.displayName ?? '').trim().toLowerCase(),
-            ),
-          )
-          .where((contact) => contact.id != null)
-          .toList();
+      _contacts =
+          contacts
+              .where((contact) => (contact.displayName ?? '').trim().isNotEmpty)
+              .where(
+                (contact) =>
+                    !existingNames.contains(
+                      (contact.displayName ?? '').trim().toLowerCase(),
+                    ),
+              )
+              .where((contact) => contact.id != null)
+              .toList();
       _loading = false;
     });
   }
@@ -76,9 +79,10 @@ class _ContactImportState extends State<ContactImport> {
         Birthday(
           id: const Uuid().v4(),
           name: contact.displayName ?? context.l10n.unnamed,
-          avatarBase64: contact.photo?.thumbnail == null
-              ? null
-              : base64Encode(contact.photo!.thumbnail!),
+          avatarBase64:
+              contact.photo?.thumbnail == null
+                  ? null
+                  : base64Encode(contact.photo!.thumbnail!),
           solarBirthday: now,
           lunarBirthday: LunarDateTime.fromDateTime(now),
           calendarType: CalendarType.solar,
@@ -132,36 +136,38 @@ class _ContactImportState extends State<ContactImport> {
             ),
         ],
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _contacts.isEmpty
-          ? Center(child: Text(context.l10n.noContactsToAdd))
-          : ListView.builder(
-              itemCount: _contacts.length,
-              itemBuilder: (context, index) {
-                final contact = _contacts[index];
-                return CheckboxListTile(
-                  value: _selectedIds.contains(contact.id!),
-                  onChanged: (selected) {
-                    setState(() {
-                      if (selected ?? false) {
-                        _selectedIds.add(contact.id!);
-                      } else {
-                        _selectedIds.remove(contact.id!);
-                      }
-                    });
-                  },
-                  title: Text(contact.displayName ?? context.l10n.unnamed),
-                  secondary: contact.photo?.thumbnail == null
-                      ? const CircleAvatar(child: Icon(Icons.person))
-                      : CircleAvatar(
-                          backgroundImage: MemoryImage(
-                            contact.photo!.thumbnail!,
-                          ),
-                        ),
-                );
-              },
-            ),
+      body:
+          _loading
+              ? const Center(child: CircularProgressIndicator())
+              : _contacts.isEmpty
+              ? Center(child: Text(context.l10n.noContactsToAdd))
+              : ListView.builder(
+                itemCount: _contacts.length,
+                itemBuilder: (context, index) {
+                  final contact = _contacts[index];
+                  return CheckboxListTile(
+                    value: _selectedIds.contains(contact.id!),
+                    onChanged: (selected) {
+                      setState(() {
+                        if (selected ?? false) {
+                          _selectedIds.add(contact.id!);
+                        } else {
+                          _selectedIds.remove(contact.id!);
+                        }
+                      });
+                    },
+                    title: Text(contact.displayName ?? context.l10n.unnamed),
+                    secondary:
+                        contact.photo?.thumbnail == null
+                            ? const CircleAvatar(child: Icon(Icons.person))
+                            : CircleAvatar(
+                              backgroundImage: MemoryImage(
+                                contact.photo!.thumbnail!,
+                              ),
+                            ),
+                  );
+                },
+              ),
     );
   }
 }

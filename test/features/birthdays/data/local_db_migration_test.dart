@@ -124,9 +124,8 @@ void main() {
     final postUpgradeIndexList = await db.rawQuery(
       'PRAGMA index_list(${DbSchema.birthdaysTable})',
     );
-    final postUpgradeIndexNames = postUpgradeIndexList
-        .map((row) => row['name'] as String)
-        .toList();
+    final postUpgradeIndexNames =
+        postUpgradeIndexList.map((row) => row['name'] as String).toList();
     expect(postUpgradeIndexNames, contains('idx_birthdays_deleted_updated'));
   });
 }

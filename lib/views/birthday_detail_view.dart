@@ -88,9 +88,10 @@ class _BirthdayDetailViewState extends State<BirthdayDetailView>
     final notif = context.read<NotificationService>();
     final store = context.read<ReminderScheduleStore>();
     final entries = store.loadAll();
-    final mine = entries.values
-        .where((e) => e.birthdayId == widget.birthday.id)
-        .toList();
+    final mine =
+        entries.values
+            .where((e) => e.birthdayId == widget.birthday.id)
+            .toList();
     final futureEntries = mine
         .where((e) => e.scheduledAt != null)
         .where((e) => e.scheduledAt!.isAfter(DateTime.now()))
@@ -291,48 +292,54 @@ class _BirthdayDetailViewState extends State<BirthdayDetailView>
   }
 
   Future<void> _showGiftSheet() async {
-    final displayName = widget.birthday.nickname?.trim().isNotEmpty == true
-        ? widget.birthday.nickname!.trim()
-        : widget.birthday.name;
+    final displayName =
+        widget.birthday.nickname?.trim().isNotEmpty == true
+            ? widget.birthday.nickname!.trim()
+            : widget.birthday.name;
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => _GiftSheet(
-        title: context.l10n.giftsFor(displayName),
-        targetCount: kGiftTargetCount,
-        items: _giftSuggestions,
-        error: _giftError,
-        isLoading: _isGiftLoading,
-        source: _giftSource,
-        onRetry: _isGiftLoading
-            ? null
-            : () => _fetchGift(preservePrevious: false),
-        snap: context.read<BirthdayAiService>().contextFor(widget.birthday),
-      ),
+      builder:
+          (ctx) => _GiftSheet(
+            title: context.l10n.giftsFor(displayName),
+            targetCount: kGiftTargetCount,
+            items: _giftSuggestions,
+            error: _giftError,
+            isLoading: _isGiftLoading,
+            source: _giftSource,
+            onRetry:
+                _isGiftLoading
+                    ? null
+                    : () => _fetchGift(preservePrevious: false),
+            snap: context.read<BirthdayAiService>().contextFor(widget.birthday),
+          ),
     );
   }
 
   Future<void> _showWishSheet() async {
-    final displayName = widget.birthday.nickname?.trim().isNotEmpty == true
-        ? widget.birthday.nickname!.trim()
-        : widget.birthday.name;
+    final displayName =
+        widget.birthday.nickname?.trim().isNotEmpty == true
+            ? widget.birthday.nickname!.trim()
+            : widget.birthday.name;
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => _WishSheet(
-        title: context.l10n.wishesFor(displayName),
-        targetCount: kWishTargetCount,
-        wishes: _wishSuggestions,
-        error: _wishError,
-        isLoading: _isWishLoading,
-        source: _wishSource,
-        onRetry: _isWishLoading
-            ? null
-            : () => _fetchWish(preservePrevious: false),
-        snap: context.read<BirthdayAiService>().contextFor(widget.birthday),
-      ),
+      builder:
+          (ctx) => _WishSheet(
+            title: context.l10n.wishesFor(displayName),
+            targetCount: kWishTargetCount,
+            wishes: _wishSuggestions,
+            error: _wishError,
+            isLoading: _isWishLoading,
+            source: _wishSource,
+            onRetry:
+                _isWishLoading
+                    ? null
+                    : () => _fetchWish(preservePrevious: false),
+            snap: context.read<BirthdayAiService>().contextFor(widget.birthday),
+          ),
     );
   }
 
@@ -785,8 +792,9 @@ String _giftText(GiftSuggestion g) {
 Future<void> _copyText(BuildContext context, String text, String label) async {
   await Clipboard.setData(ClipboardData(text: text));
   if (!context.mounted) return;
-  ScaffoldMessenger.of(context)
-      .showSnackBar(SnackBar(content: Text('Đã sao chép $label.')));
+  ScaffoldMessenger.of(
+    context,
+  ).showSnackBar(SnackBar(content: Text('Đã sao chép $label.')));
 }
 
 class _GiftSheet extends StatelessWidget {
@@ -833,8 +841,12 @@ class _GiftSheet extends StatelessWidget {
           TextButton.icon(
             icon: const Icon(Icons.copy_all),
             label: const Text('Sao chép tất cả'),
-            onPressed: () =>
-                _copyText(context, list.map(_giftText).join('\n\n'), 'tất cả'),
+            onPressed:
+                () => _copyText(
+                  context,
+                  list.map(_giftText).join('\n\n'),
+                  'tất cả',
+                ),
           ),
         if (onRetry != null)
           TextButton.icon(
@@ -847,28 +859,34 @@ class _GiftSheet extends StatelessWidget {
           child: const Text('Đóng'),
         ),
       ],
-      child: error != null
-          ? _ErrorBlock(error: error!)
-          : list.isEmpty && isLoading
-          ? ListView.separated(
-              padding: const EdgeInsets.only(top: 8, bottom: 12),
-              itemCount: targetCount,
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
-              itemBuilder: (_, __) => const _GiftCardSkeleton(),
-            )
-          : list.isEmpty
-          ? const Center(child: Text('Chưa có gợi ý nào.'))
-          : ListView.separated(
-              padding: const EdgeInsets.only(bottom: 12),
-              itemCount: list.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
-              itemBuilder: (ctx, i) => _GiftCard(
-                index: i + 1,
-                gift: list[i],
-                onCopy: () =>
-                    _copyText(context, _giftText(list[i]), 'gợi ý ${i + 1}'),
+      child:
+          error != null
+              ? _ErrorBlock(error: error!)
+              : list.isEmpty && isLoading
+              ? ListView.separated(
+                padding: const EdgeInsets.only(top: 8, bottom: 12),
+                itemCount: targetCount,
+                separatorBuilder: (_, __) => const SizedBox(height: 8),
+                itemBuilder: (_, __) => const _GiftCardSkeleton(),
+              )
+              : list.isEmpty
+              ? const Center(child: Text('Chưa có gợi ý nào.'))
+              : ListView.separated(
+                padding: const EdgeInsets.only(bottom: 12),
+                itemCount: list.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 8),
+                itemBuilder:
+                    (ctx, i) => _GiftCard(
+                      index: i + 1,
+                      gift: list[i],
+                      onCopy:
+                          () => _copyText(
+                            context,
+                            _giftText(list[i]),
+                            'gợi ý ${i + 1}',
+                          ),
+                    ),
               ),
-            ),
     );
   }
 }
@@ -1102,11 +1120,12 @@ class _WishSheet extends StatelessWidget {
           TextButton.icon(
             icon: const Icon(Icons.copy_all),
             label: const Text('Sao chép tất cả'),
-            onPressed: () => _copyText(
-              context,
-              list.map((w) => w.text).join('\n\n'),
-              'tất cả',
-            ),
+            onPressed:
+                () => _copyText(
+                  context,
+                  list.map((w) => w.text).join('\n\n'),
+                  'tất cả',
+                ),
           ),
         if (onRetry != null)
           TextButton.icon(
@@ -1119,23 +1138,24 @@ class _WishSheet extends StatelessWidget {
           child: const Text('Đóng'),
         ),
       ],
-      child: error != null
-          ? _ErrorBlock(error: error!)
-          : list.isEmpty && isLoading
-          ? ListView.separated(
-              padding: const EdgeInsets.only(top: 8, bottom: 12),
-              itemCount: targetCount,
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
-              itemBuilder: (_, __) => const _WishCardSkeleton(),
-            )
-          : list.isEmpty
-          ? const Center(child: Text('Chưa có câu chúc nào.'))
-          : ListView.separated(
-              padding: const EdgeInsets.only(bottom: 12),
-              itemCount: list.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
-              itemBuilder: (ctx, i) => _WishCard(index: i + 1, wish: list[i]),
-            ),
+      child:
+          error != null
+              ? _ErrorBlock(error: error!)
+              : list.isEmpty && isLoading
+              ? ListView.separated(
+                padding: const EdgeInsets.only(top: 8, bottom: 12),
+                itemCount: targetCount,
+                separatorBuilder: (_, __) => const SizedBox(height: 8),
+                itemBuilder: (_, __) => const _WishCardSkeleton(),
+              )
+              : list.isEmpty
+              ? const Center(child: Text('Chưa có câu chúc nào.'))
+              : ListView.separated(
+                padding: const EdgeInsets.only(bottom: 12),
+                itemCount: list.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 8),
+                itemBuilder: (ctx, i) => _WishCard(index: i + 1, wish: list[i]),
+              ),
     );
   }
 }
@@ -1288,26 +1308,27 @@ class _WishCardState extends State<_WishCard>
                 const Spacer(),
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 220),
-                  transitionBuilder: (c, a) =>
-                      ScaleTransition(scale: a, child: c),
-                  child: _showCheck
-                      ? const Icon(
-                          Icons.check_circle,
-                          key: ValueKey('check'),
-                          color: Colors.green,
-                          size: 20,
-                        )
-                      : IconButton(
-                          tooltip: 'Sao chép',
-                          key: const ValueKey('copy'),
-                          icon: const Icon(Icons.copy, size: 18),
-                          onPressed: _copy,
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(
-                            minWidth: 32,
-                            minHeight: 32,
+                  transitionBuilder:
+                      (c, a) => ScaleTransition(scale: a, child: c),
+                  child:
+                      _showCheck
+                          ? const Icon(
+                            Icons.check_circle,
+                            key: ValueKey('check'),
+                            color: Colors.green,
+                            size: 20,
+                          )
+                          : IconButton(
+                            tooltip: 'Sao chép',
+                            key: const ValueKey('copy'),
+                            icon: const Icon(Icons.copy, size: 18),
+                            onPressed: _copy,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(
+                              minWidth: 32,
+                              minHeight: 32,
+                            ),
                           ),
-                        ),
                 ),
               ],
             ),

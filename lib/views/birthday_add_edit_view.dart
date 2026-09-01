@@ -127,14 +127,14 @@ class _BirthdayAddEditViewState extends State<BirthdayAddEditView> {
       final decoded = img.decodeImage(bytes);
       if (decoded == null) throw const FormatException('Invalid image');
 
-      final longestSide = decoded.width >= decoded.height
-          ? decoded.width
-          : decoded.height;
-      final resized = longestSide > 1024
-          ? (decoded.width >= decoded.height
-                ? img.copyResize(decoded, width: 1024)
-                : img.copyResize(decoded, height: 1024))
-          : decoded;
+      final longestSide =
+          decoded.width >= decoded.height ? decoded.width : decoded.height;
+      final resized =
+          longestSide > 1024
+              ? (decoded.width >= decoded.height
+                  ? img.copyResize(decoded, width: 1024)
+                  : img.copyResize(decoded, height: 1024))
+              : decoded;
       final compressedBytes = img.encodeJpg(resized, quality: 80);
       tempDir = await Directory.systemTemp.createTemp('avatar_');
       final tempFile = File('${tempDir.path}${Platform.pathSeparator}temp.jpg');
@@ -194,36 +194,38 @@ class _BirthdayAddEditViewState extends State<BirthdayAddEditView> {
   }
 
   void _showImageError() {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(context.l10n.imageProcessError)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(context.l10n.imageProcessError)));
   }
 
   Future<void> _showPermissionDeniedDialog() async {
     return showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (BuildContext context) => AlertDialog(
-        title: Text(context.l10n.photoPermissionTitle),
-        content: Text(context.l10n.permissionDeniedMessage),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(context.l10n.cancel),
+      builder:
+          (BuildContext context) => AlertDialog(
+            title: Text(context.l10n.photoPermissionTitle),
+            content: Text(context.l10n.permissionDeniedMessage),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text(context.l10n.cancel),
+              ),
+              TextButton(
+                onPressed: () async {
+                  Navigator.of(context).pop();
+                  final permService = PhotoPermissionService();
+                  final status = await permService.checkAndRequest();
+                  if (status == PhotoPermissionStatus.granted) {
+                    // retry picking
+                    _pickImage();
+                  }
+                },
+                child: Text(context.l10n.allow),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () async {
-              Navigator.of(context).pop();
-              final permService = PhotoPermissionService();
-              final status = await permService.checkAndRequest();
-              if (status == PhotoPermissionStatus.granted) {
-                // retry picking
-                _pickImage();
-              }
-            },
-            child: Text(context.l10n.allow),
-          ),
-        ],
-      ),
     );
   }
 
@@ -231,32 +233,34 @@ class _BirthdayAddEditViewState extends State<BirthdayAddEditView> {
     return showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (BuildContext context) => AlertDialog(
-        title: Text(context.l10n.photoPermissionTitle),
-        content: Text(context.l10n.photoPermissionMessage),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(context.l10n.cancel),
+      builder:
+          (BuildContext context) => AlertDialog(
+            title: Text(context.l10n.photoPermissionTitle),
+            content: Text(context.l10n.photoPermissionMessage),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text(context.l10n.cancel),
+              ),
+              TextButton(
+                onPressed: () async {
+                  Navigator.of(context).pop();
+                  final permService = PhotoPermissionService();
+                  await permService.openSettings();
+                },
+                child: Text(context.l10n.openSettings),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () async {
-              Navigator.of(context).pop();
-              final permService = PhotoPermissionService();
-              await permService.openSettings();
-            },
-            child: Text(context.l10n.openSettings),
-          ),
-        ],
-      ),
     );
   }
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
       if (!isValidAge(_solarBirthday)) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(context.l10n.ageInvalid)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.ageInvalid)));
         return;
       }
 
@@ -310,16 +314,18 @@ class _BirthdayAddEditViewState extends State<BirthdayAddEditView> {
                 onTap: _pickImage,
                 child: CircleAvatar(
                   radius: 40,
-                  backgroundImage: _avatarBase64 != null
-                      ? (AvatarCache.decodeAndCache(_avatarBase64!) != null
-                            ? MemoryImage(
+                  backgroundImage:
+                      _avatarBase64 != null
+                          ? (AvatarCache.decodeAndCache(_avatarBase64!) != null
+                              ? MemoryImage(
                                 AvatarCache.decodeAndCache(_avatarBase64!)!,
                               )
-                            : null)
-                      : null,
-                  child: _avatarBase64 == null
-                      ? const Icon(Icons.add_a_photo)
-                      : null,
+                              : null)
+                          : null,
+                  child:
+                      _avatarBase64 == null
+                          ? const Icon(Icons.add_a_photo)
+                          : null,
                 ),
               ),
               const SizedBox(height: 16),
@@ -328,9 +334,11 @@ class _BirthdayAddEditViewState extends State<BirthdayAddEditView> {
                 decoration: InputDecoration(
                   labelText: '${context.l10n.name} *',
                 ),
-                validator: (value) => value == null || value.isEmpty
-                    ? context.l10n.nameRequired
-                    : null,
+                validator:
+                    (value) =>
+                        value == null || value.isEmpty
+                            ? context.l10n.nameRequired
+                            : null,
                 onSaved: (value) => _name = value!,
               ),
               TextFormField(
@@ -443,8 +451,8 @@ class _BirthdayAddEditViewState extends State<BirthdayAddEditView> {
                   labelText: context.l10n.remindBefore,
                 ),
                 initialValue: _remindBeforeDays,
-                onChanged: (value) =>
-                    setState(() => _remindBeforeDays = value ?? 0),
+                onChanged:
+                    (value) => setState(() => _remindBeforeDays = value ?? 0),
                 items: List.generate(31, (index) {
                   return DropdownMenuItem(value: index, child: Text('$index'));
                 }),
@@ -460,8 +468,9 @@ class _BirthdayAddEditViewState extends State<BirthdayAddEditView> {
                     initialTime: _remindTime,
                     builder: (ctx, child) {
                       return MediaQuery(
-                        data: MediaQuery.of(ctx)
-                            .copyWith(alwaysUse24HourFormat: true),
+                        data: MediaQuery.of(
+                          ctx,
+                        ).copyWith(alwaysUse24HourFormat: true),
                         child: Localizations.override(
                           context: ctx,
                           locale: Localizations.localeOf(context),
@@ -479,15 +488,16 @@ class _BirthdayAddEditViewState extends State<BirthdayAddEditView> {
               CheckboxListTile(
                 title: Text(context.l10n.repeatAnnually),
                 value: _repeatAnnually,
-                onChanged: (val) =>
-                    setState(() => _repeatAnnually = val ?? true),
+                onChanged:
+                    (val) => setState(() => _repeatAnnually = val ?? true),
               ),
               CheckboxListTile(
                 title: Text(context.l10n.enableNotification),
                 value: _isRecurringNotificationEnabled,
-                onChanged: (val) => setState(
-                  () => _isRecurringNotificationEnabled = val ?? true,
-                ),
+                onChanged:
+                    (val) => setState(
+                      () => _isRecurringNotificationEnabled = val ?? true,
+                    ),
               ),
               const SizedBox(height: 20),
               ElevatedButton(

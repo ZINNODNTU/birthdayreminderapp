@@ -230,9 +230,10 @@ class _AiSettingsCardState extends State<AiSettingsCard> {
       if (!mounted) return;
       setState(() {
         _models = models;
-        _statusMessage = models.isEmpty
-            ? 'Không lấy được danh sách model — nhập ID thủ công.'
-            : 'Đã tải ${models.length} model.';
+        _statusMessage =
+            models.isEmpty
+                ? 'Không lấy được danh sách model — nhập ID thủ công.'
+                : 'Đã tải ${models.length} model.';
         _statusOk = models.isNotEmpty;
       });
     } finally {
@@ -365,16 +366,18 @@ class _AiSettingsCardState extends State<AiSettingsCard> {
                 enableSuggestions: false,
                 decoration: InputDecoration(
                   labelText: 'API Key',
-                  helperText: _maskedKey.isEmpty
-                      ? context.l10n.apiKeyNotSaved
-                      : context.l10n.apiKeyCurrent(_maskedKey),
+                  helperText:
+                      _maskedKey.isEmpty
+                          ? context.l10n.apiKeyNotSaved
+                          : context.l10n.apiKeyCurrent(_maskedKey),
                   suffixIcon: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
-                        tooltip: _obscureApiKey
-                            ? context.l10n.showApiKey
-                            : context.l10n.hideApiKey,
+                        tooltip:
+                            _obscureApiKey
+                                ? context.l10n.showApiKey
+                                : context.l10n.hideApiKey,
                         icon: Icon(
                           _obscureApiKey
                               ? Icons.visibility
@@ -450,9 +453,8 @@ class _AiSettingsCardState extends State<AiSettingsCard> {
                 child: Text(
                   _statusMessage!,
                   style: TextStyle(
-                    color: _statusOk
-                        ? Colors.green.shade700
-                        : Colors.red.shade700,
+                    color:
+                        _statusOk ? Colors.green.shade700 : Colors.red.shade700,
                   ),
                 ),
               ),
@@ -461,17 +463,18 @@ class _AiSettingsCardState extends State<AiSettingsCard> {
                 padding: const EdgeInsets.only(top: 8),
                 child: Wrap(
                   spacing: 6,
-                  children: _models
-                      .take(20)
-                      .map(
-                        (m) => ActionChip(
-                          label: Text(m),
-                          onPressed: () {
-                            _modelCtrl.text = m;
-                          },
-                        ),
-                      )
-                      .toList(),
+                  children:
+                      _models
+                          .take(20)
+                          .map(
+                            (m) => ActionChip(
+                              label: Text(m),
+                              onPressed: () {
+                                _modelCtrl.text = m;
+                              },
+                            ),
+                          )
+                          .toList(),
                 ),
               ),
           ],

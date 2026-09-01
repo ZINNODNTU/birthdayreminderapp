@@ -135,10 +135,11 @@ class NotificationService {
   }
 
   Future<void> _createChannels() async {
-    final android = _plugin
-        .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin
-        >();
+    final android =
+        _plugin
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >();
     if (android == null) return;
     await android.createNotificationChannel(
       const AndroidNotificationChannel(
@@ -178,10 +179,11 @@ class NotificationService {
 
   Future<bool> requestNotificationPermission() async {
     await initialize();
-    final android = _plugin
-        .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin
-        >();
+    final android =
+        _plugin
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >();
     if (android == null) return true;
     final granted = await android.requestNotificationsPermission();
     return granted ?? false;
@@ -189,10 +191,11 @@ class NotificationService {
 
   Future<bool?> areNotificationsEnabled() async {
     await initialize();
-    final android = _plugin
-        .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin
-        >();
+    final android =
+        _plugin
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >();
     if (android == null) return true;
     final enabled = await android.areNotificationsEnabled();
     return enabled;
@@ -200,20 +203,22 @@ class NotificationService {
 
   Future<bool?> canScheduleExactNotifications() async {
     await initialize();
-    final android = _plugin
-        .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin
-        >();
+    final android =
+        _plugin
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >();
     if (android == null) return null;
     return await android.canScheduleExactNotifications();
   }
 
   Future<void> requestExactAlarmsPermission() async {
     await initialize();
-    final android = _plugin
-        .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin
-        >();
+    final android =
+        _plugin
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >();
     if (android == null) return;
     try {
       await android.requestExactAlarmsPermission();
@@ -267,15 +272,17 @@ class NotificationService {
             channelDescription: androidChannelDescription,
             importance: Importance.high,
             priority: Priority.high,
-            largeIcon: avatarBytes == null
-                ? null
-                : ByteArrayAndroidBitmap(avatarBytes),
+            largeIcon:
+                avatarBytes == null
+                    ? null
+                    : ByteArrayAndroidBitmap(avatarBytes),
           ),
           iOS: DarwinNotificationDetails(),
         ),
-        androidScheduleMode: exact
-            ? AndroidScheduleMode.exactAllowWhileIdle
-            : AndroidScheduleMode.inexactAllowWhileIdle,
+        androidScheduleMode:
+            exact
+                ? AndroidScheduleMode.exactAllowWhileIdle
+                : AndroidScheduleMode.inexactAllowWhileIdle,
         payload: schedule.payload,
       );
       AppLogger.info(

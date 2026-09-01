@@ -89,9 +89,8 @@ class _State extends State<BackupRestoreScreen> {
             ),
           );
         case null:
-          final stageLabel = failure == null
-              ? ''
-              : ' (lỗi ${failure.stage.name})';
+          final stageLabel =
+              failure == null ? '' : ' (lỗi ${failure.stage.name})';
           messenger.showSnackBar(
             SnackBar(
               backgroundColor: Colors.red.shade700,
@@ -169,49 +168,51 @@ class _State extends State<BackupRestoreScreen> {
   Future<bool?> _showConfirmDialog(RestorePlan plan) {
     return showAdaptiveDialog<bool>(
       context: context,
-      builder: (c) => AlertDialog(
-        title: const Text('Khôi phục dữ liệu?'),
-        content: Text(
-          'Bản sao lưu: ${plan.createdAt.toLocal()}\n'
-          'Phiên bản: ${plan.appVersion}\n\n'
-          'Bao gồm:\n• ${plan.birthdayCount} sinh nhật\n'
-          '• ${plan.photoCount} ảnh\n'
-          '• Ghi chú và cài đặt liên quan\n\n'
-          'Dữ liệu sẽ được gộp an toàn với dữ liệu hiện tại.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(c, false),
-            child: const Text('Hủy'),
+      builder:
+          (c) => AlertDialog(
+            title: const Text('Khôi phục dữ liệu?'),
+            content: Text(
+              'Bản sao lưu: ${plan.createdAt.toLocal()}\n'
+              'Phiên bản: ${plan.appVersion}\n\n'
+              'Bao gồm:\n• ${plan.birthdayCount} sinh nhật\n'
+              '• ${plan.photoCount} ảnh\n'
+              '• Ghi chú và cài đặt liên quan\n\n'
+              'Dữ liệu sẽ được gộp an toàn với dữ liệu hiện tại.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(c, false),
+                child: const Text('Hủy'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(c, true),
+                child: const Text('Khôi phục'),
+              ),
+            ],
           ),
-          FilledButton(
-            onPressed: () => Navigator.pop(c, true),
-            child: const Text('Khôi phục'),
-          ),
-        ],
-      ),
     );
   }
 
   Future<void> _showSuccessDialog(RestoreResult result) {
     return showAdaptiveDialog<void>(
       context: context,
-      builder: (c) => AlertDialog(
-        title: const Text('Khôi phục thành công'),
-        content: Text(
-          '${result.restored} sinh nhật\n'
-          '${result.photosRestored} ảnh\n'
-          'Bỏ qua: ${result.skipped}\n'
-          'Xung đột: ${result.conflicts}\n'
-          'Ảnh lỗi: ${result.photosFailed}',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(c),
-            child: const Text('Đóng'),
+      builder:
+          (c) => AlertDialog(
+            title: const Text('Khôi phục thành công'),
+            content: Text(
+              '${result.restored} sinh nhật\n'
+              '${result.photosRestored} ảnh\n'
+              'Bỏ qua: ${result.skipped}\n'
+              'Xung đột: ${result.conflicts}\n'
+              'Ảnh lỗi: ${result.photosFailed}',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(c),
+                child: const Text('Đóng'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -273,18 +274,20 @@ class BackupSettingsCard extends StatelessWidget {
           subtitle: const Text(
             'Tạo file ZIP để giữ an toàn sau khi gỡ ứng dụng',
           ),
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const BackupRestoreScreen()),
-          ),
+          onTap:
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const BackupRestoreScreen()),
+              ),
         ),
         ListTile(
           leading: const Icon(Icons.restore),
           title: const Text('Khôi phục dữ liệu'),
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const BackupRestoreScreen()),
-          ),
+          onTap:
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const BackupRestoreScreen()),
+              ),
         ),
       ],
     ),

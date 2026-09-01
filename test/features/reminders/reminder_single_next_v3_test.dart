@@ -69,8 +69,9 @@ void main() {
         exact: any(named: 'exact'),
       ),
     ).thenAnswer((_) async => true);
-    when(() => notif.isNotificationPending(any()))
-        .thenAnswer((_) async => true);
+    when(
+      () => notif.isNotificationPending(any()),
+    ).thenAnswer((_) async => true);
     when(() => notif.cancel(any())).thenAnswer((_) async => true);
   });
 
@@ -365,8 +366,8 @@ void main() {
   });
 
   test('14. UI never says "kỳ nhắc"', () {
-    final detailView = File('lib/views/birthday_detail_view.dart')
-        .readAsStringSync();
+    final detailView =
+        File('lib/views/birthday_detail_view.dart').readAsStringSync();
     expect(
       detailView.contains('kỳ nhắc'),
       isFalse,
@@ -375,8 +376,8 @@ void main() {
   });
 
   test('15. "Bật thông báo định kỳ" UI option removed from add/edit view', () {
-    final src = File('lib/views/birthday_add_edit_view.dart')
-        .readAsStringSync();
+    final src =
+        File('lib/views/birthday_add_edit_view.dart').readAsStringSync();
     expect(
       src.contains('Bật thông báo định kỳ'),
       isFalse,

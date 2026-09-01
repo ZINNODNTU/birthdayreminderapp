@@ -40,12 +40,13 @@ Widget _wrap(AuthRepository repo) {
       Provider<AuthRepository>.value(value: repo),
       Provider<UserProfileRepository>(create: (_) => _NoopProfileRepository()),
       ChangeNotifierProvider<SessionController>(
-        create: (ctx) => SessionController(
-          repository: SessionRepository(),
-          authRepository: repo,
-          profileRepository: ctx.read<UserProfileRepository>(),
-          authStateChanges: repo.authStateChanges,
-        ),
+        create:
+            (ctx) => SessionController(
+              repository: SessionRepository(),
+              authRepository: repo,
+              profileRepository: ctx.read<UserProfileRepository>(),
+              authStateChanges: repo.authStateChanges,
+            ),
       ),
       ChangeNotifierProvider<LocaleService>(
         create: (_) => LocaleService(sharedPrefs),
@@ -108,8 +109,9 @@ void main() {
     testWidgets('cancellation is silent (no snackbar, AuthScreen stays)', (
       tester,
     ) async {
-      final repo = FakeAuthRepository()
-        ..signInWithGoogleFailure = AuthFailureCancelled();
+      final repo =
+          FakeAuthRepository()
+            ..signInWithGoogleFailure = AuthFailureCancelled();
       await tester.pumpWidget(_wrap(repo));
       await tester.pumpAndSettle();
 
@@ -123,8 +125,8 @@ void main() {
     });
 
     testWidgets('failure surfaces friendly Vietnamese message', (tester) async {
-      final repo = FakeAuthRepository()
-        ..signInWithGoogleFailure = AuthFailureNetwork();
+      final repo =
+          FakeAuthRepository()..signInWithGoogleFailure = AuthFailureNetwork();
       await tester.pumpWidget(_wrap(repo));
       await tester.pumpAndSettle();
 
@@ -170,12 +172,13 @@ void main() {
             ),
             Provider<SessionRepository>.value(value: sessionRepo),
             ChangeNotifierProvider<SessionController>(
-              create: (ctx) => SessionController(
-                repository: ctx.read<SessionRepository>(),
-                authRepository: repo,
-                profileRepository: ctx.read<UserProfileRepository>(),
-                authStateChanges: repo.authStateChanges,
-              ),
+              create:
+                  (ctx) => SessionController(
+                    repository: ctx.read<SessionRepository>(),
+                    authRepository: repo,
+                    profileRepository: ctx.read<UserProfileRepository>(),
+                    authStateChanges: repo.authStateChanges,
+                  ),
             ),
             ChangeNotifierProvider<LocaleService>(
               create: (_) => LocaleService(sharedPrefs),

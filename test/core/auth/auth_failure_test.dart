@@ -56,8 +56,8 @@ void main() {
     });
 
     test('signInWithGoogle throws configured AuthFailure', () async {
-      final repo = FakeAuthRepository()
-        ..signInWithGoogleFailure = AuthFailureNetwork();
+      final repo =
+          FakeAuthRepository()..signInWithGoogleFailure = AuthFailureNetwork();
       expect(repo.signInWithGoogle(), throwsA(isA<AuthFailureNetwork>()));
     });
 

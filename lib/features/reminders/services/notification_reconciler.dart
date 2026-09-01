@@ -175,9 +175,10 @@ class ReminderReconcileResult {
     int failed = 0,
     String? message,
   }) => ReminderReconcileResult(
-    kind: failed == 0
-        ? NotificationFailureKind.none
-        : NotificationFailureKind.scheduleFailed,
+    kind:
+        failed == 0
+            ? NotificationFailureKind.none
+            : NotificationFailureKind.scheduleFailed,
     cancelled: cancelled,
     scheduled: scheduled,
     failed: failed,

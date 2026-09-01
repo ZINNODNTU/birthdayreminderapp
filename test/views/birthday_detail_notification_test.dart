@@ -116,10 +116,11 @@ Widget _wrap(BirthdayController controller, FakeNotificationService notif) {
       Provider<NotificationService>.value(value: notif),
       Provider<ReminderScheduleStore>.value(value: store),
       Provider<BirthdayAiService>(
-        create: (_) => BirthdayAiService(
-          configRepository: _StubAiConfigRepository(),
-          client: _StubAiClient(),
-        ),
+        create:
+            (_) => BirthdayAiService(
+              configRepository: _StubAiConfigRepository(),
+              client: _StubAiClient(),
+            ),
       ),
       ChangeNotifierProvider<BirthdayController>.value(value: controller),
       ChangeNotifierProvider<LocaleService>(

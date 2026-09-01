@@ -72,15 +72,16 @@ void main() {
               value: FakeNotificationService(),
             ),
             Provider<BirthdayRepository>(
-              create: (ctx) =>
-                  LocalBirthdayRepository(ctx.read<LocalDbService>()),
+              create:
+                  (ctx) => LocalBirthdayRepository(ctx.read<LocalDbService>()),
             ),
             Provider<LunarCalendarService>(
               create: (_) => const LunarCalendarService(),
             ),
             Provider<BirthdayEngine>(
-              create: (ctx) =>
-                  DefaultBirthdayEngine(ctx.read<LunarCalendarService>()),
+              create:
+                  (ctx) =>
+                      DefaultBirthdayEngine(ctx.read<LunarCalendarService>()),
             ),
             Provider<NotificationIdFactory>(
               create: (_) => const NotificationIdFactory(),
@@ -92,21 +93,24 @@ void main() {
               create: (_) => ReminderScheduleStore(sharedPrefs),
             ),
             Provider<ReminderScheduler>(
-              create: (ctx) => ReminderScheduler(
-                engine: ctx.read<BirthdayEngine>(),
-                idFactory: ctx.read<NotificationIdFactory>(),
-                notificationService: ctx.read<NotificationService>(),
-                permissionService: ctx.read<NotificationPermissionService>(),
-                store: ctx.read<ReminderScheduleStore>(),
-              ),
+              create:
+                  (ctx) => ReminderScheduler(
+                    engine: ctx.read<BirthdayEngine>(),
+                    idFactory: ctx.read<NotificationIdFactory>(),
+                    notificationService: ctx.read<NotificationService>(),
+                    permissionService:
+                        ctx.read<NotificationPermissionService>(),
+                    store: ctx.read<ReminderScheduleStore>(),
+                  ),
             ),
             ChangeNotifierProvider<BirthdayController>(
-              create: (ctx) => BirthdayController(
-                repository: ctx.read<BirthdayRepository>(),
-                reminderScheduler: ctx.read<ReminderScheduler>(),
-                notificationService: ctx.read<NotificationService>(),
-                engine: ctx.read<BirthdayEngine>(),
-              ),
+              create:
+                  (ctx) => BirthdayController(
+                    repository: ctx.read<BirthdayRepository>(),
+                    reminderScheduler: ctx.read<ReminderScheduler>(),
+                    notificationService: ctx.read<NotificationService>(),
+                    engine: ctx.read<BirthdayEngine>(),
+                  ),
             ),
             Provider<AuthRepository>.value(value: repo),
             Provider<UserProfileRepository>(
@@ -114,12 +118,14 @@ void main() {
             ),
             Provider<SessionRepository>.value(value: sessionRepo),
             ChangeNotifierProvider<SessionController>(
-              create: (ctx) => SessionController(
-                repository: ctx.read<SessionRepository>(),
-                authRepository: ctx.read<AuthRepository>(),
-                profileRepository: ctx.read<UserProfileRepository>(),
-                authStateChanges: ctx.read<AuthRepository>().authStateChanges,
-              ),
+              create:
+                  (ctx) => SessionController(
+                    repository: ctx.read<SessionRepository>(),
+                    authRepository: ctx.read<AuthRepository>(),
+                    profileRepository: ctx.read<UserProfileRepository>(),
+                    authStateChanges:
+                        ctx.read<AuthRepository>().authStateChanges,
+                  ),
             ),
             ChangeNotifierProvider<LocaleService>(
               create: (_) => LocaleService(sharedPrefs),

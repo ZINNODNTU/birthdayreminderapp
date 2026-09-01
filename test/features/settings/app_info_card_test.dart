@@ -14,9 +14,10 @@ void main() {
       MultiProvider(
         providers: [
           ChangeNotifierProvider<LocaleService>(
-            create: (_) => LocaleService(
-              SharedPreferences.getInstance() as SharedPreferences,
-            ),
+            create:
+                (_) => LocaleService(
+                  SharedPreferences.getInstance() as SharedPreferences,
+                ),
           ),
         ],
         child: MaterialApp(

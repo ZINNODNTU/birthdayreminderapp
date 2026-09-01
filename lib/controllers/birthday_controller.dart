@@ -216,9 +216,8 @@ class BirthdayController with ChangeNotifier {
     final stamped = existing.copyWith(
       deletedAt: now,
       updatedAt: now,
-      syncStatus: isAuthenticated
-          ? SyncStatus.pendingDelete
-          : SyncStatus.localOnly,
+      syncStatus:
+          isAuthenticated ? SyncStatus.pendingDelete : SyncStatus.localOnly,
       ownerUid: isAuthenticated ? _authRepository!.currentUser!.uid : null,
     );
     await _repository.upsertBirthday(stamped);

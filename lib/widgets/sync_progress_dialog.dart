@@ -64,9 +64,10 @@ class _SyncProgressDialogState extends State<SyncProgressDialog> {
                   isComplete
                       ? (hasError ? Icons.error_outline : Icons.check_circle)
                       : Icons.cloud_sync,
-                  color: isComplete
-                      ? (hasError ? Colors.red : Colors.green)
-                      : Colors.amber,
+                  color:
+                      isComplete
+                          ? (hasError ? Colors.red : Colors.green)
+                          : Colors.amber,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -89,9 +90,8 @@ class _SyncProgressDialogState extends State<SyncProgressDialog> {
               ),
               const SizedBox(height: 8),
               LinearProgressIndicator(
-                value: progress.total > 0
-                    ? progress.current / progress.total
-                    : 0,
+                value:
+                    progress.total > 0 ? progress.current / progress.total : 0,
                 backgroundColor: Colors.grey[200],
                 color: Colors.amber,
               ),

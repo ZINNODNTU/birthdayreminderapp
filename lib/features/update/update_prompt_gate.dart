@@ -57,8 +57,9 @@ class _UpdatePromptGateState extends State<UpdatePromptGate> {
       pageBuilder: (_, __, ___) => _MidAutumnUpdateDialog(release: release),
     );
     if (updateNow == true && mounted) {
-      await Navigator.of(context)
-          .push(MaterialPageRoute(builder: (_) => const UpdateScreen()));
+      await Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (_) => const UpdateScreen()));
     }
   }
 
@@ -73,14 +74,15 @@ class _MidAutumnUpdateDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final changes = release.changes.isEmpty
-        ? [
-            context.l10n.fallbackChangeExperience,
-            context.l10n.fallbackChangeNotifications,
-            context.l10n.fallbackChangeFixes,
-            context.l10n.fallbackChangeStability,
-          ]
-        : release.changes;
+    final changes =
+        release.changes.isEmpty
+            ? [
+              context.l10n.fallbackChangeExperience,
+              context.l10n.fallbackChangeNotifications,
+              context.l10n.fallbackChangeFixes,
+              context.l10n.fallbackChangeStability,
+            ]
+            : release.changes;
     return PopScope(
       canPop: !release.isMandatory,
       child: SafeArea(

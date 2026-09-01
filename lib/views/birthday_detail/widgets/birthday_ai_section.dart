@@ -71,11 +71,10 @@ class BirthdayAiSection extends StatelessWidget {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color:
-                                (available
-                                        ? Colors.green
-                                        : Colors.amber.shade700)
-                                    .withValues(alpha: 0.15),
+                            color: (available
+                                    ? Colors.green
+                                    : Colors.amber.shade700)
+                                .withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
@@ -83,9 +82,10 @@ class BirthdayAiSection extends StatelessWidget {
                                 ? context.l10n.aiReady
                                 : context.l10n.notConfigured,
                             style: TextStyle(
-                              color: available
-                                  ? Colors.green.shade700
-                                  : Colors.amber.shade800,
+                              color:
+                                  available
+                                      ? Colors.green.shade700
+                                      : Colors.amber.shade800,
                               fontWeight: FontWeight.w600,
                               fontSize: 12,
                             ),
@@ -100,8 +100,8 @@ class BirthdayAiSection extends StatelessWidget {
                         child: TextButton.icon(
                           icon: const Icon(Icons.settings, size: 18),
                           label: Text(context.l10n.openAiSettings),
-                          onPressed: () =>
-                              Navigator.pushNamed(ctx, '/settings'),
+                          onPressed:
+                              () => Navigator.pushNamed(ctx, '/settings'),
                         ),
                       ),
                   ],

@@ -32,8 +32,9 @@ class _AuthGateState extends State<AuthGate> {
           return;
         }
         if (!mounted) return;
-        await Navigator.of(context)
-            .push(MaterialPageRoute(builder: (_) => const OnboardingScreen()));
+        await Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const OnboardingScreen()));
       } catch (_) {
         // Non-critical guidance must never block application startup.
       } finally {

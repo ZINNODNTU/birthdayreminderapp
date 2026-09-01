@@ -123,9 +123,8 @@ class ReminderStatusCard extends StatelessWidget {
             Align(
               alignment: Alignment.centerRight,
               child: OutlinedButton.icon(
-                onPressed: rescheduleEnabled && !rescheduling
-                    ? onReschedule
-                    : null,
+                onPressed:
+                    rescheduleEnabled && !rescheduling ? onReschedule : null,
                 icon: const Icon(Icons.refresh),
                 label: Text(context.l10n.rescheduleReminder),
               ),

@@ -53,13 +53,14 @@ class ApkDownloadService {
         await _deleteIfExists(partFile);
         final url = await urlProvider(attempt);
         client = _clientFactory();
-        final request = http.Request('GET', url)
-          ..followRedirects = true
-          ..maxRedirects = 10
-          ..headers.addAll({
-            'User-Agent': userAgent,
-            'Accept': 'application/octet-stream',
-          });
+        final request =
+            http.Request('GET', url)
+              ..followRedirects = true
+              ..maxRedirects = 10
+              ..headers.addAll({
+                'User-Agent': userAgent,
+                'Accept': 'application/octet-stream',
+              });
         final response = await client
             .send(request)
             .timeout(const Duration(seconds: 30));

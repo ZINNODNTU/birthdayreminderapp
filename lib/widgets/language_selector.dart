@@ -27,11 +27,12 @@ class LanguageSelector extends StatelessWidget {
       ),
       offset: const Offset(0, 40),
       tooltip: l10n.chooseLanguage,
-      itemBuilder: (context) => [
-        _buildItem(context, 'vi', l10n.languageVi, currentCode),
-        _buildItem(context, 'en', l10n.languageEn, currentCode),
-        _buildItem(context, 'zh', l10n.languageZh, currentCode),
-      ],
+      itemBuilder:
+          (context) => [
+            _buildItem(context, 'vi', l10n.languageVi, currentCode),
+            _buildItem(context, 'en', l10n.languageEn, currentCode),
+            _buildItem(context, 'zh', l10n.languageZh, currentCode),
+          ],
       onSelected: (code) => localeService.setLocale(code),
     );
   }

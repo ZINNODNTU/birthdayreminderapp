@@ -231,8 +231,9 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 100));
       sync.calls = 0;
       await local.upsertBirthday(
-        _sample('k')
-            .copyWithForSync(ownerUid: 'user-a', syncStatus: SyncStatus.synced),
+        _sample(
+          'k',
+        ).copyWithForSync(ownerUid: 'user-a', syncStatus: SyncStatus.synced),
       );
 
       final ok = await controller.deleteBirthday('k');
@@ -272,8 +273,8 @@ void main() {
       'authenticated: remote soft-delete fails → tombstone stays pendingDelete',
       () async {
         final local = _FakeLocalRepo();
-        final remote = _FakeRemoteRepo()
-          ..softDeleteError = Exception('network');
+        final remote =
+            _FakeRemoteRepo()..softDeleteError = Exception('network');
         final sync = SyncManager(
           local: local,
           remote: remote,

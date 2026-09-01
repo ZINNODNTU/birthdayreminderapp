@@ -41,19 +41,21 @@ Future<SharedPreferences> _pump(
         home: MediaQuery(
           data: MediaQueryData(textScaler: TextScaler.linear(textScale)),
           child: Builder(
-            builder: (context) => Scaffold(
-              body: Center(
-                child: FilledButton(
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => OnboardingScreen(manual: manual),
+            builder:
+                (context) => Scaffold(
+                  body: Center(
+                    child: FilledButton(
+                      onPressed:
+                          () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => OnboardingScreen(manual: manual),
+                            ),
+                          ),
+                      child: const Text('open'),
                     ),
                   ),
-                  child: const Text('open'),
                 ),
-              ),
-            ),
           ),
         ),
       ),

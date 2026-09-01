@@ -134,12 +134,14 @@ Birthday birthdayFromBackupJson(
     return 0;
   }
 
-  final calendar = CalendarType.values
-      .where((e) => e.name == need<String>('calendarType'))
-      .firstOrNull;
-  final sync = SyncStatus.values
-      .where((e) => e.storageValue == need<String>('syncStatus'))
-      .firstOrNull;
+  final calendar =
+      CalendarType.values
+          .where((e) => e.name == need<String>('calendarType'))
+          .firstOrNull;
+  final sync =
+      SyncStatus.values
+          .where((e) => e.storageValue == need<String>('syncStatus'))
+          .firstOrNull;
   if (calendar == null || sync == null)
     throw const FormatException('Invalid enum');
   return Birthday(
@@ -167,12 +169,10 @@ Birthday birthdayFromBackupJson(
     createdAt: date('createdAt'),
     updatedAt: date('updatedAt'),
     deletedAt: date('deletedAt'),
-    syncStatus: mode == RestoreMode.signingMigration
-        ? SyncStatus.localOnly
-        : sync,
-    ownerUid: mode == RestoreMode.signingMigration
-        ? null
-        : j['ownerUid'] as String?,
+    syncStatus:
+        mode == RestoreMode.signingMigration ? SyncStatus.localOnly : sync,
+    ownerUid:
+        mode == RestoreMode.signingMigration ? null : j['ownerUid'] as String?,
     schemaVersion: need<int>('schemaVersion'),
   );
 }

@@ -68,9 +68,10 @@ class _ReminderSettingsCardState extends State<ReminderSettingsCard> {
       );
       if (!mounted) return;
       setState(() {
-        _statusMessage = result.isOk
-            ? 'Đồng bộ hoàn tất\nĐã tạo ${result.scheduled} lịch nhắc\nKhông có lỗi'
-            : 'Đồng bộ thất bại\n${result.message ?? '${result.failed} lịch bị lỗi'}';
+        _statusMessage =
+            result.isOk
+                ? 'Đồng bộ hoàn tất\nĐã tạo ${result.scheduled} lịch nhắc\nKhông có lỗi'
+                : 'Đồng bộ thất bại\n${result.message ?? '${result.failed} lịch bị lỗi'}';
       });
     } catch (e) {
       if (!mounted) return;
@@ -86,9 +87,8 @@ class _ReminderSettingsCardState extends State<ReminderSettingsCard> {
   @override
   Widget build(BuildContext context) {
     final entries = _entries ?? const <ManagedReminderEntry>[];
-    final visibleEntries = _expanded
-        ? entries
-        : entries.take(_collapsedCount).toList();
+    final visibleEntries =
+        _expanded ? entries : entries.take(_collapsedCount).toList();
     final hiddenCount = entries.length - _collapsedCount;
     return Card(
       elevation: 2,
@@ -120,12 +120,13 @@ class _ReminderSettingsCardState extends State<ReminderSettingsCard> {
             const SizedBox(height: 12),
             ElevatedButton.icon(
               onPressed: _busy ? null : _resync,
-              icon: _busy
-                  ? const SizedBox.square(
-                      dimension: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.sync),
+              icon:
+                  _busy
+                      ? const SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                      : const Icon(Icons.sync),
               label: Text(context.l10n.resyncReminders),
             ),
             const SizedBox(height: 12),
@@ -151,8 +152,9 @@ class _ReminderSettingsCardState extends State<ReminderSettingsCard> {
                         subtitle: Text(
                           e.scheduledAt == null
                               ? context.l10n.waiting
-                              : DateFormat('dd/MM/yyyy - HH:mm')
-                                    .format(e.scheduledAt!),
+                              : DateFormat(
+                                'dd/MM/yyyy - HH:mm',
+                              ).format(e.scheduledAt!),
                         ),
                       ),
                     if (entries.length > _collapsedCount)
@@ -160,8 +162,8 @@ class _ReminderSettingsCardState extends State<ReminderSettingsCard> {
                         alignment: Alignment.center,
                         child: TextButton.icon(
                           key: const ValueKey('reminder-expand-toggle'),
-                          onPressed: () =>
-                              setState(() => _expanded = !_expanded),
+                          onPressed:
+                              () => setState(() => _expanded = !_expanded),
                           icon: Icon(
                             _expanded
                                 ? Icons.keyboard_arrow_up

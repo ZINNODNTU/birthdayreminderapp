@@ -57,10 +57,11 @@ class _FakeRemoteRepo implements BirthdayRemoteRepository {
   BirthdayCloudPhoto? lastUpsertedPhoto;
 
   BirthdayRemoteRepository makeCopy() {
-    final copy = _FakeRemoteRepo()
-      ..upsertError = upsertError
-      ..rows.addAll(rows)
-      ..photos.addAll(photos);
+    final copy =
+        _FakeRemoteRepo()
+          ..upsertError = upsertError
+          ..rows.addAll(rows)
+          ..photos.addAll(photos);
     return copy;
   }
 

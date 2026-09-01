@@ -62,14 +62,15 @@ Future<AppUpdateService> _setup({
   return AppUpdateService(
     repository: repo,
     prefs: prefs,
-    installedVersionLoader: installedVersion == null
-        ? null
-        : () async => PackageInfo(
-            appName: 'Birthday Reminder',
-            packageName: 'x',
-            version: installedVersion,
-            buildNumber: '1',
-          ),
+    installedVersionLoader:
+        installedVersion == null
+            ? null
+            : () async => PackageInfo(
+              appName: 'Birthday Reminder',
+              packageName: 'x',
+              version: installedVersion,
+              buildNumber: '1',
+            ),
   );
 }
 
@@ -89,34 +90,32 @@ void main() {
       expect(service.latestRelease, isNull);
     });
 
-    test(
-      'error when latest release has no SHA and fetchSha256 fails',
-      () async {
-        final prefs = await SharedPreferences.getInstance();
-        final service = await _setup(
-          repo: _StubRepo({
-            'tag_name': 'v1.0.1',
-            'name': 'r',
-            'body': '',
-            'draft': false,
-            'prerelease': false,
-            'published_at': '2026-01-01T00:00:00Z',
-            'assets': [
-              {
-                'name': 'BirthdayReminder-v1.0.1.apk',
-                'browser_download_url': 'https://github.com/owner/repo/releases/download/v1.0.1/app.apk',
-                'size': 1234,
-              },
-            ],
-          }, sha: null),
-          prefs: prefs,
-        );
-        await service.checkForUpdates(manual: true);
-        expect(service.status, UpdateStatus.updateAvailable);
-        expect(service.latestRelease, isNotNull);
-        expect(service.errorMessage, contains('thiếu thông tin xác minh'));
-      },
-    );
+    test('error when latest release has no SHA and fetchSha256 fails', () async {
+      final prefs = await SharedPreferences.getInstance();
+      final service = await _setup(
+        repo: _StubRepo({
+          'tag_name': 'v1.0.1',
+          'name': 'r',
+          'body': '',
+          'draft': false,
+          'prerelease': false,
+          'published_at': '2026-01-01T00:00:00Z',
+          'assets': [
+            {
+              'name': 'BirthdayReminder-v1.0.1.apk',
+              'browser_download_url':
+                  'https://github.com/owner/repo/releases/download/v1.0.1/app.apk',
+              'size': 1234,
+            },
+          ],
+        }, sha: null),
+        prefs: prefs,
+      );
+      await service.checkForUpdates(manual: true);
+      expect(service.status, UpdateStatus.updateAvailable);
+      expect(service.latestRelease, isNotNull);
+      expect(service.errorMessage, contains('thiếu thông tin xác minh'));
+    });
 
     test('error when network fails', () async {
       final prefs = await SharedPreferences.getInstance();
@@ -154,7 +153,8 @@ void main() {
           'assets': [
             {
               'name': 'BirthdayReminder-v2.1.0.apk',
-              'browser_download_url': 'https://github.com/owner/repo/releases/download/v2.1.0/app.apk',
+              'browser_download_url':
+                  'https://github.com/owner/repo/releases/download/v2.1.0/app.apk',
               'size': 1234,
             },
           ],
@@ -191,7 +191,8 @@ void main() {
           'assets': [
             {
               'name': 'BirthdayReminder-v2.1.0.apk',
-              'browser_download_url': 'https://github.com/owner/repo/releases/download/v2.1.0/app.apk',
+              'browser_download_url':
+                  'https://github.com/owner/repo/releases/download/v2.1.0/app.apk',
               'size': 1234,
             },
           ],
@@ -230,7 +231,8 @@ void main() {
           'assets': [
             {
               'name': 'BirthdayReminder-v1.0.1.apk',
-              'browser_download_url': 'https://github.com/owner/repo/releases/download/v1.0.1/app.apk',
+              'browser_download_url':
+                  'https://github.com/owner/repo/releases/download/v1.0.1/app.apk',
               'size': 1234,
             },
           ],
@@ -296,7 +298,8 @@ void main() {
           'assets': [
             {
               'name': 'BirthdayReminder-v1.0.1.apk',
-              'browser_download_url': 'https://github.com/owner/repo/releases/download/v1.0.1/app.apk',
+              'browser_download_url':
+                  'https://github.com/owner/repo/releases/download/v1.0.1/app.apk',
               'size': 1234,
             },
           ],

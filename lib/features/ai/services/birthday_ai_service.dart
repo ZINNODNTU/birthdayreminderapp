@@ -94,10 +94,8 @@ class BirthdayAiService {
         model: config.model,
       );
       if (cached != null && cached.length >= kGiftTargetCount) {
-        final items = cached
-            .map(_giftFromMap)
-            .whereType<GiftSuggestion>()
-            .toList();
+        final items =
+            cached.map(_giftFromMap).whereType<GiftSuggestion>().toList();
         if (items.length >= kGiftTargetCount) {
           _logMetric(
             feature: 'gift',
@@ -150,10 +148,11 @@ class BirthdayAiService {
           .chat(config: config, apiKey: key, prompt: prompt, options: options)
           .timeout(
             const Duration(seconds: 27),
-            onTimeout: () => AiConnectionResult.failure(
-              code: 'timeout',
-              message: 'Quá thời gian phản hồi',
-            ),
+            onTimeout:
+                () => AiConnectionResult.failure(
+                  code: 'timeout',
+                  message: 'Quá thời gian phản hồi',
+                ),
           );
     } on TimeoutException {
       first = AiConnectionResult.failure(
@@ -313,10 +312,8 @@ class BirthdayAiService {
         model: config.model,
       );
       if (cached != null && cached.length >= kWishTargetCount) {
-        final items = cached
-            .map(_wishFromMap)
-            .whereType<BirthdayWish>()
-            .toList();
+        final items =
+            cached.map(_wishFromMap).whereType<BirthdayWish>().toList();
         if (items.length >= kWishTargetCount) {
           _logMetric(
             feature: 'wish',
@@ -393,10 +390,11 @@ class BirthdayAiService {
           .chat(config: config, apiKey: key, prompt: prompt, options: options)
           .timeout(
             const Duration(seconds: 27),
-            onTimeout: () => AiConnectionResult.failure(
-              code: 'timeout',
-              message: 'Quá thời gian phản hồi',
-            ),
+            onTimeout:
+                () => AiConnectionResult.failure(
+                  code: 'timeout',
+                  message: 'Quá thời gian phản hồi',
+                ),
           );
     } on TimeoutException {
       first = AiConnectionResult.failure(
@@ -546,9 +544,8 @@ class BirthdayAiService {
 
   String _buildGiftPrompt(BirthdayAiPersonContext ctx) {
     final displayName = ctx.name.isEmpty ? 'bạn' : ctx.name;
-    final nicknamePart = ctx.nickname.isEmpty
-        ? ''
-        : 'Biệt danh: ${ctx.nickname}\n';
+    final nicknamePart =
+        ctx.nickname.isEmpty ? '' : 'Biệt danh: ${ctx.nickname}\n';
     final genderText = ctx.gender.isEmpty ? 'chưa xác định' : ctx.gender;
     final relText = ctx.relationship.isEmpty ? 'người quen' : ctx.relationship;
     return [
@@ -587,9 +584,8 @@ class BirthdayAiService {
       _ => 'Tiếng Việt',
     };
     final displayName = ctx.name.isEmpty ? 'bạn' : ctx.name;
-    final nicknamePart = ctx.nickname.isEmpty
-        ? ''
-        : 'Biệt danh: ${ctx.nickname}\n';
+    final nicknamePart =
+        ctx.nickname.isEmpty ? '' : 'Biệt danh: ${ctx.nickname}\n';
     final genderText = ctx.gender.isEmpty ? 'chưa xác định' : ctx.gender;
     final relText = ctx.relationship.isEmpty ? 'người quen' : ctx.relationship;
     return [
@@ -627,16 +623,19 @@ class BirthdayAiService {
     final missing = kGiftTargetCount - existing.items.length;
     if (missing <= 0) return null;
     final existingNames = existing.items.map((g) => g.name).join('; ');
-    final prompt = StringBuffer()
-      ..writeln(
-        'Bổ sung $missing món quà mới hoàn toàn khác với: $existingNames.',
-      )
-      ..writeln(
-        'Cho người: tên=${ctx.name}, biệt danh=${ctx.nickname}, '
-        'giới tính=${ctx.gender}, tuổi=${ctx.age}, '
-        'quan hệ=${ctx.relationship}.',
-      )
-      ..writeln('Schema: {"g":[{"n":"...","r":"...","b":"...","c":"..."}]}.');
+    final prompt =
+        StringBuffer()
+          ..writeln(
+            'Bổ sung $missing món quà mới hoàn toàn khác với: $existingNames.',
+          )
+          ..writeln(
+            'Cho người: tên=${ctx.name}, biệt danh=${ctx.nickname}, '
+            'giới tính=${ctx.gender}, tuổi=${ctx.age}, '
+            'quan hệ=${ctx.relationship}.',
+          )
+          ..writeln(
+            'Schema: {"g":[{"n":"...","r":"...","b":"...","c":"..."}]}.',
+          );
     AppLogger.info('[AiFeature]', 'feature=gift repair missing=$missing');
     final stopwatch = Stopwatch()..start();
     final r = await _client
@@ -681,17 +680,20 @@ class BirthdayAiService {
     final missing = kWishTargetCount - existing.wishes.length;
     if (missing <= 0) return null;
     final existingTexts = existing.wishes.map((w) => w.text).join('; ');
-    final prompt = StringBuffer()
-      ..writeln('Bổ sung $missing câu chúc mới khác hoàn toàn: $existingTexts.')
-      ..writeln(
-        'Cho: tên=${ctx.name}, biệt danh=${ctx.nickname}, '
-        'giới tính=${ctx.gender}, tuổi=${ctx.age}, '
-        'quan hệ=${ctx.relationship}.',
-      )
-      ..writeln(
-        'Ngôn ngữ: ${language == "en" ? "English" : (language == "zh" ? "中文" : "Tiếng Việt")}.',
-      )
-      ..writeln('Schema: {"w":[{"s":"...","t":"..."}]}.');
+    final prompt =
+        StringBuffer()
+          ..writeln(
+            'Bổ sung $missing câu chúc mới khác hoàn toàn: $existingTexts.',
+          )
+          ..writeln(
+            'Cho: tên=${ctx.name}, biệt danh=${ctx.nickname}, '
+            'giới tính=${ctx.gender}, tuổi=${ctx.age}, '
+            'quan hệ=${ctx.relationship}.',
+          )
+          ..writeln(
+            'Ngôn ngữ: ${language == "en" ? "English" : (language == "zh" ? "中文" : "Tiếng Việt")}.',
+          )
+          ..writeln('Schema: {"w":[{"s":"...","t":"..."}]}.');
     AppLogger.info('[AiFeature]', 'feature=wish repair missing=$missing');
     final stopwatch = Stopwatch()..start();
     final r = await _client
@@ -802,17 +804,18 @@ class BirthdayAiService {
   }) async {
     if (_cacheStorage == null || bypass) return;
     final config = _repo.loadConfig();
-    final mapped = items
-        .take(kGiftTargetCount)
-        .map(
-          (e) => <String, dynamic>{
-            'name': e.name,
-            'reason': e.reason,
-            'budget': e.budget,
-            'category': e.category,
-          },
-        )
-        .toList();
+    final mapped =
+        items
+            .take(kGiftTargetCount)
+            .map(
+              (e) => <String, dynamic>{
+                'name': e.name,
+                'reason': e.reason,
+                'budget': e.budget,
+                'category': e.category,
+              },
+            )
+            .toList();
     await _cacheStorage.writeGifts(
       birthdayId: ctx.birthdayId,
       contextHash: ctx.contextHash,
@@ -830,10 +833,11 @@ class BirthdayAiService {
   }) async {
     if (_cacheStorage == null || bypass) return;
     final config = _repo.loadConfig();
-    final mapped = items
-        .take(kWishTargetCount)
-        .map((e) => <String, dynamic>{'style': e.style, 'text': e.text})
-        .toList();
+    final mapped =
+        items
+            .take(kWishTargetCount)
+            .map((e) => <String, dynamic>{'style': e.style, 'text': e.text})
+            .toList();
     await _cacheStorage.writeWishes(
       birthdayId: ctx.birthdayId,
       contextHash: ctx.contextHash,
