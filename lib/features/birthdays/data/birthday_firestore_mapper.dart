@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
+import '../../../core/firestore/firestore_schema.dart';
 import '../../../models/birthday.dart';
 import '../services/birthday_photo_service.dart';
 
@@ -11,21 +12,21 @@ class BirthdayCloudPhoto {
   const BirthdayCloudPhoto({
     required this.photoBase64,
     required this.mimeType,
-    required this.byteSize,
+    required this.size,
     required this.hash,
     required this.updatedAt,
   });
 
   final String photoBase64;
   final String mimeType;
-  final int byteSize;
+  final int size;
   final String hash;
   final DateTime updatedAt;
 
   BirthdayCloudPhoto.fromEncoded(EncodedBirthdayPhoto e, {DateTime? now})
     : photoBase64 = e.base64,
       mimeType = e.mimeType,
-      byteSize = e.byteSize,
+      size = e.byteSize,
       hash = e.hash,
       updatedAt = now ?? DateTime.now();
 }
@@ -38,14 +39,14 @@ class CloudPhotoFields {
   const CloudPhotoFields({
     required this.base64,
     required this.mimeType,
-    required this.byteSize,
+    required this.size,
     required this.hash,
     required this.updatedAt,
   });
 
   final String base64;
   final String mimeType;
-  final int byteSize;
+  final int size;
   final String hash;
   final DateTime updatedAt;
 }
@@ -74,7 +75,7 @@ class BirthdayFirestoreMapper {
 
   /// Cloud schema version — bump only when a destructive migration is
   /// required. Rules validate this field.
-  static const int schemaVersion = 1;
+  static const int schemaVersion = FirestoreSchema.version;
 
   /// Build the canonical Firestore map for an upsert. When [photo]
   /// is non-null the cloud fields are included; when it is null, the
@@ -87,50 +88,35 @@ class BirthdayFirestoreMapper {
   }) {
     final map = <String, dynamic>{
       'id': b.id,
-      'name': b.name,
-      'nickname': b.nickname,
-      'gender': b.gender,
-      'relationship': b.relationship,
+      'name': b.name.trim().isEmpty ? 'Không có tên' : b.name.trim(),
+      'birthdayDate': Timestamp.fromDate(b.solarBirthday),
       'calendarType': b.calendarType.name,
-      'solarBirthday': Timestamp.fromDate(b.solarBirthday),
-      'lunar': {
-        'day': b.lunarBirthday.day,
-        'month': b.lunarBirthday.month,
-        'year': b.lunarBirthday.year,
-        // SQLite schema v2 does not persist leap-month state; we
-        // default to false until v3 ships. Documented in
-        // docs/FIRESTORE_SCHEMA.md.
-        'isLeapMonth': false,
-      },
+      if (b.relationship != null) 'relationship': b.relationship,
+      if (b.gender != null) 'gender': b.gender,
       'note': b.note,
-      'reminder': {
-        'enabled': b.isRecurringNotificationEnabled,
-        'daysBefore': b.remindBeforeDays,
-        'hour': b.remindTime.hour,
-        'minute': b.remindTime.minute,
-        'repeatAnnually': b.repeatAnnually,
-      },
-      'createdAt':
-          b.createdAt == null
-              ? FieldValue.serverTimestamp()
-              : Timestamp.fromDate(b.createdAt!),
+      'remindBeforeDays': b.remindBeforeDays,
+      'reminderEnabled': b.isRecurringNotificationEnabled,
+      'reminderTime':
+          '${b.remindTime.hour.toString().padLeft(2, '0')}:'
+          '${b.remindTime.minute.toString().padLeft(2, '0')}',
+      'repeatYearly': b.repeatAnnually,
+      'createdAt': b.createdAt == null
+          ? FieldValue.serverTimestamp()
+          : Timestamp.fromDate(b.createdAt!),
       'updatedAt': Timestamp.fromDate(b.updatedAt ?? DateTime.now()),
-      'isDeleted': b.deletedAt != null,
-      'deletedAt':
-          b.deletedAt == null ? null : Timestamp.fromDate(b.deletedAt!),
       'schemaVersion': schemaVersion,
     };
 
     if (photo != null) {
       map['photoBase64'] = photo.photoBase64;
       map['photoMimeType'] = photo.mimeType;
-      map['photoByteSize'] = photo.byteSize;
+      map['photoSize'] = photo.size;
       map['photoHash'] = photo.hash;
       map['photoUpdatedAt'] = Timestamp.fromDate(photo.updatedAt);
     } else if (deletePhoto) {
       map['photoBase64'] = FieldValue.delete();
       map['photoMimeType'] = FieldValue.delete();
-      map['photoByteSize'] = FieldValue.delete();
+      map['photoSize'] = FieldValue.delete();
       map['photoHash'] = FieldValue.delete();
       map['photoUpdatedAt'] = FieldValue.delete();
     }
@@ -155,30 +141,35 @@ class BirthdayFirestoreMapper {
       orElse: () => CalendarType.solar,
     );
 
-    final solarTs = raw['solarBirthday'] as Timestamp?;
-    final solar = solarTs?.toDate() ?? DateTime(2000, 1, 1);
+    final solar =
+        _date(raw['birthdayDate'] ?? raw['solarBirthday']) ??
+        DateTime(2000, 1, 1);
 
     final lunarMap = raw['lunar'] as Map<String, dynamic>?;
-    final lunar =
-        lunarMap == null
-            ? const LunarDateTime(day: 1, month: 1, year: 2000)
-            : LunarDateTime(
-              day: (lunarMap['day'] as num?)?.toInt() ?? 1,
-              month: (lunarMap['month'] as num?)?.toInt() ?? 1,
-              year: (lunarMap['year'] as num?)?.toInt() ?? 2000,
-            );
+    final lunar = LunarDateTime(
+      day: _integer(lunarMap?['day'] ?? raw['lunarDay'], fallback: 1),
+      month: _integer(lunarMap?['month'] ?? raw['lunarMonth'], fallback: 1),
+      year: _integer(lunarMap?['year'] ?? raw['lunarYear'], fallback: 2000),
+    );
 
     final reminder = raw['reminder'] as Map<String, dynamic>?;
-    final hour = (reminder?['hour'] as num?)?.toInt() ?? 9;
-    final minute = (reminder?['minute'] as num?)?.toInt() ?? 0;
+    final legacyTime = (raw['reminderTime'] ?? raw['remindTime'])
+        ?.toString()
+        .split(':');
+    final hour = _integer(
+      reminder?['hour'] ??
+          (legacyTime?.isNotEmpty == true ? legacyTime!.first : null),
+      fallback: 9,
+    );
+    final minute = _integer(
+      reminder?['minute'] ??
+          (legacyTime != null && legacyTime.length > 1 ? legacyTime[1] : null),
+    );
     final clampedHour = hour.clamp(0, 23);
     final clampedMinute = minute.clamp(0, 59);
-    final rawDaysBefore = reminder?['daysBefore'];
-    final daysBefore = switch (rawDaysBefore) {
-      num value => value.toInt(),
-      String value => int.tryParse(value) ?? 0,
-      _ => 0,
-    };
+    final daysBefore = _integer(
+      raw['remindBeforeDays'] ?? reminder?['daysBefore'],
+    );
 
     final birthday = Birthday(
       id: id,
@@ -188,16 +179,27 @@ class BirthdayFirestoreMapper {
       calendarType: calendarType,
       remindBeforeDays: daysBefore,
       remindTime: TimeOfDay(hour: clampedHour, minute: clampedMinute),
-      isRecurringNotificationEnabled: reminder?['enabled'] as bool? ?? false,
-      repeatAnnually: reminder?['repeatAnnually'] as bool? ?? false,
+      isRecurringNotificationEnabled: _boolean(
+        raw['reminderEnabled'] ??
+            reminder?['enabled'] ??
+            raw['isRecurringNotificationEnabled'],
+      ),
+      repeatAnnually: _boolean(
+        raw['repeatYearly'] ??
+            reminder?['repeatAnnually'] ??
+            raw['repeatAnnually'],
+      ),
       nickname: raw['nickname'] as String?,
       gender: raw['gender'] as String?,
       relationship: raw['relationship'] as String?,
       note: raw['note'] as String?,
-      createdAt: (raw['createdAt'] as Timestamp?)?.toDate(),
-      updatedAt: (raw['updatedAt'] as Timestamp?)?.toDate(),
-      deletedAt: (raw['deletedAt'] as Timestamp?)?.toDate(),
-      schemaVersion: (raw['schemaVersion'] as num?)?.toInt() ?? 1,
+      createdAt: _date(raw['createdAt'] ?? raw['created_at']),
+      updatedAt: _date(raw['updatedAt'] ?? raw['updated_at']),
+      deletedAt: _date(raw['deletedAt'] ?? raw['deleted_at']),
+      schemaVersion: _integer(
+        raw['schemaVersion'] ?? raw['schema_version'],
+        fallback: 1,
+      ),
     );
 
     final base64 = raw['photoBase64'] as String?;
@@ -209,12 +211,28 @@ class BirthdayFirestoreMapper {
       photo: CloudPhotoFields(
         base64: base64,
         mimeType: raw['photoMimeType'] as String? ?? 'image/jpeg',
-        byteSize: (raw['photoByteSize'] as num?)?.toInt() ?? 0,
+        size: _integer(raw['photoSize'] ?? raw['photoByteSize']),
         hash: raw['photoHash'] as String? ?? '',
         updatedAt:
-            (raw['photoUpdatedAt'] as Timestamp?)?.toDate() ??
+            _date(raw['photoUpdatedAt']) ??
             DateTime.fromMillisecondsSinceEpoch(0),
       ),
     );
   }
+
+  static DateTime? _date(Object? value) {
+    if (value is Timestamp) return value.toDate();
+    if (value is DateTime) return value;
+    if (value is String) return DateTime.tryParse(value);
+    return null;
+  }
+
+  static int _integer(Object? value, {int fallback = 0}) {
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? fallback;
+    return fallback;
+  }
+
+  static bool _boolean(Object? value) =>
+      value == true || value == 1 || value == '1' || value == 'true';
 }

@@ -67,9 +67,8 @@ void main() {
 
     test('equal versions compare as equal', () {
       expect(
-        SemanticVersion.parse(
-          '1.2.3',
-        )!.compareTo(SemanticVersion.parse('1.2.3')!),
+        SemanticVersion.parse('1.2.3')!
+            .compareTo(SemanticVersion.parse('1.2.3')!),
         0,
       );
     });

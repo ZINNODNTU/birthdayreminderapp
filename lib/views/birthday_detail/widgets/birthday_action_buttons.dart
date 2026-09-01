@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../l10n/l10n_extensions.dart';
 
 /// Action buttons for gift and wish suggestions.
@@ -25,10 +26,9 @@ class BirthdayActionButtons extends StatelessWidget {
     final isNarrow = MediaQuery.of(context).size.width < 380;
     final giftButton = _GradientActionButton(
       icon: Icons.card_giftcard,
-      label:
-          isGiftLoading
-              ? context.l10n.aiThinking
-              : context.l10n.giftSuggestions,
+      label: isGiftLoading
+          ? context.l10n.aiThinking
+          : context.l10n.giftSuggestions,
       loading: isGiftLoading,
       gradient: const LinearGradient(
         colors: [Color(0xFF7C4DFF), Color(0xFFEC407A)],
@@ -99,10 +99,9 @@ class BirthdayActionButtons extends StatelessWidget {
         );
         final btn = _GradientActionButton(
           icon: Icons.message,
-          label:
-              isWishLoading
-                  ? context.l10n.aiThinking
-                  : context.l10n.wishSuggestions,
+          label: isWishLoading
+              ? context.l10n.aiThinking
+              : context.l10n.wishSuggestions,
           loading: isWishLoading,
           gradient: const LinearGradient(
             colors: [Color(0xFFFF6F00), Color(0xFFD32F2F)],

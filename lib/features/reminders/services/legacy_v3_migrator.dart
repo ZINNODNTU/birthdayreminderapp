@@ -67,11 +67,12 @@ class LegacyToV3Migrator {
       if (future.isNotEmpty) {
         survivor = future.first;
       } else {
-        final sorted = [...list]..sort(
-          (a, b) => (b.scheduledAt ?? DateTime(1970)).compareTo(
-            a.scheduledAt ?? DateTime(1970),
-          ),
-        );
+        final sorted = [...list]
+          ..sort(
+            (a, b) => (b.scheduledAt ?? DateTime(1970)).compareTo(
+              a.scheduledAt ?? DateTime(1970),
+            ),
+          );
         survivor = sorted.first;
       }
       for (final e in list) {
@@ -99,14 +100,13 @@ class LegacyToV3Migrator {
     }
 
     // Drop any non-grouped legacy keys (orphans).
-    final orphanIds =
-        entries.values
-            .where(
-              (e) =>
-                  !byBirthday.containsKey(e.birthdayId) &&
-                  ReminderScheduler.isLegacyKey(e.scheduleKey),
-            )
-            .toList();
+    final orphanIds = entries.values
+        .where(
+          (e) =>
+              !byBirthday.containsKey(e.birthdayId) &&
+              ReminderScheduler.isLegacyKey(e.scheduleKey),
+        )
+        .toList();
     for (final e in orphanIds) {
       try {
         await _notificationService.cancel(e.notificationId);

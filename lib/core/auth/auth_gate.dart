@@ -32,9 +32,8 @@ class _AuthGateState extends State<AuthGate> {
           return;
         }
         if (!mounted) return;
-        await Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (_) => const OnboardingScreen()));
+        await Navigator.of(context)
+            .push(MaterialPageRoute(builder: (_) => const OnboardingScreen()));
       } catch (_) {
         // Non-critical guidance must never block application startup.
       } finally {
@@ -45,7 +44,11 @@ class _AuthGateState extends State<AuthGate> {
 
   @override
   Widget build(BuildContext context) {
-    final mode = context.watch<SessionController>().mode;
+    final session = context.watch<SessionController>();
+    if (!session.isReady) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    final mode = session.mode;
     _scheduleOnboarding(mode);
     return switch (mode) {
       AppSessionMode.authenticated || AppSessionMode.local => const Homepage(),

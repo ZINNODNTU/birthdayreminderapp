@@ -92,3 +92,5 @@ artifacts/
 
 # Local generated release metadata
 /release-metadata.json
+android/key.properties
+*.jks

@@ -203,6 +203,7 @@ class ReminderScheduler {
       fingerprint: schedule.scheduleKey,
       scheduledAt: schedule.scheduledAt,
       birthdayId: schedule.birthdayId,
+      displayName: birthday.name.trim(),
       exact: usedExact,
     );
     final merged = _store.loadAll()..[schedule.scheduleKey] = newEntry;

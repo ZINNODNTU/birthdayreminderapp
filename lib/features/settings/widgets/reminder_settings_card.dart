@@ -20,6 +20,9 @@ class _ReminderSettingsCardState extends State<ReminderSettingsCard> {
   bool _expanded = false;
   List<ManagedReminderEntry>? _entries;
   String? _statusMessage;
+  int _processed = 0;
+  int _total = 0;
+  String? _currentName;
 
   @override
   void initState() {
@@ -44,23 +47,34 @@ class _ReminderSettingsCardState extends State<ReminderSettingsCard> {
   }
 
   Future<void> _resync() async {
-    setState(() => _busy = true);
+    setState(() {
+      _busy = true;
+      _processed = 0;
+      _total = 0;
+      _currentName = null;
+      _statusMessage = 'Đang đồng bộ lịch nhắc...';
+    });
     try {
       final reconciler = context.read<NotificationReconciler>();
-      final result = await reconciler.reconcile();
-      if (!mounted) return;
-      setState(
-        () =>
-            _statusMessage = context.l10n.reminderResyncSuccess(
-              result.scheduled,
-              result.cancelled,
-            ),
+      final result = await reconciler.reconcile(
+        onProgress: (progress) {
+          if (!mounted) return;
+          setState(() {
+            _processed = progress.processed;
+            _total = progress.total;
+            _currentName = progress.displayName;
+          });
+        },
       );
+      if (!mounted) return;
+      setState(() {
+        _statusMessage = result.isOk
+            ? 'Đồng bộ hoàn tất\nĐã tạo ${result.scheduled} lịch nhắc\nKhông có lỗi'
+            : 'Đồng bộ thất bại\n${result.message ?? '${result.failed} lịch bị lỗi'}';
+      });
     } catch (e) {
       if (!mounted) return;
-      setState(
-        () => _statusMessage = context.l10n.syncFailedDetails(e.toString()),
-      );
+      setState(() => _statusMessage = 'Đồng bộ thất bại\n$e');
     } finally {
       if (mounted) {
         setState(() => _busy = false);
@@ -72,8 +86,9 @@ class _ReminderSettingsCardState extends State<ReminderSettingsCard> {
   @override
   Widget build(BuildContext context) {
     final entries = _entries ?? const <ManagedReminderEntry>[];
-    final visibleEntries =
-        _expanded ? entries : entries.take(_collapsedCount).toList();
+    final visibleEntries = _expanded
+        ? entries
+        : entries.take(_collapsedCount).toList();
     final hiddenCount = entries.length - _collapsedCount;
     return Card(
       elevation: 2,
@@ -93,10 +108,24 @@ class _ReminderSettingsCardState extends State<ReminderSettingsCard> {
                 padding: const EdgeInsets.only(top: 8),
                 child: Text(_statusMessage!),
               ),
+            if (_busy) ...[
+              const SizedBox(height: 12),
+              LinearProgressIndicator(
+                value: _total == 0 ? null : _processed / _total,
+              ),
+              const SizedBox(height: 8),
+              Text('Đã xử lý $_processed/$_total lịch'),
+              if (_currentName != null) Text('Đang xử lý: $_currentName'),
+            ],
             const SizedBox(height: 12),
             ElevatedButton.icon(
               onPressed: _busy ? null : _resync,
-              icon: const Icon(Icons.sync),
+              icon: _busy
+                  ? const SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.sync),
               label: Text(context.l10n.resyncReminders),
             ),
             const SizedBox(height: 12),
@@ -114,12 +143,16 @@ class _ReminderSettingsCardState extends State<ReminderSettingsCard> {
                         key: ValueKey('reminder-entry-${e.scheduleKey}'),
                         dense: true,
                         leading: const Icon(Icons.event),
-                        title: Text(_safeName(e.scheduleKey)),
+                        title: Text(
+                          e.displayName.trim().isEmpty
+                              ? 'Không có tên'
+                              : e.displayName.trim(),
+                        ),
                         subtitle: Text(
                           e.scheduledAt == null
-                              ? 'ID: ${e.notificationId} • ${context.l10n.waiting}'
-                              : '${DateFormat('dd/MM/yyyy HH:mm').format(e.scheduledAt!)} • '
-                                  'ID: ${e.notificationId}',
+                              ? context.l10n.waiting
+                              : DateFormat('dd/MM/yyyy - HH:mm')
+                                    .format(e.scheduledAt!),
                         ),
                       ),
                     if (entries.length > _collapsedCount)
@@ -127,8 +160,8 @@ class _ReminderSettingsCardState extends State<ReminderSettingsCard> {
                         alignment: Alignment.center,
                         child: TextButton.icon(
                           key: const ValueKey('reminder-expand-toggle'),
-                          onPressed:
-                              () => setState(() => _expanded = !_expanded),
+                          onPressed: () =>
+                              setState(() => _expanded = !_expanded),
                           icon: Icon(
                             _expanded
                                 ? Icons.keyboard_arrow_up
@@ -148,17 +181,5 @@ class _ReminderSettingsCardState extends State<ReminderSettingsCard> {
         ),
       ),
     );
-  }
-
-  String _safeName(String key) {
-    // Avoid logging anything that could carry user data; show only the
-    // safe portion of the schedule key.
-    final parts = key.split(':');
-    if (parts.length >= 2) {
-      return context.l10n.birthdayShortId(
-        parts[1].substring(0, parts[1].length.clamp(0, 6)),
-      );
-    }
-    return context.l10n.reminderSchedule;
   }
 }

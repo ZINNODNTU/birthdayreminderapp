@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:firebase_auth/firebase_auth.dart';
 
 import 'auth_failure.dart';
@@ -18,42 +16,26 @@ class FirebaseAuthRepository implements AuthRepository {
   final FirebaseAuth _auth;
   final GoogleAuthClient _googleAuthClient;
 
-  StreamController<User?>? _stateController;
-  StreamSubscription<User?>? _firebaseSub;
-
   @override
   User? get currentUser => _auth.currentUser;
 
   @override
-  Stream<User?> get authStateChanges {
-    final controller = _stateController ??= StreamController<User?>.broadcast();
-    scheduleMicrotask(() {
-      if (!controller.isClosed) controller.add(_auth.currentUser);
-    });
-    _firebaseSub ??= _auth.authStateChanges().listen(controller.add);
-    return controller.stream;
-  }
+  Stream<User?> get authStateChanges => _auth.authStateChanges();
 
   @override
   Future<User?> signInWithGoogle() async {
     try {
       final googleUser = await _googleAuthClient.authenticate();
-      if (googleUser == null) {
-        throw AuthFailureCancelled();
-      }
+      if (googleUser == null) throw AuthFailureCancelled();
       final idToken = googleUser.authentication.idToken;
-      if (idToken == null || idToken.isEmpty) {
-        throw AuthFailureUnknown();
-      }
+      if (idToken == null || idToken.isEmpty) throw AuthFailureUnknown();
+
       final credential = GoogleAuthProvider.credential(idToken: idToken);
-      final userCredential = await _auth.signInWithCredential(credential);
-      final user = userCredential.user;
-      if (user == null) {
-        throw AuthFailureUnknown();
-      }
-      final providers = user.providerData.map((p) => p.providerId).toList();
-      if (!providers.contains('google.com')) {
-        await _auth.signOut();
+      final user = (await _auth.signInWithCredential(credential)).user;
+      if (user == null) throw AuthFailureUnknown();
+
+      final providers = user.providerData.map((p) => p.providerId);
+      if (!providers.contains(GoogleAuthProvider.PROVIDER_ID)) {
         throw AuthFailureOperationNotAllowed();
       }
       return user;
@@ -70,7 +52,9 @@ class FirebaseAuthRepository implements AuthRepository {
   Future<void> signOut() async {
     try {
       await _googleAuthClient.signOut();
-    } catch (_) {}
+    } catch (_) {
+      // Firebase sign-out must still complete if Google Play Services fails.
+    }
     await _auth.signOut();
   }
 }

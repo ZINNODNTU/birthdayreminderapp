@@ -1,5 +1,6 @@
 import 'package:birthdayreminderapp/core/auth/auth_failure.dart';
 import 'package:flutter_test/flutter_test.dart';
+
 import '../../helpers/fake_auth_repository.dart';
 
 void main() {
@@ -55,8 +56,8 @@ void main() {
     });
 
     test('signInWithGoogle throws configured AuthFailure', () async {
-      final repo =
-          FakeAuthRepository()..signInWithGoogleFailure = AuthFailureNetwork();
+      final repo = FakeAuthRepository()
+        ..signInWithGoogleFailure = AuthFailureNetwork();
       expect(repo.signInWithGoogle(), throwsA(isA<AuthFailureNetwork>()));
     });
 

@@ -28,6 +28,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import '../helpers/fake_auth_repository.dart';
 import '../helpers/fake_notification_service.dart';
+
 import 'package:birthdayreminderapp/l10n/app_localizations.dart';
 import 'package:birthdayreminderapp/services/locale_service.dart';
 
@@ -43,57 +44,52 @@ Widget _wrap({
       Provider<LocalDbService>(create: (_) => LocalDbService()),
       Provider<NotificationService>.value(value: fake),
       Provider<BirthdayRepository>(
-        create:
-            (ctx) =>
-                birthdayRepo ??
-                LocalBirthdayRepository(ctx.read<LocalDbService>()),
+        create: (ctx) =>
+            birthdayRepo ?? LocalBirthdayRepository(ctx.read<LocalDbService>()),
       ),
       Provider<LunarCalendarService>(
         create: (_) => const LunarCalendarService(),
       ),
       Provider<BirthdayEngine>(
-        create:
-            (ctx) => DefaultBirthdayEngine(ctx.read<LunarCalendarService>()),
+        create: (ctx) =>
+            DefaultBirthdayEngine(ctx.read<LunarCalendarService>()),
       ),
       Provider<NotificationIdFactory>(
         create: (_) => const NotificationIdFactory(),
       ),
       Provider<NotificationPermissionService>(
-        create: (_) => const NotificationPermissionService(),
+        create: (_) => NotificationPermissionService(),
       ),
       Provider<ReminderScheduleStore>(
         create: (_) => ReminderScheduleStore(sharedPrefs),
       ),
       Provider<ReminderScheduler>(
-        create:
-            (ctx) => ReminderScheduler(
-              engine: ctx.read<BirthdayEngine>(),
-              idFactory: ctx.read<NotificationIdFactory>(),
-              notificationService: ctx.read<NotificationService>(),
-              permissionService: ctx.read<NotificationPermissionService>(),
-              store: ctx.read<ReminderScheduleStore>(),
-            ),
+        create: (ctx) => ReminderScheduler(
+          engine: ctx.read<BirthdayEngine>(),
+          idFactory: ctx.read<NotificationIdFactory>(),
+          notificationService: ctx.read<NotificationService>(),
+          permissionService: ctx.read<NotificationPermissionService>(),
+          store: ctx.read<ReminderScheduleStore>(),
+        ),
       ),
       ChangeNotifierProvider<BirthdayController>(
-        create:
-            (ctx) => BirthdayController(
-              repository: ctx.read<BirthdayRepository>(),
-              reminderScheduler: ctx.read<ReminderScheduler>(),
-              notificationService: ctx.read<NotificationService>(),
-              engine: ctx.read<BirthdayEngine>(),
-            ),
+        create: (ctx) => BirthdayController(
+          repository: ctx.read<BirthdayRepository>(),
+          reminderScheduler: ctx.read<ReminderScheduler>(),
+          notificationService: ctx.read<NotificationService>(),
+          engine: ctx.read<BirthdayEngine>(),
+        ),
       ),
       Provider<AuthRepository>.value(value: repo),
       Provider<UserProfileRepository>(create: (_) => _NoopProfileRepo()),
       Provider<SessionRepository>.value(value: sessionRepo),
       ChangeNotifierProvider<SessionController>(
-        create:
-            (ctx) => SessionController(
-              repository: ctx.read<SessionRepository>(),
-              authRepository: ctx.read<AuthRepository>(),
-              profileRepository: ctx.read<UserProfileRepository>(),
-              authStateChanges: ctx.read<AuthRepository>().authStateChanges,
-            ),
+        create: (ctx) => SessionController(
+          repository: ctx.read<SessionRepository>(),
+          authRepository: ctx.read<AuthRepository>(),
+          profileRepository: ctx.read<UserProfileRepository>(),
+          authStateChanges: ctx.read<AuthRepository>().authStateChanges,
+        ),
       ),
       ChangeNotifierProvider<LocaleService>(
         create: (_) => LocaleService(sharedPrefs),
@@ -157,7 +153,7 @@ void main() {
     // Should be back on AuthScreen with Google button.
     expect(find.byType(AuthScreen), findsOneWidget);
     final authCtx = tester.element(find.byType(AuthScreen));
-    final l10n = AppLocalizations.of(authCtx)!;
+    final l10n = AppLocalizations.of(authCtx);
     expect(find.text(l10n.signInGoogle), findsOneWidget);
   });
 }

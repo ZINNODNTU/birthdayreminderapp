@@ -71,6 +71,7 @@ class ReminderScheduleStore {
         fingerprint: (fpMap[scheduleKey] as String?) ?? '',
         scheduledAt: _parseDate(detail['scheduledAt']),
         birthdayId: (detail['birthdayId'] as String?) ?? '',
+        displayName: (detail['displayName'] as String?) ?? '',
         exact: (detail['exact'] as bool?) ?? false,
       );
     }
@@ -88,6 +89,7 @@ class ReminderScheduleStore {
       fpMap[entry.scheduleKey] = entry.fingerprint;
       details[entry.scheduleKey] = {
         if (entry.birthdayId.isNotEmpty) 'birthdayId': entry.birthdayId,
+        if (entry.displayName.isNotEmpty) 'displayName': entry.displayName,
         if (entry.scheduledAt != null)
           'scheduledAt': entry.scheduledAt!.toIso8601String(),
         'exact': entry.exact,
@@ -123,6 +125,7 @@ class ManagedReminderEntry {
     required this.fingerprint,
     this.scheduledAt,
     this.birthdayId = '',
+    this.displayName = '',
     this.exact = false,
   });
 
@@ -131,5 +134,6 @@ class ManagedReminderEntry {
   final String fingerprint;
   final DateTime? scheduledAt;
   final String birthdayId;
+  final String displayName;
   final bool exact;
 }

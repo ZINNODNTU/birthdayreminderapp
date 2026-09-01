@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:lunar/lunar.dart';
+
 import '../controllers/birthday_controller.dart';
 import '../features/birthdays/domain/birthday_engine.dart';
 import '../models/birthday.dart';
 import 'birthday_detail_view.dart';
+
 import 'package:google_fonts/google_fonts.dart';
+
 import '../services/avatar_cache.dart';
 import '../services/locale_service.dart';
 import '../l10n/l10n_extensions.dart';
@@ -53,14 +56,9 @@ class _CalendarViewState extends State<CalendarView> {
     final eventsByDay = <DateTime, List<Birthday>>{};
     final eventCounts = <DateTime, int>{};
     for (final b in birthdays) {
-      final date =
-          b.calendarType == CalendarType.solar
-              ? DateTime(
-                focusedYear,
-                b.solarBirthday.month,
-                b.solarBirthday.day,
-              )
-              : _occurrence(b, focusedYear, engine);
+      final date = b.calendarType == CalendarType.solar
+          ? DateTime(focusedYear, b.solarBirthday.month, b.solarBirthday.day)
+          : _occurrence(b, focusedYear, engine);
       final key = _dayKey(date);
       eventsByDay.putIfAbsent(key, () => []).add(b);
       eventCounts[key] = (eventCounts[key] ?? 0) + 1;
@@ -74,10 +72,9 @@ class _CalendarViewState extends State<CalendarView> {
             )
             .toList()
           ..sort((a, b) => a.key.compareTo(b.key));
-    final selectedBirthdays =
-        _selectedDay == null
-            ? const <Birthday>[]
-            : eventsByDay[_dayKey(_selectedDay!)] ?? const <Birthday>[];
+    final selectedBirthdays = _selectedDay == null
+        ? const <Birthday>[]
+        : eventsByDay[_dayKey(_selectedDay!)] ?? const <Birthday>[];
     final monthBirthdayCount = monthEntries.fold<int>(
       0,
       (total, entry) => total + entry.value.length,
@@ -91,31 +88,28 @@ class _CalendarViewState extends State<CalendarView> {
         duration: const Duration(milliseconds: 200),
         margin: const EdgeInsets.all(4),
         decoration: BoxDecoration(
-          color:
-              isSelected
-                  ? (isDarkMode ? Colors.blueGrey[700] : Colors.blue[50])
-                  : isToday
-                  ? (isDarkMode ? Colors.grey[800] : Colors.grey[100])
-                  : null,
-          border:
-              isSelected
-                  ? Border.all(color: Colors.blueAccent, width: 2)
-                  : isToday
-                  ? Border.all(color: Colors.grey, width: 1.5)
-                  : eventCount > 0
-                  ? Border.all(color: Colors.amber, width: 1.5)
-                  : null,
+          color: isSelected
+              ? (isDarkMode ? Colors.blueGrey[700] : Colors.blue[50])
+              : isToday
+              ? (isDarkMode ? Colors.grey[800] : Colors.grey[100])
+              : null,
+          border: isSelected
+              ? Border.all(color: Colors.blueAccent, width: 2)
+              : isToday
+              ? Border.all(color: Colors.grey, width: 1.5)
+              : eventCount > 0
+              ? Border.all(color: Colors.amber, width: 1.5)
+              : null,
           borderRadius: BorderRadius.circular(12),
-          boxShadow:
-              isSelected || isToday
-                  ? [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
-                  : null,
+          boxShadow: isSelected || isToday
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
         ),
         child: Stack(
           children: [
@@ -195,16 +189,15 @@ class _CalendarViewState extends State<CalendarView> {
                   firstDay: DateTime.utc(2000, 1, 1),
                   lastDay: DateTime.utc(2100, 12, 31),
                   focusedDay: _focusedDay,
-                  selectedDayPredicate:
-                      (day) =>
-                          _selectedDay != null &&
-                          isSameDayAndMonth(_selectedDay, day),
+                  selectedDayPredicate: (day) =>
+                      _selectedDay != null &&
+                      isSameDayAndMonth(_selectedDay, day),
                   onDaySelected: (selectedDay, focusedDay) {
                     setState(() {
                       _selectedDay =
                           isSameDayAndMonth(_selectedDay, selectedDay)
-                              ? null
-                              : selectedDay;
+                          ? null
+                          : selectedDay;
                       _focusedDay = focusedDay;
                     });
                   },
@@ -214,8 +207,8 @@ class _CalendarViewState extends State<CalendarView> {
                       _selectedDay = null;
                     });
                   },
-                  eventLoader:
-                      (day) => eventsByDay[_dayKey(day)] ?? const <Birthday>[],
+                  eventLoader: (day) =>
+                      eventsByDay[_dayKey(day)] ?? const <Birthday>[],
                   calendarStyle: CalendarStyle(
                     markersMaxCount: 0,
                     outsideDaysVisible: false,
@@ -242,15 +235,12 @@ class _CalendarViewState extends State<CalendarView> {
                     ),
                   ),
                   calendarBuilders: CalendarBuilders(
-                    defaultBuilder:
-                        (context, day, focusedDay) =>
-                            buildDayCell(day, false, false),
-                    selectedBuilder:
-                        (context, day, focusedDay) =>
-                            buildDayCell(day, true, false),
-                    todayBuilder:
-                        (context, day, focusedDay) =>
-                            buildDayCell(day, false, true),
+                    defaultBuilder: (context, day, focusedDay) =>
+                        buildDayCell(day, false, false),
+                    selectedBuilder: (context, day, focusedDay) =>
+                        buildDayCell(day, true, false),
+                    todayBuilder: (context, day, focusedDay) =>
+                        buildDayCell(day, false, true),
                   ),
                 ),
               ),
@@ -262,12 +252,12 @@ class _CalendarViewState extends State<CalendarView> {
                       child: Text(
                         _selectedDay == null
                             ? context.l10n.monthBirthdays(
-                              _focusedDay.month,
-                              monthBirthdayCount,
-                            )
+                                _focusedDay.month,
+                                monthBirthdayCount,
+                              )
                             : context.l10n.dayBirthdays(
-                              '${_selectedDay!.day.toString().padLeft(2, '0')}/${_selectedDay!.month.toString().padLeft(2, '0')}',
-                            ),
+                                '${_selectedDay!.day.toString().padLeft(2, '0')}/${_selectedDay!.month.toString().padLeft(2, '0')}',
+                              ),
                         key: const ValueKey('calendar-list-title'),
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
@@ -345,10 +335,9 @@ class _BirthdayCalendarTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final avatar =
-        birthday.avatarBase64 == null
-            ? null
-            : AvatarCache.decodeAndCache(birthday.avatarBase64!);
+    final avatar = birthday.avatarBase64 == null
+        ? null
+        : AvatarCache.decodeAndCache(birthday.avatarBase64!);
     return Card(
       key: ValueKey('calendar-birthday-${birthday.id}'),
       margin: const EdgeInsets.symmetric(vertical: 6),
@@ -360,10 +349,9 @@ class _BirthdayCalendarTile extends StatelessWidget {
           radius: 24,
           backgroundColor: Colors.pink[100],
           backgroundImage: avatar == null ? null : MemoryImage(avatar),
-          child:
-              avatar == null
-                  ? const Icon(Icons.cake, color: Colors.pink)
-                  : null,
+          child: avatar == null
+              ? const Icon(Icons.cake, color: Colors.pink)
+              : null,
         ),
         title: Text(
           birthday.name,
@@ -379,13 +367,12 @@ class _BirthdayCalendarTile extends StatelessWidget {
               : context.l10n.lunar,
         ),
         trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-        onTap:
-            () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => BirthdayDetailView(birthday: birthday),
-              ),
-            ),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => BirthdayDetailView(birthday: birthday),
+          ),
+        ),
       ),
     );
   }

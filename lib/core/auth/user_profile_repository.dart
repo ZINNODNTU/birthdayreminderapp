@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../firestore/firestore_schema.dart';
+
 /// Manages the canonical `/users/{uid}` profile document.
 ///
 /// Responsibilities:
@@ -16,10 +18,10 @@ class UserProfileRepository {
 
   /// Schema version we write. Bumped only when a destructive migration
   /// is required.
-  static const int schemaVersion = 1;
+  static const int schemaVersion = FirestoreSchema.version;
 
   DocumentReference<Map<String, dynamic>> _profileDoc(String uid) {
-    return _db.collection('users').doc(uid);
+    return _db.collection(FirestoreSchema.users).doc(uid);
   }
 
   /// Create the profile document if it does not already exist; otherwise

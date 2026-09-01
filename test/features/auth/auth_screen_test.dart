@@ -12,6 +12,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../helpers/fake_auth_repository.dart';
+
 import 'package:birthdayreminderapp/l10n/app_localizations.dart';
 import 'package:birthdayreminderapp/services/locale_service.dart';
 
@@ -39,13 +40,12 @@ Widget _wrap(AuthRepository repo) {
       Provider<AuthRepository>.value(value: repo),
       Provider<UserProfileRepository>(create: (_) => _NoopProfileRepository()),
       ChangeNotifierProvider<SessionController>(
-        create:
-            (ctx) => SessionController(
-              repository: SessionRepository(),
-              authRepository: repo,
-              profileRepository: ctx.read<UserProfileRepository>(),
-              authStateChanges: repo.authStateChanges,
-            ),
+        create: (ctx) => SessionController(
+          repository: SessionRepository(),
+          authRepository: repo,
+          profileRepository: ctx.read<UserProfileRepository>(),
+          authStateChanges: repo.authStateChanges,
+        ),
       ),
       ChangeNotifierProvider<LocaleService>(
         create: (_) => LocaleService(sharedPrefs),
@@ -71,8 +71,7 @@ void main() {
       await tester.pumpWidget(_wrap(repo));
       await tester.pumpAndSettle();
 
-      final l10n =
-          AppLocalizations.of(tester.element(find.byType(AuthScreen)))!;
+      final l10n = AppLocalizations.of(tester.element(find.byType(AuthScreen)));
       expect(find.text(l10n.signInGoogle), findsOneWidget);
       expect(find.text(l10n.continueOnDevice), findsOneWidget);
     });
@@ -98,8 +97,7 @@ void main() {
       await tester.pumpWidget(_wrap(repo));
       await tester.pumpAndSettle();
 
-      final l10n =
-          AppLocalizations.of(tester.element(find.byType(AuthScreen)))!;
+      final l10n = AppLocalizations.of(tester.element(find.byType(AuthScreen)));
       await tester.tap(find.text(l10n.signInGoogle));
       await tester.pumpAndSettle();
 
@@ -110,14 +108,12 @@ void main() {
     testWidgets('cancellation is silent (no snackbar, AuthScreen stays)', (
       tester,
     ) async {
-      final repo =
-          FakeAuthRepository()
-            ..signInWithGoogleFailure = AuthFailureCancelled();
+      final repo = FakeAuthRepository()
+        ..signInWithGoogleFailure = AuthFailureCancelled();
       await tester.pumpWidget(_wrap(repo));
       await tester.pumpAndSettle();
 
-      final l10n =
-          AppLocalizations.of(tester.element(find.byType(AuthScreen)))!;
+      final l10n = AppLocalizations.of(tester.element(find.byType(AuthScreen)));
       await tester.tap(find.text(l10n.signInGoogle));
       await tester.pumpAndSettle();
 
@@ -127,13 +123,12 @@ void main() {
     });
 
     testWidgets('failure surfaces friendly Vietnamese message', (tester) async {
-      final repo =
-          FakeAuthRepository()..signInWithGoogleFailure = AuthFailureNetwork();
+      final repo = FakeAuthRepository()
+        ..signInWithGoogleFailure = AuthFailureNetwork();
       await tester.pumpWidget(_wrap(repo));
       await tester.pumpAndSettle();
 
-      final l10n =
-          AppLocalizations.of(tester.element(find.byType(AuthScreen)))!;
+      final l10n = AppLocalizations.of(tester.element(find.byType(AuthScreen)));
       await tester.tap(find.text(l10n.signInGoogle));
       await tester.pumpAndSettle();
 
@@ -145,8 +140,7 @@ void main() {
       await tester.pumpWidget(_wrap(repo));
       await tester.pumpAndSettle();
 
-      final l10n =
-          AppLocalizations.of(tester.element(find.byType(AuthScreen)))!;
+      final l10n = AppLocalizations.of(tester.element(find.byType(AuthScreen)));
       await tester.tap(find.text(l10n.signInGoogle));
       await tester.pump();
 
@@ -176,13 +170,12 @@ void main() {
             ),
             Provider<SessionRepository>.value(value: sessionRepo),
             ChangeNotifierProvider<SessionController>(
-              create:
-                  (ctx) => SessionController(
-                    repository: ctx.read<SessionRepository>(),
-                    authRepository: repo,
-                    profileRepository: ctx.read<UserProfileRepository>(),
-                    authStateChanges: repo.authStateChanges,
-                  ),
+              create: (ctx) => SessionController(
+                repository: ctx.read<SessionRepository>(),
+                authRepository: repo,
+                profileRepository: ctx.read<UserProfileRepository>(),
+                authStateChanges: repo.authStateChanges,
+              ),
             ),
             ChangeNotifierProvider<LocaleService>(
               create: (_) => LocaleService(sharedPrefs),
@@ -197,8 +190,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final l10n =
-          AppLocalizations.of(tester.element(find.byType(AuthScreen)))!;
+      final l10n = AppLocalizations.of(tester.element(find.byType(AuthScreen)));
       await tester.tap(find.text(l10n.continueOnDevice));
       await tester.pumpAndSettle();
 

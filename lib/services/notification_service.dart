@@ -89,6 +89,7 @@ class NotificationService {
 
   final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
+  Future<void>? _initialization;
   bool _isInitialized = false;
 
   static const String androidChannelId = 'birthday_reminders';
@@ -104,17 +105,23 @@ class NotificationService {
   static const int testNotificationId = 0x6E5F00D;
   static const int scheduledTestNotificationId = 0x6E5F00E;
 
-  Future<void> initialize() async {
-    if (_isInitialized) return;
+  Future<void> initialize() {
+    if (_isInitialized) return Future.value();
+    return _initialization ??= _initializeOnce().catchError((Object error) {
+      _initialization = null;
+      throw error;
+    });
+  }
 
-    const AndroidInitializationSettings androidSettings =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
-    const DarwinInitializationSettings iosSettings =
-        DarwinInitializationSettings(
-          requestAlertPermission: true,
-          requestBadgePermission: true,
-          requestSoundPermission: true,
-        );
+  Future<void> _initializeOnce() async {
+    const androidSettings = AndroidInitializationSettings(
+      '@mipmap/ic_launcher',
+    );
+    const iosSettings = DarwinInitializationSettings(
+      requestAlertPermission: true,
+      requestBadgePermission: true,
+      requestSoundPermission: true,
+    );
 
     await _plugin.initialize(
       const InitializationSettings(android: androidSettings, iOS: iosSettings),
@@ -122,20 +129,38 @@ class NotificationService {
         devtools.log('clicked: ${response.payload}');
       },
     );
-
-    await _createTestChannel();
-
+    await _createChannels();
     _isInitialized = true;
     AppLogger.info('NotificationRuntime', 'initialized');
   }
 
-  Future<void> _createTestChannel() async {
-    final android =
+  Future<void> _createChannels() async {
+    final android = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+    if (android == null) return;
+    await android.createNotificationChannel(
+      const AndroidNotificationChannel(
+        androidChannelId,
+        androidChannelName,
+        description: androidChannelDescription,
+        importance: Importance.high,
+      ),
+    );
+    await _createTestChannel(android: android);
+  }
+
+  Future<void> _createTestChannel({
+    AndroidFlutterLocalNotificationsPlugin? android,
+  }) async {
+    final implementation =
+        android ??
         _plugin
             .resolvePlatformSpecificImplementation<
               AndroidFlutterLocalNotificationsPlugin
             >();
-    if (android == null) return;
+    if (implementation == null) return;
     const channel = AndroidNotificationChannel(
       testChannelId,
       testChannelName,
@@ -144,7 +169,7 @@ class NotificationService {
       playSound: true,
       enableVibration: true,
     );
-    await android.createNotificationChannel(channel);
+    await implementation.createNotificationChannel(channel);
     AppLogger.debug(
       'NotificationService',
       'test channel ensured: $testChannelId ($testChannelName)',
@@ -152,43 +177,43 @@ class NotificationService {
   }
 
   Future<bool> requestNotificationPermission() async {
-    final android =
-        _plugin
-            .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin
-            >();
+    await initialize();
+    final android = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     if (android == null) return true;
     final granted = await android.requestNotificationsPermission();
     return granted ?? false;
   }
 
   Future<bool?> areNotificationsEnabled() async {
-    final android =
-        _plugin
-            .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin
-            >();
+    await initialize();
+    final android = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     if (android == null) return true;
     final enabled = await android.areNotificationsEnabled();
     return enabled;
   }
 
   Future<bool?> canScheduleExactNotifications() async {
-    final android =
-        _plugin
-            .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin
-            >();
+    await initialize();
+    final android = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     if (android == null) return null;
     return await android.canScheduleExactNotifications();
   }
 
   Future<void> requestExactAlarmsPermission() async {
-    final android =
-        _plugin
-            .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin
-            >();
+    await initialize();
+    final android = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     if (android == null) return;
     try {
       await android.requestExactAlarmsPermission();
@@ -242,17 +267,15 @@ class NotificationService {
             channelDescription: androidChannelDescription,
             importance: Importance.high,
             priority: Priority.high,
-            largeIcon:
-                avatarBytes == null
-                    ? null
-                    : ByteArrayAndroidBitmap(avatarBytes),
+            largeIcon: avatarBytes == null
+                ? null
+                : ByteArrayAndroidBitmap(avatarBytes),
           ),
           iOS: DarwinNotificationDetails(),
         ),
-        androidScheduleMode:
-            exact
-                ? AndroidScheduleMode.exactAllowWhileIdle
-                : AndroidScheduleMode.inexactAllowWhileIdle,
+        androidScheduleMode: exact
+            ? AndroidScheduleMode.exactAllowWhileIdle
+            : AndroidScheduleMode.inexactAllowWhileIdle,
         payload: schedule.payload,
       );
       AppLogger.info(

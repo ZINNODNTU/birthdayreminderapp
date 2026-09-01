@@ -46,10 +46,10 @@ class _AppInfoCardState extends State<AppInfoCard> {
               info == null
                   ? context.l10n.loading
                   : context.l10n.appVersionInfo(
-                    info.appName,
-                    info.version,
-                    info.buildNumber,
-                  ),
+                      info.appName,
+                      info.version,
+                      info.buildNumber,
+                    ),
             ),
             Text(context.l10n.testChannel(NotificationService.testChannelId)),
             Text(
@@ -70,11 +70,10 @@ class _AppInfoCardState extends State<AppInfoCard> {
               leading: const Icon(Icons.system_update),
               title: Text(context.l10n.updateApp),
               subtitle: Text(context.l10n.checkNewVersion),
-              onTap:
-                  () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const UpdateScreen()),
-                  ),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const UpdateScreen()),
+              ),
             ),
           ],
         ),

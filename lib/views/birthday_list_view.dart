@@ -26,12 +26,9 @@ class _BirthdayListViewState extends State<BirthdayListView> {
     final birthdays = context.watch<BirthdayController>().birthdays;
 
     // Lọc danh sách sinh nhật theo tên tìm kiếm
-    final filteredBirthdays =
-        birthdays.where((birthday) {
-          return birthday.name.toLowerCase().contains(
-            _searchQuery.toLowerCase(),
-          );
-        }).toList();
+    final filteredBirthdays = birthdays.where((birthday) {
+      return birthday.name.toLowerCase().contains(_searchQuery.toLowerCase());
+    }).toList();
 
     // Hàm để lấy ngày tháng trong năm hiện tại với sinh nhật (day, month)
     DateTime getNextBirthdayDate(Birthday birthday) {
@@ -62,10 +59,9 @@ class _BirthdayListViewState extends State<BirthdayListView> {
 
     return Scaffold(
       appBar: AppBar(
-        title:
-            _isSelectionMode
-                ? Text(context.l10n.selectedCount(_selectedBirthdays.length))
-                : null,
+        title: _isSelectionMode
+            ? Text(context.l10n.selectedCount(_selectedBirthdays.length))
+            : null,
         actions: [
           if (_isSelectionMode) ...[
             IconButton(
@@ -93,35 +89,34 @@ class _BirthdayListViewState extends State<BirthdayListView> {
                   _sortAscending = value;
                 });
               },
-              itemBuilder:
-                  (context) => [
-                    PopupMenuItem(
-                      value: true,
-                      child: Row(
-                        children: [
-                          if (_sortAscending)
-                            const Icon(Icons.check, color: Colors.blue)
-                          else
-                            const SizedBox(width: 24),
-                          const SizedBox(width: 8),
-                          Text(context.l10n.nearestBirthday),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: false,
-                      child: Row(
-                        children: [
-                          if (!_sortAscending)
-                            const Icon(Icons.check, color: Colors.blue)
-                          else
-                            const SizedBox(width: 24),
-                          const SizedBox(width: 8),
-                          Text(context.l10n.farthestBirthday),
-                        ],
-                      ),
-                    ),
-                  ],
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  value: true,
+                  child: Row(
+                    children: [
+                      if (_sortAscending)
+                        const Icon(Icons.check, color: Colors.blue)
+                      else
+                        const SizedBox(width: 24),
+                      const SizedBox(width: 8),
+                      Text(context.l10n.nearestBirthday),
+                    ],
+                  ),
+                ),
+                PopupMenuItem(
+                  value: false,
+                  child: Row(
+                    children: [
+                      if (!_sortAscending)
+                        const Icon(Icons.check, color: Colors.blue)
+                      else
+                        const SizedBox(width: 24),
+                      const SizedBox(width: 8),
+                      Text(context.l10n.farthestBirthday),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ],
         ],
@@ -147,40 +142,36 @@ class _BirthdayListViewState extends State<BirthdayListView> {
           filteredBirthdays.isEmpty
               ? Expanded(child: Center(child: Text(context.l10n.noBirthdays)))
               : Expanded(
-                child: ListView.builder(
-                  itemCount: filteredBirthdays.length,
-                  itemBuilder: (context, index) {
-                    final birthday = filteredBirthdays[index];
-                    final isSelected = _selectedBirthdays.contains(birthday);
+                  child: ListView.builder(
+                    itemCount: filteredBirthdays.length,
+                    itemBuilder: (context, index) {
+                      final birthday = filteredBirthdays[index];
+                      final isSelected = _selectedBirthdays.contains(birthday);
 
-                    return GestureDetector(
-                      onLongPress: () => _toggleSelectionMode(birthday),
-                      onTap:
-                          () =>
-                              _isSelectionMode
-                                  ? _toggleSelection(birthday)
-                                  : _openBirthdayDetail(context, birthday),
-                      child: Container(
-                        color:
-                            isSelected
-                                ? Colors.blue.withValues(alpha: 0.2)
-                                : Colors.transparent,
-                        child: BirthdayItem(birthday: birthday),
-                      ),
-                    );
-                  },
+                      return GestureDetector(
+                        onLongPress: () => _toggleSelectionMode(birthday),
+                        onTap: () => _isSelectionMode
+                            ? _toggleSelection(birthday)
+                            : _openBirthdayDetail(context, birthday),
+                        child: Container(
+                          color: isSelected
+                              ? Colors.blue.withValues(alpha: 0.2)
+                              : Colors.transparent,
+                          child: BirthdayItem(birthday: birthday),
+                        ),
+                      );
+                    },
+                  ),
                 ),
-              ),
         ],
       ),
-      floatingActionButton:
-          _isSelectionMode
-              ? FloatingActionButton(
-                onPressed: _deleteSelected,
-                tooltip: context.l10n.deleteSelected,
-                child: const Icon(Icons.delete),
-              )
-              : null,
+      floatingActionButton: _isSelectionMode
+          ? FloatingActionButton(
+              onPressed: _deleteSelected,
+              tooltip: context.l10n.deleteSelected,
+              child: const Icon(Icons.delete),
+            )
+          : null,
     );
   }
 
@@ -222,25 +213,24 @@ class _BirthdayListViewState extends State<BirthdayListView> {
     final count = _selectedBirthdays.length;
     final confirmed = await showDialog<bool>(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text(context.l10n.deleteBirthdayTitle),
-            content: Text(
-              count == 1
-                  ? context.l10n.deleteOneConfirm
-                  : context.l10n.deleteManyConfirm(count),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: Text(context.l10n.cancel),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: Text(context.l10n.delete),
-              ),
-            ],
+      builder: (context) => AlertDialog(
+        title: Text(context.l10n.deleteBirthdayTitle),
+        content: Text(
+          count == 1
+              ? context.l10n.deleteOneConfirm
+              : context.l10n.deleteManyConfirm(count),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(context.l10n.cancel),
           ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(context.l10n.delete),
+          ),
+        ],
+      ),
     );
     if (confirmed != true) return;
     var failed = 0;

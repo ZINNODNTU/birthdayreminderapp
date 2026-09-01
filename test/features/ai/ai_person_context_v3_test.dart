@@ -227,10 +227,9 @@ void main() {
         language: 'vi',
       );
       expect(list.length, greaterThanOrEqualTo(10));
-      final usesName =
-          list
-              .where((w) => w.text.contains('Mai') || w.text.contains('Mài'))
-              .length;
+      final usesName = list
+          .where((w) => w.text.contains('Mai') || w.text.contains('Mài'))
+          .length;
       expect(usesName, greaterThanOrEqualTo(7));
     });
 
@@ -274,10 +273,9 @@ void main() {
         language: 'vi',
       );
       expect(list.length, greaterThanOrEqualTo(10));
-      final mentionsMother =
-          list
-              .where((w) => w.text.contains('Mẹ') || w.text.contains('mẹ'))
-              .length;
+      final mentionsMother = list
+          .where((w) => w.text.contains('Mẹ') || w.text.contains('mẹ'))
+          .length;
       expect(mentionsMother, greaterThanOrEqualTo(5));
     });
   });

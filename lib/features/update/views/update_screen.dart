@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+
 import '../../../l10n/l10n_extensions.dart';
 import '../models/app_release.dart';
 import '../models/update_status.dart';
@@ -166,10 +167,9 @@ class _UpdateScreenState extends State<UpdateScreen> {
         break;
       case UpdateStatus.downloading:
         title = context.l10n.downloadingUpdate;
-        subtitle =
-            totalBytes != null && totalBytes > 0
-                ? '${(progress * 100).toStringAsFixed(0)}% — ${_formatBytes(downloadedBytes)} / ${_formatBytes(totalBytes)}'
-                : context.l10n.downloadedSize(_formatBytes(downloadedBytes));
+        subtitle = totalBytes != null && totalBytes > 0
+            ? '${(progress * 100).toStringAsFixed(0)}% — ${_formatBytes(downloadedBytes)} / ${_formatBytes(totalBytes)}'
+            : context.l10n.downloadedSize(_formatBytes(downloadedBytes));
         break;
       case UpdateStatus.verifying:
         title = context.l10n.verifyingUpdate;
@@ -249,14 +249,14 @@ class _UpdateScreenState extends State<UpdateScreen> {
           ElevatedButton.icon(
             onPressed:
                 status == UpdateStatus.updateAvailable &&
-                        context
-                                .read<AppUpdateService>()
-                                .latestRelease
-                                ?.sha256
-                                .isNotEmpty ==
-                            true
-                    ? _downloadUpdate
-                    : null,
+                    context
+                            .read<AppUpdateService>()
+                            .latestRelease
+                            ?.sha256
+                            .isNotEmpty ==
+                        true
+                ? _downloadUpdate
+                : null,
             icon: const Icon(Icons.download),
             label: Text(context.l10n.downloadUpdate),
           ),

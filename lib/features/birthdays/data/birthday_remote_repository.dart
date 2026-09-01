@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../../../core/firestore/firestore_schema.dart';
 import '../../../models/birthday.dart';
 import 'birthday_firestore_mapper.dart';
 
@@ -50,7 +51,10 @@ class FirestoreBirthdayRemoteRepository implements BirthdayRemoteRepository {
   final BirthdayFirestoreMapper _mapper;
 
   CollectionReference<Map<String, dynamic>> _collection(String uid) {
-    return _db.collection('users').doc(uid).collection('birthdays');
+    return _db
+        .collection(FirestoreSchema.users)
+        .doc(uid)
+        .collection(FirestoreSchema.birthdays);
   }
 
   @override

@@ -68,10 +68,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 alignment: Alignment.centerRight,
                 child: TextButton(
                   key: const Key('onboarding-skip'),
-                  onPressed:
-                      widget.manual
-                          ? () => _close(complete: false)
-                          : () => _close(complete: true),
+                  onPressed: widget.manual
+                      ? () => _close(complete: false)
+                      : () => _close(complete: true),
                   child: Text(widget.manual ? 'Đóng' : 'Bỏ qua'),
                 ),
               ),
@@ -80,10 +79,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   key: const Key('onboarding-pages'),
                   controller: _controller,
                   onPageChanged: (value) => setState(() => _page = value),
-                  children:
-                      OnboardingPageData.pages
-                          .map((data) => OnboardingPage(data: data))
-                          .toList(),
+                  children: OnboardingPageData.pages
+                      .map((data) => OnboardingPage(data: data))
+                      .toList(),
                 ),
               ),
               OnboardingIndicator(

@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+
+import '../core/firestore/firestore_schema.dart';
 import '../models/birthday.dart';
 
 class FirestoreService {
@@ -19,7 +21,10 @@ class FirestoreService {
   }
 
   CollectionReference<Map<String, dynamic>> get _birthdaysCollection =>
-      _firestore.collection('users').doc(_uid).collection('birthdays');
+      _firestore
+          .collection(FirestoreSchema.users)
+          .doc(_uid)
+          .collection(FirestoreSchema.birthdays);
 
   Future<void> backupBirthday(Birthday birthday) async {
     await _birthdaysCollection.doc(birthday.id).set({

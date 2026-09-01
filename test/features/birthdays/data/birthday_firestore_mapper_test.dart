@@ -47,7 +47,7 @@ void main() {
       final map = mapper.toFirestore(_sampleBirthday());
       expect(map.containsKey('photoBase64'), false);
       expect(map.containsKey('photoMimeType'), false);
-      expect(map.containsKey('photoByteSize'), false);
+      expect(map.containsKey('photoSize'), false);
       expect(map.containsKey('photoHash'), false);
       expect(map.containsKey('photoUpdatedAt'), false);
     });
@@ -56,14 +56,14 @@ void main() {
       final photo = BirthdayCloudPhoto(
         photoBase64: 'BASE64PAYLOAD',
         mimeType: 'image/jpeg',
-        byteSize: 12345,
+        size: 12345,
         hash: 'abc',
         updatedAt: DateTime(2024, 5, 6),
       );
       final map = mapper.toFirestore(_sampleBirthday(), photo: photo);
       expect(map['photoBase64'], 'BASE64PAYLOAD');
       expect(map['photoMimeType'], 'image/jpeg');
-      expect(map['photoByteSize'], 12345);
+      expect(map['photoSize'], 12345);
       expect(map['photoHash'], 'abc');
       expect(map['photoUpdatedAt'], isA<Timestamp>());
     });
@@ -72,7 +72,7 @@ void main() {
       final map = mapper.toFirestore(_sampleBirthday(), deletePhoto: true);
       expect(map['photoBase64'], isA<FieldValue>());
       expect(map['photoMimeType'], isA<FieldValue>());
-      expect(map['photoByteSize'], isA<FieldValue>());
+      expect(map['photoSize'], isA<FieldValue>());
       expect(map['photoHash'], isA<FieldValue>());
       expect(map['photoUpdatedAt'], isA<FieldValue>());
     });
@@ -115,14 +115,14 @@ void main() {
         'schemaVersion': 1,
         'photoBase64': 'ABCD',
         'photoMimeType': 'image/jpeg',
-        'photoByteSize': 4242,
+        'photoSize': 4242,
         'photoHash': 'deadbeef',
         'photoUpdatedAt': Timestamp.fromDate(DateTime(2024, 1, 1)),
       });
       final record = mapper.fromFirestore(snap)!;
       expect(record.photo, isNotNull);
       expect(record.photo!.base64, 'ABCD');
-      expect(record.photo!.byteSize, 4242);
+      expect(record.photo!.size, 4242);
       expect(record.photo!.hash, 'deadbeef');
       expect(record.photo!.updatedAt, DateTime(2024, 1, 1));
     });

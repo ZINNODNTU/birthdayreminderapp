@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+
 import '../../../models/birthday.dart';
 import '../../../l10n/l10n_extensions.dart';
 
@@ -103,9 +104,8 @@ class BirthdayInfoCard extends StatelessWidget {
           Expanded(
             child: Text(
               value,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyLarge?.copyWith(color: Colors.grey.shade900),
+              style: Theme.of(context).textTheme.bodyLarge
+                  ?.copyWith(color: Colors.grey.shade900),
             ),
           ),
         ],

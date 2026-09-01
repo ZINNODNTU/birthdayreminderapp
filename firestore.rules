@@ -1,105 +1,79 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // ----- helpers ----------------------------------------------------
-    function signedIn() {
-      return request.auth != null;
-    }
-
-    function signedInAs(userId) {
-      return signedIn() && request.auth.uid == userId;
-    }
-
-    // Production: `request.auth.token.firebase.sign_in_provider == 'google.com'`.
-// Emulator: the test harness puts a literal `provider` claim at
-// `request.auth.token.provider`. Accept both shapes.
-    function isGoogleUser() {
+    function owner(uid) { return request.auth != null && request.auth.uid == uid; }
+    function googleUser() {
       return request.auth != null &&
         (request.auth.token.provider == 'google.com' ||
-          (request.auth.token.firebase != null &&
-            request.auth.token.firebase.sign_in_provider == 'google.com'));
+         (request.auth.token.firebase != null && request.auth.token.firebase.sign_in_provider == 'google.com'));
+    }
+    function uuidV4(id) {
+      return id.matches('^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$');
+    }
+    function validProfile(uid) {
+      return request.resource.data.keys().hasOnly([
+        'uid', 'createdAt', 'updatedAt', 'lastLoginAt', 'displayName',
+        'email', 'photoUrl', 'provider', 'schemaVersion'
+      ]) && request.resource.data.uid == uid
+        && request.resource.data.provider == 'google.com'
+        && request.resource.data.schemaVersion == 2;
+    }
+    function validBirthday(id) {
+      return uuidV4(id)
+        && request.resource.data.keys().hasOnly([
+          'id', 'name', 'birthdayDate', 'calendarType', 'relationship',
+          'gender', 'note', 'photoBase64', 'photoMimeType', 'photoSize',
+          'photoHash', 'photoUpdatedAt', 'reminderEnabled',
+          'remindBeforeDays', 'reminderTime', 'repeatYearly',
+          'createdAt', 'updatedAt', 'schemaVersion'
+        ])
+        && request.resource.data.id == id
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.birthdayDate is timestamp
+        && request.resource.data.calendarType in ['solar', 'lunar']
+        && (!('relationship' in request.resource.data)
+          || request.resource.data.relationship is string)
+        && (!('gender' in request.resource.data)
+          || request.resource.data.gender is string)
+        && request.resource.data.remindBeforeDays is int
+        && request.resource.data.remindBeforeDays >= 0
+        && request.resource.data.reminderEnabled is bool
+        && request.resource.data.reminderTime is string
+        && request.resource.data.reminderTime.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$')
+        && request.resource.data.repeatYearly is bool
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.updatedAt is timestamp
+        && request.resource.data.schemaVersion == 2
+        && (!('photoBase64' in request.resource.data) ||
+          (request.resource.data.photoBase64 is string
+            && request.resource.data.photoBase64.size() > 0
+            && request.resource.data.photoBase64.size() <= 700 * 1024))
+        && (!('photoMimeType' in request.resource.data)
+          || request.resource.data.photoMimeType is string)
+        && (!('photoSize' in request.resource.data)
+          || (request.resource.data.photoSize is int
+            && request.resource.data.photoSize >= 0))
+        && (!('photoHash' in request.resource.data)
+          || request.resource.data.photoHash is string)
+        && (!('photoUpdatedAt' in request.resource.data)
+          || request.resource.data.photoUpdatedAt is timestamp);
     }
 
-    // ----- user profile ------------------------------------------------
-    match /users/{userId} {
-      allow read, delete: if signedInAs(userId);
-
-      allow create: if signedInAs(userId)
-        && isGoogleUser()
-        && request.resource.data.uid == userId
-        && request.resource.data.provider == 'google.com'
-        && request.resource.data.schemaVersion == 1
-        && request.resource.data.keys().hasAll([
-             'uid', 'provider', 'createdAt', 'updatedAt',
-             'lastLoginAt', 'schemaVersion'
-           ]);
-
-      // Updates may not modify immutable fields.
-      allow update: if signedInAs(userId)
-        && isGoogleUser()
-        && request.resource.data.uid == resource.data.uid
-        && request.resource.data.provider == 'google.com'
-        && request.resource.data.schemaVersion == resource.data.schemaVersion
+    match /users/{uid} {
+      allow read, delete: if owner(uid);
+      allow create: if owner(uid) && googleUser() && validProfile(uid);
+      allow update: if owner(uid) && googleUser() && validProfile(uid)
         && request.resource.data.createdAt == resource.data.createdAt;
 
-      // ----- birthdays subcollection --------------------------------
       match /birthdays/{birthdayId} {
-        allow read, delete: if signedInAs(userId);
-
-        allow create, update: if signedInAs(userId)
-          && request.resource.data.id == birthdayId
-          && request.resource.data.name is string
-          && request.resource.data.name.size() > 0
-          && request.resource.data.schemaVersion == 1
-          && request.resource.data.calendarType in ['solar', 'lunar']
-          && request.resource.data.reminder.enabled is bool
-          && request.resource.data.reminder.daysBefore is int
-          && request.resource.data.reminder.daysBefore >= 0
-          && request.resource.data.reminder.hour is int
-          && request.resource.data.reminder.hour >= 0
-          && request.resource.data.reminder.hour <= 23
-          && request.resource.data.reminder.minute is int
-          && request.resource.data.reminder.minute >= 0
-          && request.resource.data.reminder.minute <= 59
-          // Photo fields are optional. When present they MUST match
-          // the documented shape. Photo Base64 must not exceed the
-          // ~700 KB headroom we carved out of the 1 MB document limit.
-          && (!('photoBase64' in request.resource.data) || (
-                request.resource.data.photoBase64 is string
-                && request.resource.data.photoBase64.size() <= 700 * 1024))
-          && (!('photoMimeType' in request.resource.data)
-                || request.resource.data.photoMimeType is string)
-          && (!('photoByteSize' in request.resource.data)
-                || (request.resource.data.photoByteSize is int
-                      && request.resource.data.photoByteSize >= 0
-                      && request.resource.data.photoByteSize <= 700 * 1024))
-          && (!('photoHash' in request.resource.data)
-                || request.resource.data.photoHash is string)
-          && (!('photoUpdatedAt' in request.resource.data)
-                || request.resource.data.photoUpdatedAt is timestamp);
+        allow read, delete: if owner(uid);
+        allow create, update: if owner(uid) && validBirthday(birthdayId);
       }
-
-      match /preferences/{document=**} {
-        allow read, write: if signedInAs(userId);
-      }
-
-      match /devices/{deviceId} {
-        allow read, write: if signedInAs(userId);
-      }
+      match /preferences/{document=**} { allow read, write: if owner(uid); }
+      match /devices/{deviceId} { allow read, write: if owner(uid); }
     }
-
-    // ----- legacy / global birthdays -----------------------------------
-    // Production architecture is /users/{uid}/birthdays/{id}. The
-    // top-level collection is denied outright so legacy callers cannot
-    // reintroduce it.
-    match /birthdays/{document=**} {
-      allow read, write: if false;
-    }
-
-    // ----- catch-all ---------------------------------------------------
-    match /{document=**} {
-      allow read, write: if false;
-    }
+    match /birthdays/{document=**} { allow read, write: if false; }
+    match /{document=**} { allow read, write: if false; }
   }
 }

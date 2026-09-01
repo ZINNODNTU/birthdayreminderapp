@@ -28,6 +28,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import '../helpers/fake_auth_repository.dart';
 import '../helpers/fake_notification_service.dart';
+
 import 'package:birthdayreminderapp/l10n/app_localizations.dart';
 import 'package:birthdayreminderapp/services/locale_service.dart';
 
@@ -63,47 +64,44 @@ class _ProdParityTree extends StatelessWidget {
           create: (_) => const LunarCalendarService(),
         ),
         Provider<BirthdayEngine>(
-          create:
-              (ctx) => DefaultBirthdayEngine(ctx.read<LunarCalendarService>()),
+          create: (ctx) =>
+              DefaultBirthdayEngine(ctx.read<LunarCalendarService>()),
         ),
         Provider<NotificationIdFactory>(
           create: (_) => const NotificationIdFactory(),
         ),
         Provider<NotificationPermissionService>(
-          create: (_) => const NotificationPermissionService(),
+          create: (_) => NotificationPermissionService(),
         ),
         Provider<ReminderScheduleStore>(
           create: (_) => ReminderScheduleStore(sharedPrefs),
         ),
         Provider<ReminderScheduler>(
-          create:
-              (ctx) => ReminderScheduler(
-                engine: ctx.read<BirthdayEngine>(),
-                idFactory: ctx.read<NotificationIdFactory>(),
-                notificationService: ctx.read<NotificationService>(),
-                permissionService: ctx.read<NotificationPermissionService>(),
-                store: ctx.read<ReminderScheduleStore>(),
-              ),
+          create: (ctx) => ReminderScheduler(
+            engine: ctx.read<BirthdayEngine>(),
+            idFactory: ctx.read<NotificationIdFactory>(),
+            notificationService: ctx.read<NotificationService>(),
+            permissionService: ctx.read<NotificationPermissionService>(),
+            store: ctx.read<ReminderScheduleStore>(),
+          ),
         ),
         ChangeNotifierProvider<BirthdayController>(
-          create:
-              (ctx) => BirthdayController(
-                repository: ctx.read<BirthdayRepository>(),
-                reminderScheduler: ctx.read<ReminderScheduler>(),
-                notificationService: ctx.read<NotificationService>(),
-                engine: ctx.read<BirthdayEngine>(),
-              ),
+          create: (ctx) => BirthdayController(
+            repository: ctx.read<BirthdayRepository>(),
+            reminderScheduler: ctx.read<ReminderScheduler>(),
+            notificationService: ctx.read<NotificationService>(),
+            engine: ctx.read<BirthdayEngine>(),
+          ),
         ),
         Provider<UserProfileRepository>(create: (_) => _NoopProfileRepo()),
         Provider<SessionRepository>.value(value: sessionRepo),
         ChangeNotifierProvider<SessionController>(
-          create:
-              (ctx) => SessionController(
-                repository: sessionRepo,
-                authRepository: repo,
-                profileRepository: ctx.read<UserProfileRepository>(),
-                authStateChanges: repo.authStateChanges,
-              ),
+          create: (ctx) => SessionController(
+            repository: sessionRepo,
+            authRepository: repo,
+            profileRepository: ctx.read<UserProfileRepository>(),
+            authStateChanges: repo.authStateChanges,
+          ),
         ),
         ChangeNotifierProvider<LocaleService>(
           create: (_) => LocaleService(sharedPrefs),
@@ -171,8 +169,9 @@ void main() {
 
       expect(repo.signInWithGoogleCalls, 1);
       expect(find.byType(Homepage), findsOneWidget);
-      final session =
-          tester.element(find.byType(Homepage)).read<SessionController>();
+      final session = tester
+          .element(find.byType(Homepage))
+          .read<SessionController>();
       expect(session.mode, AppSessionMode.authenticated);
     },
   );

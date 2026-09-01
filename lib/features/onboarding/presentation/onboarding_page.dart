@@ -35,36 +35,33 @@ class OnboardingPage extends StatelessWidget {
           Text(
             data.title,
             textAlign: TextAlign.center,
-            style: Theme.of(
-              context,
-            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
+            style: Theme.of(context).textTheme.headlineSmall
+                ?.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 12),
           Text(
             data.description,
             textAlign: TextAlign.center,
-            style: Theme.of(
-              context,
-            ).textTheme.bodyLarge?.copyWith(height: 1.45),
+            style: Theme.of(context).textTheme.bodyLarge
+                ?.copyWith(height: 1.45),
           ),
           const SizedBox(height: 24),
           Wrap(
             alignment: WrapAlignment.center,
             spacing: 8,
             runSpacing: 8,
-            children:
-                data.highlights
-                    .map(
-                      (text) => Chip(
-                        avatar: Icon(
-                          Icons.check_circle_outline,
-                          size: 18,
-                          color: colors.primary,
-                        ),
-                        label: Text(text),
-                      ),
-                    )
-                    .toList(),
+            children: data.highlights
+                .map(
+                  (text) => Chip(
+                    avatar: Icon(
+                      Icons.check_circle_outline,
+                      size: 18,
+                      color: colors.primary,
+                    ),
+                    label: Text(text),
+                  ),
+                )
+                .toList(),
           ),
         ],
       ),

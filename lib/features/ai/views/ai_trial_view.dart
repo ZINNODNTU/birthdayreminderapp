@@ -118,7 +118,7 @@ class _AiTrialViewState extends State<AiTrialView> {
                   _result!.ok
                       ? 'Phản hồi (${_result!.latencyMs} ms):\n\n${_result!.reply}'
                       : 'Lỗi: ${_result!.errorCode}'
-                          '${_result!.errorMessage != null ? ' — ${_result!.errorMessage}' : ''}',
+                            '${_result!.errorMessage != null ? ' — ${_result!.errorMessage}' : ''}',
                   style: TextStyle(
                     color: _result!.ok ? Colors.black87 : Colors.red.shade700,
                   ),

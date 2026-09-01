@@ -32,16 +32,17 @@ class NotificationReconciler {
   final ReminderScheduleStore _store;
 
   /// Maintenance tick: ensure every live birthday has exactly ONE
-  /// future pending notification. Cancels managed entries for
-  /// deleted birthdays; reschedules only when the desired single
-  /// future entry is missing OR has already fired.
-  Future<ReminderReconcileResult> reconcile() async {
+  /// future pending notification. [onProgress] emits after every birthday.
+  Future<ReminderReconcileResult> reconcile({
+    void Function(ReminderReconcileProgress progress)? onProgress,
+  }) async {
     final caps = await _permissionService.query();
     if (caps.status == NotificationCapability.denied) {
       return ReminderReconcileResult(
         kind: NotificationFailureKind.permissionDenied,
         cancelled: 0,
         scheduled: 0,
+        failed: 1,
         message: 'Notifications are disabled by the OS.',
       );
     }
@@ -72,8 +73,19 @@ class NotificationReconciler {
     // notification exists if repeatAnnually is true. If repeatAnnually is false,
     // only keep the one-time reminder and do not reschedule after it fires.
     int scheduled = 0;
+    int failed = 0;
+    String? lastError;
+    int processed = 0;
+    final total = birthdays.length;
     final now = DateTime.now();
     for (final b in birthdays) {
+      onProgress?.call(
+        ReminderReconcileProgress(
+          processed: processed,
+          total: total,
+          displayName: b.name.trim().isEmpty ? 'Không có tên' : b.name.trim(),
+        ),
+      );
       final v3Key = ReminderScheduler.scheduleKeyFor(birthdayId: b.id);
       final existing = keep[v3Key];
 
@@ -83,6 +95,14 @@ class NotificationReconciler {
           keep.remove(v3Key);
           cancelled++;
         }
+        processed++;
+        onProgress?.call(
+          ReminderReconcileProgress(
+            processed: processed,
+            total: total,
+            displayName: b.name.trim().isEmpty ? 'Không có tên' : b.name.trim(),
+          ),
+        );
         continue;
       }
 
@@ -91,6 +111,14 @@ class NotificationReconciler {
           existing.scheduledAt!.isAfter(now)) {
         // Healthy: there's still a future pending — leave it alone.
         scheduled++;
+        processed++;
+        onProgress?.call(
+          ReminderReconcileProgress(
+            processed: processed,
+            total: total,
+            displayName: b.name.trim().isEmpty ? 'Không có tên' : b.name.trim(),
+          ),
+        );
         continue;
       }
 
@@ -108,13 +136,26 @@ class NotificationReconciler {
         final result = await _scheduler.scheduleNextAnnualReminder(b);
         if (result.isOk) {
           scheduled++;
+        } else {
+          failed++;
+          lastError = result.message ?? result.kind.name;
         }
       }
+      processed++;
+      onProgress?.call(
+        ReminderReconcileProgress(
+          processed: processed,
+          total: total,
+          displayName: b.name.trim().isEmpty ? 'Không có tên' : b.name.trim(),
+        ),
+      );
     }
 
     return ReminderReconcileResult.ok(
       cancelled: cancelled,
       scheduled: scheduled,
+      failed: failed,
+      message: lastError,
     );
   }
 }
@@ -124,22 +165,42 @@ class ReminderReconcileResult {
     required this.kind,
     required this.cancelled,
     required this.scheduled,
+    this.failed = 0,
     this.message,
   });
 
   factory ReminderReconcileResult.ok({
     required int cancelled,
     required int scheduled,
+    int failed = 0,
+    String? message,
   }) => ReminderReconcileResult(
-    kind: NotificationFailureKind.none,
+    kind: failed == 0
+        ? NotificationFailureKind.none
+        : NotificationFailureKind.scheduleFailed,
     cancelled: cancelled,
     scheduled: scheduled,
+    failed: failed,
+    message: message,
   );
 
   final NotificationFailureKind kind;
   final int cancelled;
   final int scheduled;
+  final int failed;
   final String? message;
 
   bool get isOk => kind == NotificationFailureKind.none;
+}
+
+class ReminderReconcileProgress {
+  const ReminderReconcileProgress({
+    required this.processed,
+    required this.total,
+    required this.displayName,
+  });
+
+  final int processed;
+  final int total;
+  final String displayName;
 }

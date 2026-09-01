@@ -82,17 +82,16 @@ void main() {
         sample(photo: photo),
         sample(id: 'dead', deleted: DateTime.utc(2025)),
       ]);
-      final result =
-          await BackupService(
-            repository: source,
-            preferences: prefs,
-            packageInfo: PackageInfo(
-              appName: 'x',
-              packageName: 'x',
-              version: '1.0.1',
-              buildNumber: '2',
-            ),
-          ).createBackup();
+      final result = await BackupService(
+        repository: source,
+        preferences: prefs,
+        packageInfo: PackageInfo(
+          appName: 'x',
+          packageName: 'x',
+          version: '1.0.1',
+          buildNumber: '2',
+        ),
+      ).createBackup();
       expect(result.birthdayCount, 2);
       expect(result.photoCount, 1);
       final text = utf8.decode(result.bytes, allowMalformed: true);
@@ -149,23 +148,21 @@ void main() {
   });
   test('future schema rejected', () async {
     final prefs = await SharedPreferences.getInstance();
-    final bytes =
-        (await BackupService(
-              repository: MemoryRepo(),
-              preferences: prefs,
-              packageInfo: PackageInfo(
-                appName: 'x',
-                packageName: 'x',
-                version: '1',
-                buildNumber: '1',
-              ),
-            ).createBackup())
-            .bytes;
+    final bytes = (await BackupService(
+      repository: MemoryRepo(),
+      preferences: prefs,
+      packageInfo: PackageInfo(
+        appName: 'x',
+        packageName: 'x',
+        version: '1',
+        buildNumber: '1',
+      ),
+    ).createBackup()).bytes;
     final decoded = ZipDecoder().decodeBytes(bytes);
     final manifest = decoded.findFile('manifest.json')!;
-    final json =
-        jsonDecode(utf8.decode(manifest.content as List<int>))
-            as Map<String, dynamic>;
+    final json = jsonDecode(
+      utf8.decode(manifest.content as List<int>),
+    ) as Map<String, dynamic>;
     json['schemaVersion'] = 999;
     final changed = utf8.encode(jsonEncode(json));
     final changedArchive = Archive();

@@ -23,6 +23,7 @@ import 'package:birthdayreminderapp/services/notification_service.dart';
 import 'package:birthdayreminderapp/views/birthday_detail_view.dart';
 
 import '../helpers/fake_notification_service.dart';
+
 import 'package:birthdayreminderapp/l10n/app_localizations.dart';
 import 'package:birthdayreminderapp/services/locale_service.dart';
 
@@ -82,7 +83,7 @@ class _NoopScheduler extends ReminderScheduler {
         engine: _NoopEngine(),
         idFactory: NotificationIdFactory(),
         notificationService: notif,
-        permissionService: const NotificationPermissionService(),
+        permissionService: NotificationPermissionService(),
         store: _NoopStore(),
       );
 
@@ -115,11 +116,10 @@ Widget _wrap(BirthdayController controller, FakeNotificationService notif) {
       Provider<NotificationService>.value(value: notif),
       Provider<ReminderScheduleStore>.value(value: store),
       Provider<BirthdayAiService>(
-        create:
-            (_) => BirthdayAiService(
-              configRepository: _StubAiConfigRepository(),
-              client: _StubAiClient(),
-            ),
+        create: (_) => BirthdayAiService(
+          configRepository: _StubAiConfigRepository(),
+          client: _StubAiClient(),
+        ),
       ),
       ChangeNotifierProvider<BirthdayController>.value(value: controller),
       ChangeNotifierProvider<LocaleService>(

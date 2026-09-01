@@ -141,17 +141,16 @@ class GiftFallbackEngine {
   ];
 
   List<GiftSuggestion> _closeFriend(_Gender g, int? age) {
-    final youngTail =
-        age != null && age <= 25
-            ? const [
-              GiftSuggestion(
-                name: 'Voucher quán cà phê yêu thích 3 tháng',
-                reason: 'Cùng nhau tái khám phá quán quen mỗi tuần.',
-                budget: '450.000 – 1.000.000đ',
-                category: 'Trải nghiệm',
-              ),
-            ]
-            : const <GiftSuggestion>[];
+    final youngTail = age != null && age <= 25
+        ? const [
+            GiftSuggestion(
+              name: 'Voucher quán cà phê yêu thích 3 tháng',
+              reason: 'Cùng nhau tái khám phá quán quen mỗi tuần.',
+              budget: '450.000 – 1.000.000đ',
+              category: 'Trải nghiệm',
+            ),
+          ]
+        : const <GiftSuggestion>[];
     return [
       GiftSuggestion(
         name: 'Voucher quán ăn / cafe quen 3 tháng',

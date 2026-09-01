@@ -6,41 +6,52 @@ const {
   assertFails,
   assertSucceeds,
 } = require('@firebase/rules-unit-testing');
-const {doc, getDoc, setDoc, updateDoc, deleteDoc} = require('firebase/firestore');
+const {
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  Timestamp,
+} = require('firebase/firestore');
+
+const birthdayId = '550e8400-e29b-41d4-a716-446655440000';
 
 const projectId = 'demo-birthday-reminder-rules-test';
 let testEnv;
 
 function validProfile(uid) {
+  const timestamp = Timestamp.fromDate(new Date('2024-01-01T00:00:00.000Z'));
   return {
     uid,
     provider: 'google.com',
-    createdAt: '2024-01-01T00:00:00.000Z',
-    updatedAt: '2024-01-01T00:00:00.000Z',
-    lastLoginAt: '2024-01-01T00:00:00.000Z',
-    schemaVersion: 1,
+    displayName: 'Alice',
+    email: 'alice@example.com',
+    photoUrl: null,
+    createdAt: timestamp,
+    updatedAt: timestamp,
+    lastLoginAt: timestamp,
+    schemaVersion: 2,
   };
 }
 
 function validBirthday(uid, id) {
+  const timestamp = Timestamp.fromDate(new Date('2024-01-01T00:00:00.000Z'));
   return {
     id,
     name: 'Test User',
+    birthdayDate: Timestamp.fromDate(new Date('2000-01-01T00:00:00.000Z')),
     calendarType: 'solar',
-    solarBirthday: '2000-01-01T00:00:00.000Z',
-    lunar: null,
+    relationship: 'Bạn bè',
+    gender: 'female',
     note: null,
-    reminder: {
-      enabled: false,
-      daysBefore: 0,
-      hour: 9,
-      minute: 0,
-      repeatAnnually: true,
-    },
-    createdAt: '2024-01-01T00:00:00.000Z',
-    updatedAt: '2024-01-01T00:00:00.000Z',
-    deletedAt: null,
-    schemaVersion: 1,
+    remindBeforeDays: 0,
+    reminderEnabled: true,
+    reminderTime: '09:00',
+    repeatYearly: true,
+    createdAt: timestamp,
+    updatedAt: timestamp,
+    schemaVersion: 2,
   };
 }
 
@@ -50,7 +61,7 @@ async function seedProfile(uid) {
   });
 }
 
-async function seedBirthday(uid, id = 'one') {
+async function seedBirthday(uid, id = birthdayId) {
   await testEnv.withSecurityRulesDisabled(async (context) => {
     await setDoc(
       doc(context.firestore(), `users/${uid}/birthdays/${id}`),
@@ -145,7 +156,9 @@ test('9. createdAt mutation denied', async () => {
     .authenticatedContext('alice', {provider: 'google.com'})
     .firestore();
   await assertFails(
-    updateDoc(doc(db, 'users/alice'), {createdAt: '2099-01-01T00:00:00.000Z'}),
+    updateDoc(doc(db, 'users/alice'), {
+      createdAt: Timestamp.fromDate(new Date('2099-01-01T00:00:00.000Z')),
+    }),
   );
 });
 
@@ -158,40 +171,40 @@ test('10. Google user can create birthday under own UID', async () => {
     .authenticatedContext('alice', {provider: 'google.com'})
     .firestore();
   await assertSucceeds(
-    setDoc(doc(db, 'users/alice/birthdays/b1'), validBirthday('alice', 'b1')),
+    setDoc(doc(db, `users/alice/birthdays/${birthdayId}`), validBirthday('alice', birthdayId)),
   );
 });
 
 test('11. Google user can read own birthday', async () => {
-  await seedBirthday('alice', 'b1');
+  await seedBirthday('alice', birthdayId);
   const db = testEnv
     .authenticatedContext('alice', {provider: 'google.com'})
     .firestore();
-  await assertSucceeds(getDoc(doc(db, 'users/alice/birthdays/b1')));
+  await assertSucceeds(getDoc(doc(db, `users/alice/birthdays/${birthdayId}`)));
 });
 
 test('12. Google user can update own birthday', async () => {
-  await seedBirthday('alice', 'b1');
+  await seedBirthday('alice', birthdayId);
   const db = testEnv
     .authenticatedContext('alice', {provider: 'google.com'})
     .firestore();
-  await assertSucceeds(updateDoc(doc(db, 'users/alice/birthdays/b1'), {name: 'Renamed'}));
+  await assertSucceeds(updateDoc(doc(db, `users/alice/birthdays/${birthdayId}`), {name: 'Renamed'}));
 });
 
 test('13. Google user can delete own birthday', async () => {
-  await seedBirthday('alice', 'b1');
+  await seedBirthday('alice', birthdayId);
   const db = testEnv
     .authenticatedContext('alice', {provider: 'google.com'})
     .firestore();
-  await assertSucceeds(deleteDoc(doc(db, 'users/alice/birthdays/b1')));
+  await assertSucceeds(deleteDoc(doc(db, `users/alice/birthdays/${birthdayId}`)));
 });
 
 test('14. cross-user birthday read denied', async () => {
-  await seedBirthday('alice', 'b1');
+  await seedBirthday('alice', birthdayId);
   const db = testEnv
     .authenticatedContext('bob', {provider: 'google.com'})
     .firestore();
-  await assertFails(getDoc(doc(db, 'users/alice/birthdays/b1')));
+  await assertFails(getDoc(doc(db, `users/alice/birthdays/${birthdayId}`)));
 });
 
 test('15. cross-user birthday write denied', async () => {
@@ -199,10 +212,10 @@ test('15. cross-user birthday write denied', async () => {
     .authenticatedContext('bob', {provider: 'google.com'})
     .firestore();
   await assertFails(
-    setDoc(doc(db, 'users/alice/birthdays/b1'), validBirthday('alice', 'b1')),
+    setDoc(doc(db, `users/alice/birthdays/${birthdayId}`), validBirthday('alice', birthdayId)),
   );
   await assertFails(
-    updateDoc(doc(db, 'users/alice/birthdays/b1'), {name: 'Hijack'}),
+    updateDoc(doc(db, `users/alice/birthdays/${birthdayId}`), {name: 'Hijack'}),
   );
 });
 
@@ -242,43 +255,37 @@ test('19. invalid schemaVersion denied', async () => {
   const db = testEnv
     .authenticatedContext('alice', {provider: 'google.com'})
     .firestore();
-  const bad = {...validBirthday('alice', 'b1'), schemaVersion: 99};
-  await assertFails(setDoc(doc(db, 'users/alice/birthdays/b1'), bad));
+  const bad = {...validBirthday('alice', birthdayId), schemaVersion: 99};
+  await assertFails(setDoc(doc(db, `users/alice/birthdays/${birthdayId}`), bad));
 });
 
 test('20. invalid reminder hour denied', async () => {
   const db = testEnv
     .authenticatedContext('alice', {provider: 'google.com'})
     .firestore();
-  const bad = {
-    ...validBirthday('alice', 'b1'),
-    reminder: {
-      ...validBirthday('alice', 'b1').reminder,
-      hour: 24,
-    },
-  };
-  await assertFails(setDoc(doc(db, 'users/alice/birthdays/b1'), bad));
+  const bad = {...validBirthday('alice', birthdayId), reminderTime: '24:00'};
+  await assertFails(
+    setDoc(doc(db, `users/alice/birthdays/${birthdayId}`), bad),
+  );
 });
 
 test('21. invalid reminder minute denied', async () => {
   const db = testEnv
     .authenticatedContext('alice', {provider: 'google.com'})
     .firestore();
-  const bad = {
-    ...validBirthday('alice', 'b1'),
-    reminder: {
-      ...validBirthday('alice', 'b1').reminder,
-      minute: 60,
-    },
-  };
-  await assertFails(setDoc(doc(db, 'users/alice/birthdays/b1'), bad));
+  const bad = {...validBirthday('alice', birthdayId), reminderTime: '09:60'};
+  await assertFails(
+    setDoc(doc(db, `users/alice/birthdays/${birthdayId}`), bad),
+  );
 });
 
 test('22. malformed birthday (missing name) denied', async () => {
   const db = testEnv
     .authenticatedContext('alice', {provider: 'google.com'})
     .firestore();
-  const bad = validBirthday('alice', 'b1');
+  const bad = validBirthday('alice', birthdayId);
   delete bad.name;
-  await assertFails(setDoc(doc(db, 'users/alice/birthdays/b1'), bad));
+  await assertFails(setDoc(doc(db, `users/alice/birthdays/${birthdayId}`), bad));
 });
+
+

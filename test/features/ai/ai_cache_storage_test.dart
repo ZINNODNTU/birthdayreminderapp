@@ -77,8 +77,7 @@ void main() {
 
   test('readWishes returns null after TTL passes', () async {
     SharedPreferences.setMockInitialValues({
-      'ai_cache_wishes_v3':
-          '{"savedAt":"2020-01-01T00:00:00.000Z","inputs":{"birthdayId":"id1","contextHash":"abcd","promptVersion":"gifts_v3_wishes_v3","language":"vi","provider":"gemini","model":"m"},"items":[{"text":"A"}]}',
+      'ai_cache_wishes_v3': '{"savedAt":"2020-01-01T00:00:00.000Z","inputs":{"birthdayId":"id1","contextHash":"abcd","promptVersion":"gifts_v3_wishes_v3","language":"vi","provider":"gemini","model":"m"},"items":[{"text":"A"}]}',
     });
     final prefs = await SharedPreferences.getInstance();
     final s = AiCacheStorage(prefs);

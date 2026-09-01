@@ -1,5 +1,7 @@
 import 'dart:convert';
+
 import 'package:http/http.dart' as http;
+
 import '../models/app_release.dart';
 import '../utils/semantic_version.dart';
 

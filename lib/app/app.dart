@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 // import removed
 import 'package:provider/provider.dart';
@@ -27,13 +28,16 @@ class BirthdayReminderApp extends StatefulWidget {
 
 class _BirthdayReminderAppState extends State<BirthdayReminderApp>
     with WidgetsBindingObserver {
+  Future<void>? _runtimeInitialization;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      unawaited(_initializePostFrameRuntime());
+      _runtimeInitialization ??= _initializePostFrameRuntime();
+      unawaited(_runtimeInitialization);
     });
   }
 
@@ -60,6 +64,8 @@ class _BirthdayReminderAppState extends State<BirthdayReminderApp>
 
   Future<void> _runMaintenance() async {
     try {
+      await (_runtimeInitialization ??= _initializePostFrameRuntime());
+      if (!mounted) return;
       final reconciler = context.read<NotificationReconciler>();
       final result = await reconciler.reconcile();
       AppLogger.info(

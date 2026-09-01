@@ -36,8 +36,9 @@ class OpenAiCompatibleClient {
         message: 'Model id is required.',
       );
     }
-    final base =
-        (baseUrl == null || baseUrl.isEmpty) ? _defaultBaseUrl() : baseUrl;
+    final base = (baseUrl == null || baseUrl.isEmpty)
+        ? _defaultBaseUrl()
+        : baseUrl;
     final url = Uri.parse('$base/chat/completions');
     final stopwatch = Stopwatch()..start();
     try {
@@ -112,8 +113,9 @@ class OpenAiCompatibleClient {
     required String apiKey,
     String? baseUrl,
   }) async {
-    final base =
-        (baseUrl == null || baseUrl.isEmpty) ? _defaultBaseUrl() : baseUrl;
+    final base = (baseUrl == null || baseUrl.isEmpty)
+        ? _defaultBaseUrl()
+        : baseUrl;
     final url = Uri.parse('$base/models');
     try {
       final response = await _client
@@ -146,8 +148,9 @@ class OpenAiCompatibleClient {
     if (apiKey.isEmpty) {
       return AiConnectionResult.failure(code: 'missing_api_key');
     }
-    final base =
-        (baseUrl == null || baseUrl.isEmpty) ? _defaultBaseUrl() : baseUrl;
+    final base = (baseUrl == null || baseUrl.isEmpty)
+        ? _defaultBaseUrl()
+        : baseUrl;
     final url = Uri.parse('$base/chat/completions');
     final effectiveTimeout = options?.timeout ?? _defaultChatTimeout;
     final effectiveMaxTokens = options?.maxTokens ?? maxTokens;

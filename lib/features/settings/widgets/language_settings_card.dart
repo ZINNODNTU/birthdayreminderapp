@@ -36,20 +36,26 @@ class LanguageSettingsCard extends StatelessWidget {
               subtitle: Text(context.l10n.selectLanguage),
             ),
             const SizedBox(height: 6),
-            for (final language in _languages)
-              RadioListTile<String>(
-                key: ValueKey('language_${language.$1}'),
-                value: language.$1,
-                groupValue: localeService.locale.languageCode,
-                onChanged: (value) {
-                  if (value != null) localeService.setLocale(value);
-                },
-                activeColor: MidAutumnColors.lantern,
-                title: Text('${language.$2}  ${language.$3}'),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
+            RadioGroup<String>(
+              groupValue: localeService.locale.languageCode,
+              onChanged: (value) {
+                if (value != null) localeService.setLocale(value);
+              },
+              child: Column(
+                children: [
+                  for (final language in _languages)
+                    RadioListTile<String>(
+                      key: ValueKey('language_${language.$1}'),
+                      value: language.$1,
+                      activeColor: MidAutumnColors.lantern,
+                      title: Text('${language.$2}  ${language.$3}'),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                ],
               ),
+            ),
           ],
         ),
       ),

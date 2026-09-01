@@ -1,10 +1,13 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/config/app_config.dart';
 import '../core/logging/app_logger.dart';
+import '../firebase_options.dart';
 
 /// Resolved SharedPreferences instance. The provider tree in
 /// `dependencies.dart` reads from this static field rather than
@@ -33,7 +36,12 @@ class AppBootstrap {
     BootstrappedPreferences.instance = prefs;
     AppLogger.info('bootstrap', 'prefs ready');
 
-    await Firebase.initializeApp();
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    if (kIsWeb) {
+      await FirebaseAuth.instance.setPersistence(Persistence.LOCAL);
+    }
     AppLogger.info('bootstrap', 'firebase ready');
 
     await initializeDateFormatting(AppConfig.primaryLocale);

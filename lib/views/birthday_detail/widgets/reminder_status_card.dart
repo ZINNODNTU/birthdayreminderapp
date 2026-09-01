@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+
 import '../models/reminder_status.dart';
 import '../../../l10n/l10n_extensions.dart';
 
@@ -122,8 +123,9 @@ class ReminderStatusCard extends StatelessWidget {
             Align(
               alignment: Alignment.centerRight,
               child: OutlinedButton.icon(
-                onPressed:
-                    rescheduleEnabled && !rescheduling ? onReschedule : null,
+                onPressed: rescheduleEnabled && !rescheduling
+                    ? onReschedule
+                    : null,
                 icon: const Icon(Icons.refresh),
                 label: Text(context.l10n.rescheduleReminder),
               ),

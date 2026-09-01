@@ -38,6 +38,8 @@ class SessionController extends ChangeNotifier {
   }) : _repository = repository,
        _authRepository = authRepository,
        _profileRepository = profileRepository {
+    _user = authRepository.currentUser;
+    _lastAuthenticated = _user != null;
     _authSub = authStateChanges.listen(_onAuthChanged);
     _bootstrap();
   }
@@ -60,7 +62,10 @@ class SessionController extends ChangeNotifier {
   Future<bool> isLocalModePersisted() => _repository.isLocalModeEnabled();
 
   Future<void> _bootstrap() async {
-    _mode = await _repository.resolveMode(isAuthenticated: _lastAuthenticated);
+    final mode = await _repository.resolveMode(
+      isAuthenticated: _lastAuthenticated,
+    );
+    if (!_bootstrapDone) _mode = mode;
     _bootstrapDone = true;
     notifyListeners();
   }
@@ -70,7 +75,8 @@ class SessionController extends ChangeNotifier {
   Future<void> _onAuthChanged(User? user) async {
     _lastAuthenticated = user != null;
     _user = user;
-    _mode = await _repository.resolveMode(isAuthenticated: _lastAuthenticated);
+    _mode = await _repository.resolveMode(isAuthenticated: user != null);
+    _bootstrapDone = true;
     notifyListeners();
     if (user != null) {
       // Best-effort — Firestore being unavailable should never block

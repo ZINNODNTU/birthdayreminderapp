@@ -48,25 +48,24 @@ List<SingleChildWidget> buildProdParityProviders({
   bool isType(SingleChildWidget p, String typeName) =>
       p.runtimeType.toString() == typeName;
 
-  final filtered =
-      production.where((p) {
-        if (isType(p, 'Provider<FirebaseAuthRepository>')) return false;
-        if (isType(p, 'Provider<UserProfileRepository>')) return false;
-        if (isType(p, 'Provider<BirthdayRemoteRepository>')) return false;
-        if (googleAuthClientOverride != null &&
-            isType(p, 'Provider<GoogleAuthClient>')) {
-          return false;
-        }
-        if (notificationServiceOverride != null &&
-            isType(p, 'Provider<NotificationService>')) {
-          return false;
-        }
-        if (localDbServiceOverride != null &&
-            isType(p, 'Provider<LocalDbService>')) {
-          return false;
-        }
-        return true;
-      }).toList();
+  final filtered = production.where((p) {
+    if (isType(p, 'Provider<FirebaseAuthRepository>')) return false;
+    if (isType(p, 'Provider<UserProfileRepository>')) return false;
+    if (isType(p, 'Provider<BirthdayRemoteRepository>')) return false;
+    if (googleAuthClientOverride != null &&
+        isType(p, 'Provider<GoogleAuthClient>')) {
+      return false;
+    }
+    if (notificationServiceOverride != null &&
+        isType(p, 'Provider<NotificationService>')) {
+      return false;
+    }
+    if (localDbServiceOverride != null &&
+        isType(p, 'Provider<LocalDbService>')) {
+      return false;
+    }
+    return true;
+  }).toList();
 
   final overrides = <SingleChildWidget>[
     if (localDbServiceOverride != null)

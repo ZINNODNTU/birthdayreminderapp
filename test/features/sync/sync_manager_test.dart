@@ -57,11 +57,10 @@ class _FakeRemoteRepo implements BirthdayRemoteRepository {
   BirthdayCloudPhoto? lastUpsertedPhoto;
 
   BirthdayRemoteRepository makeCopy() {
-    final copy =
-        _FakeRemoteRepo()
-          ..upsertError = upsertError
-          ..rows.addAll(rows)
-          ..photos.addAll(photos);
+    final copy = _FakeRemoteRepo()
+      ..upsertError = upsertError
+      ..rows.addAll(rows)
+      ..photos.addAll(photos);
     return copy;
   }
 
@@ -273,7 +272,7 @@ void main() {
         remote.photos['z'] = CloudPhotoFields(
           base64: 'CLOUD_PHOTO_BASE64',
           mimeType: 'image/jpeg',
-          byteSize: 42,
+          size: 42,
           hash: 'deadbeef',
           updatedAt: DateTime(2024, 5, 6),
         );

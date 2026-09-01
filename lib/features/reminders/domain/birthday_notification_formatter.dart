@@ -68,29 +68,27 @@ class BirthdayNotificationFormatter {
   }) {
     final occDay = DateTime(occurrence.year, occurrence.month, occurrence.day);
     final age = ageForOccurrence(birthday, occDay);
-    final display =
-        birthday.nickname?.isNotEmpty == true
-            ? '${birthday.name} (${birthday.nickname})'
-            : birthday.name;
+    final display = birthday.nickname?.isNotEmpty == true
+        ? '${birthday.name} (${birthday.nickname})'
+        : birthday.name;
     final now = DateTime.now();
     final isToday =
         now.year == occDay.year &&
         now.month == occDay.month &&
         now.day == occDay.day;
-    final title =
-        isToday ? '🎂 Sinh nhật của $display' : '🎂 Sắp đến sinh nhật $display';
-    final relation =
-        birthday.relationship?.trim().isNotEmpty == true
-            ? ' (${birthday.relationship})'
-            : '';
-    final body =
-        isToday
-            ? 'Hôm nay là sinh nhật$relation của $display'
-                '${age >= 0 ? ' ($age tuổi)' : ''}. '
-                'Đừng quên gửi lời chúc!'
-            : '$display sẽ có sinh nhật vào ngày '
-                '${occDay.day.toString().padLeft(2, '0')}/'
-                '${occDay.month.toString().padLeft(2, '0')}';
+    final title = isToday
+        ? '🎂 Sinh nhật của $display'
+        : '🎂 Sắp đến sinh nhật $display';
+    final relation = birthday.relationship?.trim().isNotEmpty == true
+        ? ' (${birthday.relationship})'
+        : '';
+    final body = isToday
+        ? 'Hôm nay là sinh nhật$relation của $display'
+              '${age >= 0 ? ' ($age tuổi)' : ''}. '
+              'Đừng quên gửi lời chúc!'
+        : '$display sẽ có sinh nhật vào ngày '
+              '${occDay.day.toString().padLeft(2, '0')}/'
+              '${occDay.month.toString().padLeft(2, '0')}';
     return BirthdayNotificationContent(
       title: title,
       body: body,

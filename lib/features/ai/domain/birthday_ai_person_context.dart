@@ -42,10 +42,9 @@ class BirthdayAiPersonContext {
       nickname: (b.nickname ?? '').trim(),
       gender: (b.gender ?? '').trim(),
       age: _computeAge(b.solarBirthday, DateTime.now()),
-      relationship:
-          (b.relationship ?? '').trim().isEmpty
-              ? 'người quen'
-              : b.relationship!.trim(),
+      relationship: (b.relationship ?? '').trim().isEmpty
+          ? 'người quen'
+          : b.relationship!.trim(),
       promptVersion: kAiV3PromptVersion,
     );
   }

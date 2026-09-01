@@ -224,32 +224,29 @@ class _NotificationSettingsCardState extends State<NotificationSettingsCard> {
             const SizedBox(height: 8),
             _StatusRow(
               label: context.l10n.notificationPermission,
-              value:
-                  snap == null
-                      ? context.l10n.checking
-                      : snap.permissionGranted
-                      ? context.l10n.granted
-                      : context.l10n.notGranted,
+              value: snap == null
+                  ? context.l10n.checking
+                  : snap.permissionGranted
+                  ? context.l10n.granted
+                  : context.l10n.notGranted,
               ok: snap?.permissionGranted ?? false,
             ),
             _StatusRow(
               label: context.l10n.appNotifications,
-              value:
-                  snap == null
-                      ? context.l10n.checking
-                      : snap.notificationsEnabled
-                      ? context.l10n.on
-                      : context.l10n.off,
+              value: snap == null
+                  ? context.l10n.checking
+                  : snap.notificationsEnabled
+                  ? context.l10n.on
+                  : context.l10n.off,
               ok: snap?.notificationsEnabled ?? false,
             ),
             _StatusRow(
               label: context.l10n.exactAlarm,
-              value:
-                  snap == null
-                      ? context.l10n.checking
-                      : snap.exactAvailable
-                      ? context.l10n.granted
-                      : context.l10n.notGranted,
+              value: snap == null
+                  ? context.l10n.checking
+                  : snap.exactAvailable
+                  ? context.l10n.granted
+                  : context.l10n.notGranted,
               ok: snap?.exactAvailable ?? false,
             ),
             _StatusRow(

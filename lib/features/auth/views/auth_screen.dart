@@ -33,9 +33,8 @@ class _AuthScreenState extends State<AuthScreen> {
       if (!mounted) return;
       // Cancellation is not an error — keep the user where they are.
       if (e is AuthFailureCancelled) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(_mapFailureMessage(e))));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(_mapFailureMessage(e))));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -118,20 +117,19 @@ class _AuthScreenState extends State<AuthScreen> {
                 FilledButton.icon(
                   key: const ValueKey('continue_with_google_button'),
                   onPressed: inFlight ? null : _signInWithGoogle,
-                  icon:
-                      _googleInFlight
-                          ? const SizedBox(
-                            height: 18,
-                            width: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                          : const Text(
-                            'G',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 18,
-                            ),
+                  icon: _googleInFlight
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text(
+                          'G',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 18,
                           ),
+                        ),
                   label: Text(l10n.signInGoogle),
                   style: FilledButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),
@@ -152,14 +150,13 @@ class _AuthScreenState extends State<AuthScreen> {
                 OutlinedButton.icon(
                   key: const ValueKey('continue_on_device_button'),
                   onPressed: inFlight ? null : _continueOnDevice,
-                  icon:
-                      _localInFlight
-                          ? const SizedBox(
-                            height: 18,
-                            width: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                          : const Icon(Icons.devices),
+                  icon: _localInFlight
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.devices),
                   label: Text(l10n.continueOnDevice),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),

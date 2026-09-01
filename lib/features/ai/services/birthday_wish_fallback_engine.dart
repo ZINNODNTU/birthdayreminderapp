@@ -20,8 +20,9 @@ class BirthdayWishFallbackEngine {
     final rel = _relationship(relationship);
     final bucket = _bucket(age);
     final firstName = _firstName(name);
-    final callName =
-        nickname?.trim().isNotEmpty == true ? nickname!.trim() : firstName;
+    final callName = nickname?.trim().isNotEmpty == true
+        ? nickname!.trim()
+        : firstName;
 
     // Pull templates from the relationship bank first, then pad with
     // generic Vietnamese templates so we always reach the target.
@@ -175,8 +176,7 @@ class BirthdayWishFallbackEngine {
   List<BirthdayWish> _colleagueTemplates() => const [
     BirthdayWish(
       style: 'Trang trọng',
-      text:
-          'Kính chúc bạn một tuổi mới thật nhiều sức khỏe, công việc thuận lợi và thành công.',
+      text: 'Kính chúc bạn một tuổi mới thật nhiều sức khỏe, công việc thuận lợi và thành công.',
     ),
     BirthdayWish(
       style: 'Lịch sự',
@@ -189,18 +189,15 @@ class BirthdayWishFallbackEngine {
     ),
     BirthdayWish(
       style: 'Lịch sự',
-      text:
-          'Chúc bạn tuổi mới an khang, thịnh vượng và đạt nhiều mục tiêu nghề nghiệp.',
+      text: 'Chúc bạn tuổi mới an khang, thịnh vượng và đạt nhiều mục tiêu nghề nghiệp.',
     ),
     BirthdayWish(
       style: 'Trang trọng',
-      text:
-          'Kính chúc bạn đón một năm mới tràn đầy năng lượng và cảm hứng làm việc.',
+      text: 'Kính chúc bạn đón một năm mới tràn đầy năng lượng và cảm hứng làm việc.',
     ),
     BirthdayWish(
       style: 'Lịch sự',
-      text:
-          'Chúc bạn sinh nhật hạnh phúc — cảm ơn vì luôn là một đồng nghiệp đáng tin cậy.',
+      text: 'Chúc bạn sinh nhật hạnh phúc — cảm ơn vì luôn là một đồng nghiệp đáng tin cậy.',
     ),
     BirthdayWish(
       style: 'Trang trọng',
@@ -208,8 +205,7 @@ class BirthdayWishFallbackEngine {
     ),
     BirthdayWish(
       style: 'Lịch sự',
-      text:
-          'Mừng sinh nhật bạn — chúc bạn luôn vững vàng trên con đường sự nghiệp.',
+      text: 'Mừng sinh nhật bạn — chúc bạn luôn vững vàng trên con đường sự nghiệp.',
     ),
     BirthdayWish(
       style: 'Trang trọng',
@@ -218,88 +214,77 @@ class BirthdayWishFallbackEngine {
     ),
     BirthdayWish(
       style: 'Lịch sự',
-      text:
-          'Kính chúc bạn tuổi mới đạt được nhiều mục tiêu cá nhân và nghề nghiệp.',
+      text: 'Kính chúc bạn tuổi mới đạt được nhiều mục tiêu cá nhân và nghề nghiệp.',
     ),
   ];
 
   List<BirthdayWish> _parentTemplates(String name, _Relationship rel) {
     final word =
         rel == _Relationship.parent && name.toLowerCase().contains('mẹ')
-            ? 'Mẹ'
-            : rel == _Relationship.parent
-            ? 'Bố'
-            : '';
+        ? 'Mẹ'
+        : rel == _Relationship.parent
+        ? 'Bố'
+        : '';
     return [
       BirthdayWish(
         style: 'Trân trọng',
-        text:
-            word.isEmpty
-                ? 'Cảm ơn $name đã luôn yêu thương và dạy dỗ mình. Con chúc $name sức khỏe và bình an.'
-                : 'Con cảm ơn $word vì đã luôn yêu thương và dạy dỗ con. Chúc $word sức khỏe và bình an.',
+        text: word.isEmpty
+            ? 'Cảm ơn $name đã luôn yêu thương và dạy dỗ mình. Con chúc $name sức khỏe và bình an.'
+            : 'Con cảm ơn $word vì đã luôn yêu thương và dạy dỗ con. Chúc $word sức khỏe và bình an.',
       ),
       BirthdayWish(
         style: 'Yêu thương',
-        text:
-            word.isEmpty
-                ? 'Chúc $name sinh nhật vui vẻ — con luôn tự hào về $name.'
-                : 'Chúc $word sinh nhật vui vẻ — con luôn tự hào về $word.',
+        text: word.isEmpty
+            ? 'Chúc $name sinh nhật vui vẻ — con luôn tự hào về $name.'
+            : 'Chúc $word sinh nhật vui vẻ — con luôn tự hào về $word.',
       ),
       BirthdayWish(
         style: 'Trân trọng',
-        text:
-            word.isEmpty
-                ? 'Mong $name luôn khỏe mạnh, hạnh phúc và sống vui mỗi ngày.'
-                : 'Mong $word luôn khỏe mạnh, hạnh phúc và sống vui mỗi ngày.',
+        text: word.isEmpty
+            ? 'Mong $name luôn khỏe mạnh, hạnh phúc và sống vui mỗi ngày.'
+            : 'Mong $word luôn khỏe mạnh, hạnh phúc và sống vui mỗi ngày.',
       ),
       BirthdayWish(
         style: 'Yêu thương',
-        text:
-            word.isEmpty
-                ? 'Cảm ơn $name vì đã cho con một tuổi thơ đầy yêu thương.'
-                : 'Cảm ơn $word vì đã cho con một tuổi thơ đầy yêu thương.',
+        text: word.isEmpty
+            ? 'Cảm ơn $name vì đã cho con một tuổi thơ đầy yêu thương.'
+            : 'Cảm ơn $word vì đã cho con một tuổi thơ đầy yêu thương.',
       ),
       BirthdayWish(
         style: 'Trân trọng',
-        text:
-            word.isEmpty
-                ? 'Chúc $name thêm một năm thật nhiều sức khỏe và niềm vui bên gia đình.'
-                : 'Chúc $word thêm một năm thật nhiều sức khỏe và niềm vui bên gia đình.',
+        text: word.isEmpty
+            ? 'Chúc $name thêm một năm thật nhiều sức khỏe và niềm vui bên gia đình.'
+            : 'Chúc $word thêm một năm thật nhiều sức khỏe và niềm vui bên gia đình.',
       ),
       BirthdayWish(
         style: 'Yêu thương',
-        text:
-            word.isEmpty
-                ? 'Con chúc $name sinh nhật thật ấm áp và ý nghĩa.'
-                : 'Con chúc $word sinh nhật thật ấm áp và ý nghĩa.',
+        text: word.isEmpty
+            ? 'Con chúc $name sinh nhật thật ấm áp và ý nghĩa.'
+            : 'Con chúc $word sinh nhật thật ấm áp và ý nghĩa.',
       ),
       BirthdayWish(
         style: 'Trân trọng',
-        text:
-            word.isEmpty
-                ? 'Mong mỗi ngày của $name đều an lành và đầy tiếng cười.'
-                : 'Mong mỗi ngày của $word đều an lành và đầy tiếng cười.',
+        text: word.isEmpty
+            ? 'Mong mỗi ngày của $name đều an lành và đầy tiếng cười.'
+            : 'Mong mỗi ngày của $word đều an lành và đầy tiếng cười.',
       ),
       BirthdayWish(
         style: 'Yêu thương',
-        text:
-            word.isEmpty
-                ? 'Con luôn nhớ những bữa cơm gia đình — cảm ơn $name vì điều đó.'
-                : 'Con luôn nhớ những bữa cơm gia đình — cảm ơn $word vì điều đó.',
+        text: word.isEmpty
+            ? 'Con luôn nhớ những bữa cơm gia đình — cảm ơn $name vì điều đó.'
+            : 'Con luôn nhớ những bữa cơm gia đình — cảm ơn $word vì điều đó.',
       ),
       BirthdayWish(
         style: 'Trân trọng',
-        text:
-            word.isEmpty
-                ? 'Chúc $name sống lâu, sống khỏe, sống vui cùng con cháu.'
-                : 'Chúc $word sống lâu, sống khỏe, sống vui cùng con cháu.',
+        text: word.isEmpty
+            ? 'Chúc $name sống lâu, sống khỏe, sống vui cùng con cháu.'
+            : 'Chúc $word sống lâu, sống khỏe, sống vui cùng con cháu.',
       ),
       BirthdayWish(
         style: 'Trân trọng',
-        text:
-            word.isEmpty
-                ? 'Sinh nhật $name — con yêu $name rất nhiều.'
-                : 'Sinh nhật $word — con yêu $word rất nhiều.',
+        text: word.isEmpty
+            ? 'Sinh nhật $name — con yêu $name rất nhiều.'
+            : 'Sinh nhật $word — con yêu $word rất nhiều.',
       ),
     ];
   }
@@ -449,31 +434,27 @@ class BirthdayWishFallbackEngine {
       ),
       BirthdayWish(
         style: 'Văn chương',
-        text:
-            name.isEmpty
-                ? 'Mừng ngày bạn chào đời — mong hành trình phía trước luôn dịu dàng và đáng yêu.'
-                : 'Mừng ngày $name chào đời — mong hành trình phía trước luôn dịu dàng và đáng yêu.',
+        text: name.isEmpty
+            ? 'Mừng ngày bạn chào đời — mong hành trình phía trước luôn dịu dàng và đáng yêu.'
+            : 'Mừng ngày $name chào đời — mong hành trình phía trước luôn dịu dàng và đáng yêu.',
       ),
       BirthdayWish(
         style: 'Văn chương',
-        text:
-            name.isEmpty
-                ? 'Chúc bạn thêm một mùa xuân trong đời, nhẹ nhàng mà thật rực rỡ.'
-                : 'Chúc $name thêm một mùa xuân trong đời, nhẹ nhàng mà thật rực rỡ.',
+        text: name.isEmpty
+            ? 'Chúc bạn thêm một mùa xuân trong đời, nhẹ nhàng mà thật rực rỡ.'
+            : 'Chúc $name thêm một mùa xuân trong đời, nhẹ nhàng mà thật rực rỡ.',
       ),
       BirthdayWish(
         style: 'Câu chúc',
-        text:
-            name.isEmpty
-                ? 'Sinh nhật vui vẻ — hôm nay là ngày của bạn.'
-                : 'Sinh nhật vui vẻ $name — hôm nay là ngày của bạn.',
+        text: name.isEmpty
+            ? 'Sinh nhật vui vẻ — hôm nay là ngày của bạn.'
+            : 'Sinh nhật vui vẻ $name — hôm nay là ngày của bạn.',
       ),
       BirthdayWish(
         style: 'Yêu thương',
-        text:
-            name.isEmpty
-                ? 'Chúc bạn luôn được yêu thương và trân trọng.'
-                : 'Chúc $name luôn được yêu thương và trân trọng.',
+        text: name.isEmpty
+            ? 'Chúc bạn luôn được yêu thương và trân trọng.'
+            : 'Chúc $name luôn được yêu thương và trân trọng.',
       ),
     ];
   }
